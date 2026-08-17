@@ -17,11 +17,12 @@ import {
   Flame,
   Clock,
   Trash2,
+  LogOut,
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
-import { getCategories } from "@/lib/services/db";
-import { Category } from "@/types";
+import { getCategories, getUserAddresses } from "@/lib/services/db";
+import { Category, UserAddress } from "@/types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 
 export function Navbar() {
@@ -32,6 +33,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+  const [userAddress, setUserAddress] = useState<UserAddress | null>(null);
 
   const cartCount = getTotalItems();
 
@@ -137,6 +139,12 @@ export function Navbar() {
         // Listen for Google Auth redirects & state changes
         const { data: authListener } = supabase.auth.onAuthStateChange(
           async (event, session) => {
+            if (event === "SIGNED_OUT" || !session) {
+              setToken(null);
+              useUserStore.getState().clearUser();
+              useCartStore.getState().setItems([]);
+              return;
+            }
             if (session) {
               setToken(session.access_token);
             }
@@ -186,6 +194,23 @@ export function Navbar() {
     }
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    async function fetchUserAddress() {
+      if (profile) {
+        const addrs = await getUserAddresses();
+        if (Array.isArray(addrs) && addrs.length > 0) {
+          const def = addrs.find((a: UserAddress) => a.is_default) || addrs[0];
+          setUserAddress(def);
+        } else {
+          setUserAddress(null);
+        }
+      } else {
+        setUserAddress(null);
+      }
+    }
+    fetchUserAddress();
+  }, [profile]);
 
   // Search States
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -268,6 +293,22 @@ export function Navbar() {
     window.location.href = url;
   };
 
+  const handleSignOut = async () => {
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Sign out error:", err);
+    } finally {
+      useUserStore.getState().clearUser();
+      useCartStore.getState().setItems([]);
+      setAccountDropdownOpen(false);
+      setMobileMenuOpen(false);
+      window.location.href = "/login";
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     executeSearch(searchQuery);
@@ -276,26 +317,35 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full font-sans border-b border-slate-200 bg-white">
       {/* TOP MAIN ROW: Clean Light Header */}
-      <div className="bg-white text-slate-900 px-3 py-2 flex items-center justify-between gap-2 sm:gap-4 border-b border-slate-200">
-        {/* 1. Brand Logo */}
-        <Link
-          href="/"
-          className="flex items-center space-x-2 px-2 py-1 border border-transparent hover:border-slate-900 transition-all flex-shrink-0"
-        >
-          <img
-            src="/logo.png"
-            alt="AURA Logo"
-            className="w-8 h-8 object-cover border border-slate-900"
-          />
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tight text-slate-900 leading-none font-mono">
-              aura<span className="text-slate-900">.eg</span>
-            </span>
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-              Luxury Tech
-            </span>
-          </div>
-        </Link>
+      <div className="bg-white text-slate-900 px-3 sm:px-4 py-2 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 border-b border-slate-200">
+        {/* 1. Mobile Menu Toggle & Brand Logo */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="sm:hidden p-1.5 text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+            aria-label="Open Mobile Navigation Menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <Link
+            href="/"
+            className="flex items-center space-x-2 px-1 py-1 hover:opacity-95 transition-all flex-shrink-0"
+          >
+            <img
+              src="/logo.png"
+              alt="AURA Logo"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-cover border border-slate-900"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 leading-none font-mono">
+                aura
+              </span>
+              <span className="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                Luxury Tech
+              </span>
+            </div>
+          </Link>
+        </div>
 
         {/* 2. Deliver To Location Picker */}
         {!profile ? (
@@ -324,18 +374,30 @@ export function Navbar() {
               <span className="text-[10px] text-slate-500">
                 Deliver to {profile?.full_name?.split(" ")[0] || "User"}
               </span>
-              <span className="text-xs font-bold text-slate-800 tracking-tight">
-                Cairo & Giza ...
+              <span
+                className="text-xs font-bold text-slate-800 tracking-tight truncate max-w-[130px]"
+                title={
+                  userAddress
+                    ? `${userAddress.street_address}, ${userAddress.city}`
+                    : "Add Delivery Address"
+                }
+              >
+                {userAddress
+                  ? `${userAddress.city}${userAddress.state_region ? `, ${userAddress.state_region}` : ""}`
+                  : "Set Location..."}
               </span>
             </div>
           </Link>
         )}
 
-        {/* 3. Central Search Bar */}
-        <div ref={searchContainerRef} className="relative flex-1 max-w-3xl z-40">
+        {/* 3. Central Search Bar (Desktop & Tablet) */}
+        <div
+          ref={searchContainerRef}
+          className="relative order-3 sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-2xl lg:max-w-3xl z-40"
+        >
           <form
             onSubmit={handleSearchSubmit}
-            className="w-full flex items-center h-10 bg-slate-100 text-slate-900 border border-slate-300 transition-all focus-within:border-slate-900"
+            className="w-full flex items-center h-9 sm:h-10 bg-slate-100 text-slate-900 border border-slate-300 transition-all focus-within:border-slate-900"
           >
             {/* Custom Category Dropdown Selector */}
             <div className="hidden sm:flex items-center">
@@ -343,7 +405,7 @@ export function Navbar() {
                 value={selectedCategory}
                 onChange={(val) => setSelectedCategory(val)}
                 options={[
-                  { value: 'all', label: 'All' },
+                  { value: "all", label: "All" },
                   ...categories.map((c) => ({ value: c.id, label: c.name })),
                 ]}
                 triggerClassName="h-10 bg-slate-200 border-0 border-r border-slate-300 hover:bg-slate-300 text-xs font-semibold text-slate-800"
@@ -357,16 +419,16 @@ export function Navbar() {
               value={searchQuery}
               onFocus={() => setIsSearchFocused(true)}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-3 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium h-full bg-transparent"
+              className="flex-1 px-3 py-1.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium h-full bg-transparent"
             />
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="bg-slate-900 hover:bg-black text-white px-4 h-full flex items-center justify-center transition-colors font-bold flex-shrink-0 cursor-pointer"
+              className="bg-slate-900 hover:bg-black text-white px-3 sm:px-4 h-full flex items-center justify-center transition-colors font-bold flex-shrink-0 cursor-pointer"
               title="Search"
             >
-              <Search className="w-5 h-5 text-white" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </button>
           </form>
 
@@ -463,13 +525,6 @@ export function Navbar() {
 
         {/* 4. Right Controls */}
         <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0 text-xs">
-          {/* Country / Language Indicator */}
-          <div className="hidden sm:flex items-center space-x-1 px-2 py-1.5 border border-transparent hover:border-slate-300 cursor-pointer">
-            <span className="text-base">🇪🇬</span>
-            <span className="font-bold text-slate-800 text-xs">EN</span>
-            <ChevronDown className="w-3 h-3 text-slate-500" />
-          </div>
-
           {/* Accounts & Lists Dropdown */}
           <div className="relative">
             <button
@@ -522,6 +577,13 @@ export function Navbar() {
                         Admin Dashboard
                       </Link>
                     )}
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2.5 text-rose-600 font-bold hover:bg-rose-50 border-t border-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Sign Out</span>
+                    </button>
                   </>
                 ) : (
                   <div className="p-3 text-center space-y-2">
@@ -705,6 +767,23 @@ export function Navbar() {
                       className="block p-2 bg-slate-900 text-white font-bold"
                     >
                       Admin Dashboard
+                    </Link>
+                  )}
+                  {profile ? (
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left p-2 text-rose-600 font-bold hover:bg-rose-50 flex items-center space-x-1.5 border-t border-slate-200"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block p-2 text-slate-900 font-bold underline"
+                    >
+                      Sign In / Register
                     </Link>
                   )}
                 </div>

@@ -58,6 +58,32 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  const guard = await verifyAdmin();
+  if (!guard.isAdmin) return guard.response;
+
+  try {
+    const { id, query, search_count } = await request.json();
+    if (!id || !query) return NextResponse.json({ error: 'Missing ID or Query' }, { status: 400 });
+
+    const supabase = createClient();
+    const updates: Record<string, any> = { query: query.trim(), updated_at: new Date().toISOString() };
+    if (typeof search_count === 'number') updates.search_count = search_count;
+
+    const { data, error } = await supabase
+      .from('trending_searches')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data || { success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const guard = await verifyAdmin();
   if (!guard.isAdmin) return guard.response;

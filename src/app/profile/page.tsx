@@ -6,14 +6,15 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store/useUserStore';
 import { ProductCard } from '@/components/product/ProductCard';
 import { formatPrice, formatDate } from '@/lib/utils';
-import { User, Heart, Package, Sparkles, LogOut, ShieldCheck, Save, ExternalLink, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { User, Heart, Package, Sparkles, LogOut, ShieldCheck, Save, ExternalLink, Lock, Gift, Tag, Copy, Check } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 import { getUserOrders, getUserLoyaltyInfo, getProducts } from '@/lib/services/db';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, wishlistIds, setProfile, clearUser } = useUserStore();
+  const { profile, wishlistIds, loyaltyPoints, addLoyaltyPoints, setProfile, clearUser } = useUserStore();
 
   const [activeTab, setActiveTab] = useState<'info' | 'wishlist' | 'orders' | 'loyalty'>('info');
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -25,6 +26,101 @@ export default function ProfilePage() {
   const [loyaltyData, setLoyaltyData] = useState<{ points: number; logs: any[] }>({ points: 0, logs: [] });
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [redeemedVouchers, setRedeemedVouchers] = useState<
+    Array<{ title: string; code: string; date: string; discountAmount: number }>
+  >([]);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const rewardsCatalog = [
+    {
+      id: "reward-50",
+      title: "EGP 50 Shopping Voucher",
+      description: "Instant EGP 50 off discount applied to your next purchase.",
+      pointsCost: 500,
+      discountAmount: 50,
+      badge: "🛍️ INSTANT CREDIT",
+    },
+    {
+      id: "reward-100",
+      title: "EGP 100 VIP Cash Coupon",
+      description: "EGP 100 coupon code valid across all hardware categories.",
+      pointsCost: 1000,
+      discountAmount: 100,
+      badge: "🔥 POPULAR CHOICE",
+    },
+    {
+      id: "reward-250",
+      title: "EGP 250 Luxury Gift Voucher",
+      description: "EGP 250 big savings voucher for high-end orders.",
+      pointsCost: 2500,
+      discountAmount: 250,
+      badge: "👑 PLATINUM FAVORITE",
+    },
+    {
+      id: "reward-500",
+      title: "EGP 500 Super VIP Coupon",
+      description: "EGP 500 discount for serious tech collectors & builders.",
+      pointsCost: 5000,
+      discountAmount: 500,
+      badge: "💎 ULTIMATE SAVINGS",
+    },
+  ];
+
+  const handleRedeemReward = (reward: {
+    id: string;
+    title: string;
+    pointsCost: number;
+    discountAmount: number;
+  }) => {
+    const currentPoints =
+      loyaltyData.points ?? profile?.loyalty_points ?? loyaltyPoints ?? 0;
+    if (currentPoints < reward.pointsCost) {
+      toast.error(
+        `Insufficient points. You need ${reward.pointsCost - currentPoints} more PTS.`,
+      );
+      return;
+    }
+
+    const generatedCode = `AURA-VIP-${reward.discountAmount}-${Math.random()
+      .toString(36)
+      .substring(2, 7)
+      .toUpperCase()}`;
+
+    // Deduct points
+    addLoyaltyPoints(-reward.pointsCost);
+    setLoyaltyData((prev) => ({
+      ...prev,
+      points: Math.max(0, prev.points - reward.pointsCost),
+    }));
+
+    const newVoucher = {
+      title: reward.title,
+      code: generatedCode,
+      date: new Date().toLocaleDateString(),
+      discountAmount: reward.discountAmount,
+    };
+
+    setRedeemedVouchers((prev) => [newVoucher, ...prev]);
+
+    toast.success(`🎉 Redeemed "${reward.title}"! Code: ${generatedCode}`, {
+      duration: 6000,
+      style: {
+        background: "#0f172a",
+        color: "#ffffff",
+        borderRadius: "0px",
+        fontSize: "12px",
+        fontWeight: "bold",
+        border: "1px solid #1e293b",
+      },
+    });
+  };
+
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success(`Code ${code} copied to clipboard!`);
+    setTimeout(() => setCopiedCode(null), 2500);
+  };
 
   const [mounted, setMounted] = useState(false);
 
@@ -91,9 +187,19 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = () => {
-    clearUser();
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      clearUser();
+      const { useCartStore } = await import('@/store/useCartStore');
+      useCartStore.getState().setItems([]);
+      router.push('/login');
+    }
   };
 
   return (
@@ -127,13 +233,19 @@ export default function ProfilePage() {
         </div>
 
         {/* Loyalty Points Pill */}
-        <div className="flex items-center space-x-4 bg-slate-50 px-5 py-3 border border-slate-200">
-          <Sparkles className="w-5 h-5 text-slate-900" />
+        <button
+          type="button"
+          onClick={() => setActiveTab('loyalty')}
+          className="flex items-center space-x-4 bg-slate-900 text-white px-5 py-3 border border-slate-800 hover:bg-black transition-colors text-left cursor-pointer group"
+        >
+          <Sparkles className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
           <div>
-            <span className="text-[10px] text-slate-500 block font-mono uppercase">VIP Points</span>
-            <span className="text-base font-black text-slate-900 font-mono">{loyaltyData.points} PTS</span>
+            <span className="text-[10px] text-slate-400 block font-mono uppercase">VIP Points (Click to Redeem)</span>
+            <span className="text-base font-black text-amber-400 font-mono">
+              {loyaltyData.points ?? profile?.loyalty_points ?? loyaltyPoints ?? 0} PTS
+            </span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Tabs Layout */}
@@ -149,7 +261,7 @@ export default function ProfilePage() {
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <User className="w-4 h-4 text-slate-900" />
+            <User className={`w-4 h-4 ${activeTab === 'info' ? 'text-white' : 'text-slate-900'}`} />
             <span>Account Settings</span>
           </button>
 
@@ -162,7 +274,7 @@ export default function ProfilePage() {
             }`}
           >
             <div className="flex items-center space-x-3">
-              <Heart className="w-4 h-4 text-slate-900" />
+              <Heart className={`w-4 h-4 ${activeTab === 'wishlist' ? 'text-white' : 'text-slate-900'}`} />
               <span>Saved Wishlist</span>
             </div>
             <span className={`px-2 py-0.5 text-[10px] font-mono font-bold border ${activeTab === 'wishlist' ? 'bg-white text-slate-900 border-white' : 'bg-slate-100 text-slate-900 border-slate-300'}`}>
@@ -178,7 +290,7 @@ export default function ProfilePage() {
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <Package className="w-4 h-4 text-slate-900" />
+            <Package className={`w-4 h-4 ${activeTab === 'orders' ? 'text-white' : 'text-slate-900'}`} />
             <span>Order History</span>
           </button>
 
@@ -186,7 +298,7 @@ export default function ProfilePage() {
             href="/addresses"
             className="w-full p-3 text-xs font-bold flex items-center space-x-3 transition-colors uppercase border bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
           >
-            <User className="w-4 h-4 text-slate-900" />
+            <User className={`w-4 h-4 text-slate-900`} />
             <span>Your Addresses</span>
           </Link>
 
@@ -198,7 +310,7 @@ export default function ProfilePage() {
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-slate-900" />
+            <Sparkles className={`w-4 h-4 ${activeTab === 'loyalty' ? 'text-white' : 'text-slate-900'}`} />
             <span>VIP Rewards</span>
           </button>
 
@@ -330,24 +442,184 @@ export default function ProfilePage() {
           {/* Tab 4: VIP Rewards */}
           {activeTab === 'loyalty' && (
             <div className="p-6 bg-white border border-slate-200 space-y-6">
-              <div className="flex justify-between items-center">
+              {/* Header & Status Pill */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200">
                 <div>
-                  <h2 className="text-base font-black text-slate-900 uppercase">AURA Rewards Status</h2>
-                  <p className="text-xs text-slate-600 mt-1">Earn points on every purchase.</p>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-base font-black text-slate-900 uppercase">AURA Rewards Status</h2>
+                    <span className={`px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase border ${
+                      (loyaltyData.points ?? loyaltyPoints) >= 5000
+                        ? 'bg-slate-900 text-amber-400 border-amber-400'
+                        : (loyaltyData.points ?? loyaltyPoints) >= 1500
+                        ? 'bg-amber-400 text-slate-900 border-amber-500'
+                        : (loyaltyData.points ?? loyaltyPoints) >= 500
+                        ? 'bg-slate-200 text-slate-900 border-slate-400'
+                        : 'bg-slate-100 text-slate-600 border-slate-300'
+                    }`}>
+                      {(loyaltyData.points ?? loyaltyPoints) >= 5000
+                        ? '👑 PLATINUM VIP'
+                        : (loyaltyData.points ?? loyaltyPoints) >= 1500
+                        ? '🌟 GOLD VIP'
+                        : (loyaltyData.points ?? loyaltyPoints) >= 500
+                        ? '🥈 SILVER VIP'
+                        : '🥉 BRONZE MEMBER'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Earn 10% base points on every order + Automatic High-Value Purchase Bonuses!
+                  </p>
                 </div>
-                <span className="text-2xl font-black text-slate-900 font-mono">{loyaltyData.points} PTS</span>
+                <div className="p-4 bg-slate-900 text-white border border-slate-800 text-right">
+                  <span className="text-[10px] text-slate-400 font-mono uppercase block">Available Balance</span>
+                  <span className="text-2xl font-black text-amber-400 font-mono">
+                    {loyaltyData.points ?? profile?.loyalty_points ?? loyaltyPoints ?? 0} PTS
+                  </span>
+                </div>
               </div>
 
-              <div className="p-5 bg-slate-50 border border-slate-200 space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Redemption Rules</h4>
-                <p className="text-xs text-slate-700">
-                  Every 10 points equals $1.00 discount applied directly at checkout.
+              {/* Automatic High-Value Order Bonus Rules */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  Automatic High-Value Order Bonuses
+                </h3>
+                <p className="text-xs text-slate-600">
+                  When you make a high-value purchase, bonus points are added automatically to your account balance at checkout!
                 </p>
-                <div className="pt-2 flex flex-wrap gap-2 text-[11px] font-mono text-slate-700">
-                  <span className="bg-white px-3 py-1 border border-slate-300">🛍️ 10% Points per $1 spent</span>
-                  <span className="bg-white px-3 py-1 border border-slate-300">⭐ 25 Points per product review</span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="p-4 bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[10px] font-bold font-mono text-slate-500 block uppercase">Silver Tier Order</span>
+                    <p className="text-xs font-black text-slate-900">Orders &ge; EGP 1,500</p>
+                    <p className="text-xs font-mono font-bold text-emerald-600">+250 Bonus Points</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[10px] font-bold font-mono text-slate-500 block uppercase">Gold Tier Order</span>
+                    <p className="text-xs font-black text-slate-900">Orders &ge; EGP 3,000</p>
+                    <p className="text-xs font-mono font-bold text-amber-600">+600 Bonus Points</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[10px] font-bold font-mono text-slate-500 block uppercase">Platinum Tier Order</span>
+                    <p className="text-xs font-black text-slate-900">Orders &ge; EGP 5,000</p>
+                    <p className="text-xs font-mono font-bold text-purple-600">+1,200 Bonus Points</p>
+                  </div>
                 </div>
               </div>
+
+              {/* VIP Points Store & Redemption Catalog */}
+              <div className="space-y-4 pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-amber-500" />
+                      VIP Points Store & Redemption Catalog
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Exchange your points ({loyaltyData.points ?? profile?.loyalty_points ?? loyaltyPoints ?? 0} PTS available) for instant discount vouchers!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {rewardsCatalog.map((reward) => {
+                    const currentBalance = loyaltyData.points ?? profile?.loyalty_points ?? loyaltyPoints ?? 0;
+                    const canAfford = currentBalance >= reward.pointsCost;
+
+                    return (
+                      <div
+                        key={reward.id}
+                        className={`p-5 border flex flex-col justify-between space-y-3 transition-all ${
+                          canAfford
+                            ? "bg-slate-50 border-slate-300 hover:border-slate-900"
+                            : "bg-slate-50/50 border-slate-200 opacity-75"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[10px] font-mono font-bold text-amber-600 uppercase block">
+                              {reward.badge}
+                            </span>
+                            <h4 className="text-xs font-black text-slate-900 uppercase mt-0.5">
+                              {reward.title}
+                            </h4>
+                            <p className="text-xs text-slate-600 mt-1">
+                              {reward.description}
+                            </p>
+                          </div>
+                          <div className="px-3 py-1 bg-slate-900 text-amber-400 font-mono font-black text-xs border border-slate-800 flex-shrink-0">
+                            {reward.pointsCost} PTS
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-[11px] font-mono font-bold text-slate-700">
+                            Value: EGP {reward.discountAmount}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRedeemReward(reward)}
+                            disabled={!canAfford}
+                            className={`px-4 py-2 text-xs font-bold uppercase transition-colors border cursor-pointer ${
+                              canAfford
+                                ? "bg-slate-900 hover:bg-black text-white border-slate-800"
+                                : "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
+                            }`}
+                          >
+                            {canAfford ? "REDEEM VOUCHER" : `NEED ${reward.pointsCost - currentBalance} MORE PTS`}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* User Claimed Vouchers list */}
+              {redeemedVouchers.length > 0 && (
+                <div className="p-5 bg-slate-900 text-white space-y-3 border border-slate-800">
+                  <h4 className="text-xs font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-amber-400" />
+                    Your Active Claimed Vouchers ({redeemedVouchers.length})
+                  </h4>
+                  <p className="text-xs text-slate-300">
+                    Use these promo codes at checkout to apply your redeemed discount!
+                  </p>
+
+                  <div className="space-y-2 pt-1">
+                    {redeemedVouchers.map((v, i) => (
+                      <div
+                        key={i}
+                        className="p-3 bg-slate-800 border border-slate-700 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <p className="font-bold text-white uppercase">{v.title}</p>
+                          <span className="text-[10px] text-slate-400 font-mono">Claimed on {v.date}</span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <code className="px-3 py-1 bg-black text-amber-400 font-mono font-black border border-slate-700">
+                            {v.code}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(v.code)}
+                            className="p-1.5 bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
+                            title="Copy code"
+                          >
+                            {copiedCode === v.code ? (
+                              <Check className="w-4 h-4 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-slate-200" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

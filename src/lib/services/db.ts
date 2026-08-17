@@ -255,6 +255,38 @@ export async function updateUserRoleInDb(
   }
 }
 
+export async function createUserInDb(userData: any): Promise<Profile | null> {
+  try {
+    const res = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateUserInDb(userData: any): Promise<Profile | null> {
+  try {
+    const res = await fetch("/api/admin/users", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteUserInDb(userId: string): Promise<boolean> {
   try {
     const res = await fetch(`/api/admin/users?id=${userId}`, {
@@ -332,6 +364,51 @@ export async function setDefaultUserAddress(id: string): Promise<boolean> {
   }
 }
 
+export async function createAdminAddress(addressData: any): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/addresses", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(addressData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateAdminAddress(addressData: any): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/addresses", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(addressData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteAdminAddress(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/addresses?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ==========================================
 // 6. ORDERS SERVICES (Public Customer & Admin)
 // ==========================================
@@ -355,6 +432,29 @@ export async function getUserOrders(userId: string): Promise<any[]> {
     return await res.json();
   } catch {
     return [];
+  }
+}
+
+export async function createOrderInDb(orderData: any): Promise<any | null> {
+  try {
+    console.log("Sending POST /api/orders payload:", orderData);
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderData),
+    });
+    console.log("POST /api/orders response status:", res.status);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("POST /api/orders failed:", res.status, errText);
+      return null;
+    }
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch (err) {
+    console.error("createOrderInDb fetch exception:", err);
+    return null;
   }
 }
 
@@ -432,6 +532,24 @@ export async function addAdminTrendingSearch(query: string): Promise<boolean> {
       method: "POST",
       headers: ADMIN_HEADERS,
       body: JSON.stringify({ query }),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateAdminTrendingSearch(
+  id: string,
+  query: string,
+  search_count?: number
+): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/trending-searches", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ id, query, search_count }),
     });
     if (res.ok) notifyDataChanged();
     return res.ok;
@@ -702,6 +820,79 @@ export async function updateBentoItemInDb(
 export async function deleteBentoItemInDb(id: string): Promise<boolean> {
   try {
     const res = await fetch(`/api/admin/bento?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
+    if (!res.ok) return false;
+    notifyDataChanged();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// PROMO CODES HELPERS
+export async function getAdminPromoCodes(): Promise<any[]> {
+  try {
+    const res = await fetch("/api/admin/promo-codes", {
+      headers: ADMIN_HEADERS,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function verifyPromoCode(code: string): Promise<{ success: boolean; promo?: any; message?: string }> {
+  try {
+    const res = await fetch(`/api/promo-codes?code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, promo: data.promo };
+    }
+    return { success: false, message: data.message || "Invalid promo code" };
+  } catch {
+    return { success: false, message: "Error verifying promo code" };
+  }
+}
+
+export async function createAdminPromoCode(promoData: { code: string; discount_percent: number; is_active?: boolean }): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/promo-codes", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(promoData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateAdminPromoCode(promoData: { id: string; code?: string; discount_percent?: number; is_active?: boolean }): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/promo-codes", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(promoData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteAdminPromoCode(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/promo-codes?id=${id}`, {
       method: "DELETE",
       headers: ADMIN_HEADERS,
     });

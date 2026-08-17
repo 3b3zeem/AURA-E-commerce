@@ -23,6 +23,70 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  const guard = await verifyAdmin(request);
+  if (!guard.isAdmin && guard.response) return guard.response;
+
+  try {
+    const { email, full_name, role, phone, loyalty_points } = await request.json();
+    if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const userId = `usr-${Date.now()}`;
+    const newProfile = {
+      id: userId,
+      email,
+      full_name: full_name || email.split('@')[0],
+      role: role || 'customer',
+      phone: phone || null,
+      loyalty_points: typeof loyalty_points === 'number' ? loyalty_points : 100,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([newProfile])
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data || newProfile);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  const guard = await verifyAdmin(request);
+  if (!guard.isAdmin && guard.response) return guard.response;
+
+  try {
+    const { id, email, full_name, role, phone, loyalty_points } = await request.json();
+    if (!id) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (email) updates.email = email;
+    if (full_name !== undefined) updates.full_name = full_name;
+    if (role) updates.role = role;
+    if (phone !== undefined) updates.phone = phone;
+    if (typeof loyalty_points === 'number') updates.loyalty_points = loyalty_points;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data || { success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   const guard = await verifyAdmin(request);
   if (!guard.isAdmin && guard.response) return guard.response;

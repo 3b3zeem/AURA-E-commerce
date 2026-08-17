@@ -34,11 +34,31 @@ export async function POST(request: Request) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reviews')
-      .insert([{ product_id, user_id, rating, comment, is_approved: true }])
+      .insert([{ product_id, user_id, rating, comment }])
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Award +25 VIP Loyalty Points to the user in profiles table
+    if (user_id && user_id !== 'guest') {
+      try {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('loyalty_points')
+          .eq('id', user_id)
+          .single();
+
+        const currentPts = userProfile?.loyalty_points || 0;
+        await supabase
+          .from('profiles')
+          .update({ loyalty_points: currentPts + 25 })
+          .eq('id', user_id);
+      } catch (ptsErr) {
+        console.error('Failed to update loyalty points for review:', ptsErr);
+      }
+    }
+
     return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

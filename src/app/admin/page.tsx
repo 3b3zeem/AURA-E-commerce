@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
 import { useUserStore } from "@/store/useUserStore";
 import {
   getProducts,
@@ -23,8 +24,9 @@ import {
   deleteTrendingSearch,
   getOrdersFromDb,
   updateOrderStatusInDb,
-  getTrendingSearchesFromDb,
-  getUserAddresses,
+  getAdminTrendingSearches,
+  getAdminAddresses,
+  getAdminPromoCodes,
 } from "@/lib/services/db";
 import { Product, Category, Story, Profile } from "@/types";
 import { CheckCircle2 } from "lucide-react";
@@ -37,6 +39,7 @@ import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
 import { AdminStoriesTab } from "@/components/admin/AdminStoriesTab";
 import { AdminBentoTab } from "@/components/admin/AdminBentoTab";
+import { AdminPromoTab } from "@/components/admin/AdminPromoTab";
 import { AdminTrendingTab } from "@/components/admin/AdminTrendingTab";
 import { AdminAddressesTab } from "@/components/admin/AdminAddressesTab";
 import { AdminAnalyticsTab } from "@/components/admin/AdminAnalyticsTab";
@@ -56,6 +59,7 @@ export default function AdminDashboardPage() {
   const [ordersList, setOrdersList] = useState<any[]>([]);
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [addressesList, setAddressesList] = useState<any[]>([]);
+  const [promosList, setPromosList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -106,15 +110,17 @@ export default function AdminDashboardPage() {
   // Load live data from Supabase DB on mount
   const refreshData = async () => {
     setLoading(true);
-    const [prods, cats, stors, usrs, ords, trend, addrs] = await Promise.all([
-      getProducts(),
-      getCategories(),
-      getStories(),
-      getUsersFromDb(),
-      getOrdersFromDb(),
-      getTrendingSearchesFromDb(),
-      getUserAddresses(),
-    ]);
+    const [prods, cats, stors, usrs, ords, trend, addrs, prmos] =
+      await Promise.all([
+        getProducts(),
+        getCategories(),
+        getStories(),
+        getUsersFromDb(),
+        getOrdersFromDb(),
+        getAdminTrendingSearches(),
+        getAdminAddresses(),
+        getAdminPromoCodes(),
+      ]);
 
     setProductsList(prods);
     setCategoriesList(cats);
@@ -123,6 +129,7 @@ export default function AdminDashboardPage() {
     setOrdersList(ords);
     setTrendingList(trend);
     setAddressesList(addrs);
+    setPromosList(prmos);
 
     if (cats.length > 0) setNewProdCategory(cats[0].id);
     setLoading(false);
@@ -208,6 +215,21 @@ export default function AdminDashboardPage() {
 
   const showNotification = (msg: string) => {
     setNotification(msg);
+    toast.success(msg, {
+      style: {
+        background: "#0f172a",
+        color: "#ffffff",
+        borderRadius: "0px",
+        fontSize: "12px",
+        fontWeight: "bold",
+        textTransform: "uppercase",
+        border: "1px solid #1e293b",
+      },
+      iconTheme: {
+        primary: "#10b981",
+        secondary: "#ffffff",
+      },
+    });
     setTimeout(() => setNotification(null), 4000);
   };
 
@@ -222,7 +244,9 @@ export default function AdminDashboardPage() {
         name: newProdName,
         description: newProdDesc || "Premium Monochrome AURA item.",
         price: parseFloat(newProdPrice),
-        original_price: newProdOrigPrice ? parseFloat(newProdOrigPrice) : undefined,
+        original_price: newProdOrigPrice
+          ? parseFloat(newProdOrigPrice)
+          : undefined,
         stock: parseInt(newProdStock) || 10,
         category_id: newProdCategory || categoriesList[0]?.id || undefined,
         images: [newProdImage],
@@ -233,7 +257,9 @@ export default function AdminDashboardPage() {
         is_flash_deal: newProdFlashDeal,
       });
 
-      showNotification(`Product "${newProdName}" added successfully to Supabase!`);
+      showNotification(
+        `Product "${newProdName}" added successfully to Supabase!`,
+      );
       await refreshData();
 
       setNewProdName("");
@@ -266,19 +292,59 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const confirmWithToast = (title: string, onConfirm: () => Promise<void>) => {
+    toast(
+      (t) => (
+        <div className="space-y-2 font-sans text-slate-900">
+          <p className="text-xs font-black uppercase text-slate-900">{title}</p>
+          <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">
+            <button
+              onClick={async () => {
+                toast.dismiss(t.id);
+                await onConfirm();
+              }}
+              className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold uppercase transition-colors cursor-pointer"
+            >
+              Confirm Delete
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold uppercase transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 8000,
+        position: "top-center",
+        style: {
+          background: "#ffffff",
+          border: "2px solid #0f172a",
+          borderRadius: "0px",
+          padding: "16px 24px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.3)",
+          minWidth: "300px",
+          textAlign: "center",
+        },
+      },
+    );
+  };
+
   const handleDeleteProduct = async (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
+    confirmWithToast("Delete this Product?", async () => {
       try {
         setActionLoadingId(id);
         const success = await deleteProductInDb(id);
         if (success) {
-          setProductsList(productsList.filter((p) => p.id !== id));
+          setProductsList((prev) => prev.filter((p) => p.id !== id));
           showNotification("Product removed from database.");
         }
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   // Handlers for Categories
@@ -335,7 +401,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (confirm("Are you sure you want to delete this category?")) {
+    confirmWithToast("Delete this Category?", async () => {
       try {
         setActionLoadingId(id);
         const success = await deleteCategoryInDb(id);
@@ -348,7 +414,7 @@ export default function AdminDashboardPage() {
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   // Handlers for Stories
@@ -393,7 +459,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteStory = async (id: string) => {
-    if (confirm("Are you sure you want to delete this story?")) {
+    confirmWithToast("Delete this Campaign Story?", async () => {
       try {
         setActionLoadingId(id);
         const success = await deleteStoryInDb(id);
@@ -404,7 +470,7 @@ export default function AdminDashboardPage() {
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   // Handlers for Users
@@ -423,18 +489,18 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (confirm("Are you sure you want to delete this user profile?")) {
+    confirmWithToast("Delete this User Profile?", async () => {
       try {
         setActionLoadingId(userId);
         const success = await deleteUserInDb(userId);
         if (success) {
-          showNotification("User profile deleted.");
+          showNotification("User account removed.");
           await refreshData();
         }
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   // Handlers for Orders
@@ -454,18 +520,36 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (confirm("Are you sure you want to delete this order?")) {
+    confirmWithToast(`Delete Order #${orderId.slice(0, 8)}?`, async () => {
       try {
         setActionLoadingId(orderId);
         const success = await deleteOrderInDb(orderId);
         if (success) {
-          showNotification("Order removed.");
+          toast.success(`Order #${orderId.slice(0, 8)} removed successfully`, {
+            style: {
+              background: "#0f172a",
+              color: "#ffffff",
+              borderRadius: "0px",
+              fontSize: "12px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              border: "1px solid #1e293b",
+            },
+            iconTheme: {
+              primary: "#10b981",
+              secondary: "#ffffff",
+            },
+          });
           await refreshData();
+        } else {
+          toast.error("Failed to remove order from database");
         }
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to remove order");
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   // Handlers for Trending Searches
@@ -494,22 +578,23 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteTrending = async (id: string) => {
-    if (confirm("Are you sure you want to delete this search term?")) {
+    confirmWithToast("Delete Search Keyword?", async () => {
       try {
         setActionLoadingId(id);
         const success = await deleteTrendingSearch(id);
         if (success) {
-          showNotification("Search term removed.");
+          toast.success("Search term removed");
           await refreshData();
         }
       } finally {
         setActionLoadingId(null);
       }
-    }
+    });
   };
 
   return (
     <div className="w-full bg-[#f8fafc] text-slate-900 font-sans min-h-screen pb-16">
+      <Toaster position="top-center" />
       {/* Toast Notification */}
       <AnimatePresence>
         {notification && (
@@ -526,12 +611,7 @@ export default function AdminDashboardPage() {
       </AnimatePresence>
 
       {/* ADMIN HEADER */}
-      <AdminHeader
-        loading={loading}
-        isAdmin={isAdmin}
-        onRefresh={refreshData}
-        onMakeMeAdmin={handleMakeMeAdmin}
-      />
+      <AdminHeader isAdmin={isAdmin} onMakeMeAdmin={handleMakeMeAdmin} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         {/* TAB NAVIGATION GRID */}
@@ -545,6 +625,7 @@ export default function AdminDashboardPage() {
           storiesCount={storiesList.length}
           trendingCount={trendingList.length}
           addressesCount={addressesList.length}
+          promosCount={promosList.length}
         />
 
         {/* ACTIVE TAB CONTENTS */}
@@ -584,6 +665,8 @@ export default function AdminDashboardPage() {
             actionLoadingId={actionLoadingId}
             onToggleUserRole={toggleUserRole}
             onDeleteUser={handleDeleteUser}
+            onRefresh={refreshData}
+            onNotify={showNotification}
           />
         )}
 
@@ -605,17 +688,31 @@ export default function AdminDashboardPage() {
           />
         )}
 
+        {activeTab === "promos" && (
+          <AdminPromoTab
+            promosList={promosList}
+            onRefresh={refreshData}
+            onNotify={showNotification}
+          />
+        )}
+
         {activeTab === "trending" && (
           <AdminTrendingTab
             trendingList={trendingList}
             actionLoadingId={actionLoadingId}
             onOpenAddModal={() => setIsAddTrendingOpen(true)}
             onDeleteTrending={handleDeleteTrending}
+            onRefresh={refreshData}
+            onNotify={showNotification}
           />
         )}
 
         {activeTab === "addresses" && (
-          <AdminAddressesTab addressesList={addressesList} />
+          <AdminAddressesTab
+            addressesList={addressesList}
+            onRefresh={refreshData}
+            onNotify={showNotification}
+          />
         )}
 
         {activeTab === "analytics" && (

@@ -67,11 +67,20 @@ export const useUserStore = create<UserState>()(
       isInWishlist: (productId) => get().wishlistIds.includes(productId),
 
       addLoyaltyPoints: (points) => {
-        const newTotal = get().loyaltyPoints + points;
+        const newTotal = Math.max(0, get().loyaltyPoints + points);
         set((state) => ({
           loyaltyPoints: newTotal,
           profile: state.profile ? { ...state.profile, loyalty_points: newTotal } : null,
         }));
+
+        const profileId = get().profile?.id;
+        if (profileId) {
+          fetch("/api/users", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: profileId, loyalty_points: newTotal }),
+          }).catch(() => {});
+        }
       },
 
       clearUser: () => set({ profile: null, token: null, wishlistIds: [], loyaltyPoints: 0 }),

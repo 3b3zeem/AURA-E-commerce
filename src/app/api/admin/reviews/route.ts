@@ -55,7 +55,7 @@ export async function PUT(request: Request) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('reviews')
-      .update({ is_approved, rating, comment })
+      .update({ rating, comment })
       .eq('id', id)
       .select()
       .single();

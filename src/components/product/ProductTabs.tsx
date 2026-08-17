@@ -30,6 +30,8 @@ export function ProductTabs({ product }: ProductTabsProps) {
     if (product?.id) loadReviews();
   }, [product?.id]);
 
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState(false);
+
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -57,6 +59,8 @@ export function ProductTabs({ product }: ProductTabsProps) {
     setReviews([newRev, ...reviews]);
     setNewComment('');
     addLoyaltyPoints(25);
+    setReviewSuccessMsg(true);
+    setTimeout(() => setReviewSuccessMsg(false), 4000);
 
     if (profile?.id) {
       try {
@@ -202,13 +206,20 @@ export function ProductTabs({ product }: ProductTabsProps) {
                 className="w-full bg-white border border-slate-300 p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900"
               />
 
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center space-x-2 transition-colors uppercase border border-slate-800 cursor-pointer"
-              >
-                <span>Submit Review</span>
-                <Send className="w-3.5 h-3.5 text-white" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center space-x-2 transition-colors uppercase border border-slate-800 cursor-pointer"
+                >
+                  <span>Submit Review</span>
+                  <Send className="w-3.5 h-3.5 text-white" />
+                </button>
+                {reviewSuccessMsg && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 font-mono">
+                    ✓ +25 VIP Points added to your balance!
+                  </span>
+                )}
+              </div>
             </form>
 
             {/* Reviews List */}

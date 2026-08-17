@@ -11,6 +11,7 @@ import {
   MapPin,
   BarChart3,
   LayoutGrid,
+  Tag,
 } from "lucide-react";
 
 export type AdminTab =
@@ -22,7 +23,8 @@ export type AdminTab =
   | "users"
   | "stories"
   | "trending"
-  | "addresses";
+  | "addresses"
+  | "promos";
 
 interface AdminTabsNavProps {
   activeTab: AdminTab;
@@ -34,6 +36,7 @@ interface AdminTabsNavProps {
   storiesCount: number;
   trendingCount: number;
   addressesCount: number;
+  promosCount?: number;
   bentoCount?: number;
 }
 
@@ -47,6 +50,7 @@ export function AdminTabsNav({
   storiesCount,
   trendingCount,
   addressesCount,
+  promosCount = 4,
   bentoCount = 4,
 }: AdminTabsNavProps) {
   const tabsList = [
@@ -60,6 +64,7 @@ export function AdminTabsNav({
     },
     { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "bento", label: "Bento CMS", count: bentoCount, icon: LayoutGrid },
+    { id: "promos", label: "Promo Codes", count: promosCount, icon: Tag },
     { id: "stories", label: "Stories", count: storiesCount, icon: Sparkles },
     { id: "trending", label: "Trending", count: trendingCount, icon: Flame },
     {
@@ -72,7 +77,7 @@ export function AdminTabsNav({
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-8 text-xs font-bold uppercase tracking-wider">
+    <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-3 mb-8 text-xs font-bold uppercase tracking-wider">
       {tabsList.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -80,7 +85,7 @@ export function AdminTabsNav({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id as AdminTab)}
-            className={`p-3.5 border text-left transition-all flex flex-col justify-between space-y-3 cursor-pointer group relative ${
+            className={`p-3 border text-left transition-all flex flex-col justify-between space-y-2 cursor-pointer group relative ${
               isActive
                 ? "bg-slate-900 text-white border-slate-900 shadow-md"
                 : "bg-white text-slate-700 border-slate-200 hover:border-slate-900 hover:bg-slate-50"
@@ -88,7 +93,7 @@ export function AdminTabsNav({
           >
             <div className="flex items-center justify-between w-full">
               <Icon
-                className={`w-5 h-5 ${
+                className={`w-4 h-4 ${
                   isActive
                     ? "text-white"
                     : "text-slate-900 group-hover:scale-110 transition-transform"
@@ -96,7 +101,7 @@ export function AdminTabsNav({
               />
               {tab.count !== null && (
                 <span
-                  className={`text-[10px] font-mono font-black px-1.5 py-0.5 border ${
+                  className={`text-[9px] font-mono font-black px-1 py-0.5 border ${
                     isActive
                       ? "bg-white text-slate-900 border-white"
                       : "bg-slate-100 text-slate-900 border-slate-200"
@@ -106,7 +111,7 @@ export function AdminTabsNav({
                 </span>
               )}
             </div>
-            <span className="font-black text-[11px] truncate tracking-tight">
+            <span className="font-black text-[10px] truncate tracking-tight">
               {tab.label}
             </span>
           </button>
