@@ -75,7 +75,7 @@ export default function OffersPage() {
       <div className="relative bg-slate-950 text-white py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800 overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" />
         
-        <div className="relative max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-2xl text-center md:text-left">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider">
               <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -106,7 +106,7 @@ export default function OffersPage() {
       </div>
 
       {/* OFFERS LISTING */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+      <div className="px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-4 gap-4">
           <div>
             <h2 className="text-xl font-black text-slate-900 uppercase font-mono tracking-tight flex items-center gap-2">
