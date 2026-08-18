@@ -2,20 +2,32 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, ShieldCheck, Truck, RefreshCw, Headphones, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, ShieldCheck, Truck, RefreshCw, Headphones, ArrowRight, Check, Tag } from 'lucide-react';
 import { useUserStore } from '@/store/useUserStore';
+import { subscribeNewsletter } from '@/lib/services/db';
+import toast from 'react-hot-toast';
 
 export function Footer() {
   const { profile } = useUserStore();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
-      setSubscribed(true);
-      setEmail('');
-      setTimeout(() => setSubscribed(false), 3000);
+      setSubmitting(true);
+      const res = await subscribeNewsletter(email.trim());
+      setSubmitting(false);
+
+      if (res.success) {
+        setSubscribed(true);
+        setEmail('');
+        toast.success(res.message || "Subscribed successfully!");
+        setTimeout(() => setSubscribed(false), 4000);
+      } else {
+        toast.error(res.message || "Subscription failed");
+      }
     }
   };
 
@@ -73,7 +85,7 @@ export function Footer() {
             <div className="w-9 h-9 bg-slate-900 text-white flex items-center justify-center font-black border border-slate-800">
               <Sparkles className="w-5 h-5 fill-current text-white" />
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 font-mono">aura<span className="text-slate-900">.eg</span></span>
+            <span className="text-xl font-black tracking-tight text-slate-900 font-mono">aura</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
             High-performance hardware & smart tech accessories engineered with precision craftsmanship.
@@ -84,6 +96,7 @@ export function Footer() {
         <div className="space-y-3">
           <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">Navigation</h4>
           <ul className="space-y-2 text-xs text-slate-700 font-bold uppercase">
+            <li><Link href="/offers" className="text-amber-600 hover:text-amber-700 font-black transition-colors flex items-center gap-1.5"><Tag className="w-3.5 h-3.5 text-amber-600" /> Exclusive Offers & Bundles</Link></li>
             <li><Link href="/products" className="hover:text-slate-900 transition-colors underline">Catalog Explorer</Link></li>
             <li><Link href="/categories" className="hover:text-slate-900 transition-colors underline">Product Categories</Link></li>
             <li><Link href="/order-tracking" className="hover:text-slate-900 transition-colors underline">Order Tracking</Link></li>
@@ -121,7 +134,8 @@ export function Footer() {
             />
             <button
               type="submit"
-              className="px-4 bg-slate-900 text-white hover:bg-black transition-colors flex items-center justify-center border border-slate-800 cursor-pointer"
+              disabled={submitting}
+              className="px-4 bg-slate-900 text-white hover:bg-black transition-colors flex items-center justify-center border border-slate-800 cursor-pointer disabled:opacity-50"
             >
               {subscribed ? <Check className="w-4 h-4 text-white" /> : <ArrowRight className="w-4 h-4 text-white" />}
             </button>

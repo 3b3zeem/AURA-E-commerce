@@ -74,14 +74,40 @@ export function AdminAddressesTab({
     setIsModalOpen(true);
   };
 
+  const [phoneError, setPhoneError] = useState("");
+
+  const handlePhoneChange = (val: string) => {
+    const clean = val.replace(/\D/g, "").slice(0, 11);
+    setPhone(clean);
+    if (clean.length > 0 && !clean.startsWith("0")) {
+      setPhoneError("Egyptian number must start with 0");
+    } else if (clean.length >= 3 && !/^(010|011|012|015)/.test(clean)) {
+      setPhoneError("Must start with 010, 011, 012, or 015");
+    } else if (clean.length > 0 && clean.length < 11) {
+      setPhoneError(`Must be 11 digits (${clean.length}/11)`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !streetAddress || !city) return;
 
+    // Validate phone number
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 11 || !/^(010|011|012|015)\d{8}$/.test(cleanPhone)) {
+      setPhoneError("Valid 11-digit Egyptian number required (010, 011, 012, 015)");
+      return;
+    }
+
     setSubmitting(true);
-    const payload = {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validUserId = editingAddress?.user_id && uuidRegex.test(editingAddress.user_id) ? editingAddress.user_id : undefined;
+
+    const payload: any = {
       full_name: fullName,
-      phone_number: phone,
+      phone_number: cleanPhone,
       street_address: streetAddress,
       building_no: buildingNo,
       city,
@@ -90,8 +116,10 @@ export function AdminAddressesTab({
       country,
       delivery_instructions: instructions,
       is_default: isDefault,
-      user_id: editingAddress?.user_id || "usr-admin-manual",
     };
+    if (validUserId) {
+      payload.user_id = validUserId;
+    }
 
     if (editingAddress) {
       const updated = await updateAdminAddress({ id: editingAddress.id, ...payload });
@@ -247,14 +275,23 @@ export function AdminAddressesTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 mb-1">Phone Number</label>
+                  <label className="block text-slate-700 mb-1">Phone Number (Egyptian)</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
+                    maxLength={11}
+                    placeholder="01012345678"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className={`w-full p-2 bg-slate-50 border text-slate-900 text-xs font-mono focus:outline-none ${
+                      phoneError ? "border-rose-500 focus:border-rose-600" : "border-slate-300 focus:border-slate-900"
+                    }`}
                   />
+                  {phoneError ? (
+                    <p className="text-[10px] text-rose-600 font-bold mt-1 lowercase normal-case">{phoneError}</p>
+                  ) : (
+                    <p className="text-[9px] text-slate-500 mt-0.5 font-mono normal-case">11 digits (010, 011, 012, 015)</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1">City</label>

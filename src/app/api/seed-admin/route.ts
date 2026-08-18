@@ -12,7 +12,7 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const email = 'admin@aura.eg';
+    const email = 'admin@aura.com';
     const password = 'adminpassword123';
 
     // 1. Try signing in

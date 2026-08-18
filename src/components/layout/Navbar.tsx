@@ -210,6 +210,15 @@ export function Navbar() {
       }
     }
     fetchUserAddress();
+
+    const handleDataChange = () => {
+      fetchUserAddress();
+    };
+
+    window.addEventListener("aura_data_changed", handleDataChange);
+    return () => {
+      window.removeEventListener("aura_data_changed", handleDataChange);
+    };
   }, [profile]);
 
   // Search States
@@ -372,7 +381,7 @@ export function Navbar() {
             <MapPin className="w-4 h-4 text-slate-900 mt-1" />
             <div className="flex flex-col text-left leading-tight">
               <span className="text-[10px] text-slate-500">
-                Deliver to {profile?.full_name?.split(" ")[0] || "User"}
+                Deliver to {userAddress?.full_name?.split(" ")[0] || profile?.full_name?.split(" ")[0] || "User"}
               </span>
               <span
                 className="text-xs font-bold text-slate-800 tracking-tight truncate max-w-[130px]"
@@ -415,7 +424,7 @@ export function Navbar() {
             {/* Search Input Text Box */}
             <input
               type="text"
-              placeholder="Search AURA.eg products..."
+              placeholder="Search AURA products..."
               value={searchQuery}
               onFocus={() => setIsSearchFocused(true)}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -667,6 +676,14 @@ export function Navbar() {
           )}
 
           {/* Today's Deals */}
+          <Link
+            href="/offers"
+            className="px-2.5 py-1 bg-amber-50 border border-amber-300 text-amber-900 font-bold hover:bg-amber-100 transition-colors flex items-center gap-1"
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500 animate-pulse" />
+            <span>Offers & Bundles</span>
+          </Link>
+
           <Link
             href="/products?flash=true"
             className="px-2 py-1 border border-transparent hover:border-amber-500 font-bold text-amber-700 flex items-center gap-1"

@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { AIChatWidget } from "@/components/ai/AIChatWidget";
+import { OfferOverlayModal } from "@/components/home/OfferOverlayModal";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -105,6 +106,7 @@ export default function RootLayout({
         <Footer />
         <CartDrawer />
         <AIChatWidget />
+        <OfferOverlayModal />
       </body>
     </html>
   );

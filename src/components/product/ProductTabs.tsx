@@ -42,7 +42,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
       user_id: profile?.id || 'guest',
       profile: profile || {
         id: 'guest',
-        email: 'user@aura.eg',
+        email: 'user@aura.com',
         full_name: 'Verified Customer',
         avatar_url: null,
         phone: null,

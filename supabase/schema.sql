@@ -340,3 +340,66 @@ CREATE POLICY "Users can delete own reviews" ON public.reviews
 -- LOYALTY LOGS
 CREATE POLICY "Users can view their loyalty logs" ON public.loyalty_logs
     FOR SELECT USING (auth.uid() = user_id OR is_admin());
+
+-- =======================================================
+-- 14. OFFERS & BUNDLES TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.offers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    description TEXT,
+    badge TEXT DEFAULT 'SPECIAL OFFER',
+    image_url TEXT NOT NULL,
+    original_price DECIMAL(10, 2) NOT NULL,
+    offer_price DECIMAL(10, 2) NOT NULL,
+    discount_percentage INT DEFAULT 0 NOT NULL,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    show_in_overlay BOOLEAN DEFAULT false NOT NULL,
+    ends_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.offer_products (
+    offer_id UUID REFERENCES public.offers(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    PRIMARY KEY (offer_id, product_id)
+);
+
+ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.offer_products ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Offers readable by everyone" ON public.offers;
+DROP POLICY IF EXISTS "Admin full control on offers" ON public.offers;
+DROP POLICY IF EXISTS "Everyone full control on offers" ON public.offers;
+DROP POLICY IF EXISTS "Offer products readable by everyone" ON public.offer_products;
+DROP POLICY IF EXISTS "Admin full control on offer products" ON public.offer_products;
+DROP POLICY IF EXISTS "Everyone full control on offer products" ON public.offer_products;
+
+CREATE POLICY "Offers readable by everyone" ON public.offers FOR SELECT USING (true);
+CREATE POLICY "Everyone full control on offers" ON public.offers FOR ALL USING (true);
+CREATE POLICY "Offer products readable by everyone" ON public.offer_products FOR SELECT USING (true);
+CREATE POLICY "Everyone full control on offer products" ON public.offer_products FOR ALL USING (true);
+
+-- =======================================================
+-- 15. NEWSLETTER SUBSCRIBERS TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    status TEXT DEFAULT 'active' NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can subscribe to newsletter" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "Everyone can select newsletter" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "Admin full control on newsletter subscribers" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "Everyone can manage newsletter subscribers" ON public.newsletter_subscribers;
+
+CREATE POLICY "Anyone can subscribe to newsletter" ON public.newsletter_subscribers FOR INSERT WITH CHECK (true);
+CREATE POLICY "Everyone can select newsletter" ON public.newsletter_subscribers FOR SELECT USING (true);
+CREATE POLICY "Everyone can manage newsletter subscribers" ON public.newsletter_subscribers FOR ALL USING (true);
+

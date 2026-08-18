@@ -184,3 +184,30 @@ export interface BentoItem {
   created_at?: string;
 }
 
+export interface Offer {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  description?: string | null;
+  badge?: string | null;
+  image_url: string;
+  original_price: number;
+  offer_price: number;
+  discount_percentage: number;
+  products?: Product[];
+  product_ids: string[];
+  is_active: boolean;
+  show_in_overlay: boolean;
+  ends_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  status: 'active' | 'unsubscribed';
+  created_at: string;
+}
+
+

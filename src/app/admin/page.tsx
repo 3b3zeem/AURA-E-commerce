@@ -27,13 +27,20 @@ import {
   getAdminTrendingSearches,
   getAdminAddresses,
   getAdminPromoCodes,
+  getOffers,
+  createOfferInDb,
+  updateOfferInDb,
+  deleteOfferInDb,
+  getNewsletterSubscribers,
 } from "@/lib/services/db";
-import { Product, Category, Story, Profile } from "@/types";
+import { Product, Category, Story, Profile, Offer, NewsletterSubscriber } from "@/types";
 import { CheckCircle2 } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminTabsNav, AdminTab } from "@/components/admin/AdminTabsNav";
 import { AdminProductsTab } from "@/components/admin/AdminProductsTab";
+import { AdminOffersTab } from "@/components/admin/AdminOffersTab";
+import { AdminNewsletterTab } from "@/components/admin/AdminNewsletterTab";
 import { AdminOrdersTab } from "@/components/admin/AdminOrdersTab";
 import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
@@ -44,6 +51,21 @@ import { AdminTrendingTab } from "@/components/admin/AdminTrendingTab";
 import { AdminAddressesTab } from "@/components/admin/AdminAddressesTab";
 import { AdminAnalyticsTab } from "@/components/admin/AdminAnalyticsTab";
 import { AdminModals } from "@/components/admin/AdminModals";
+
+const ALL_ADMIN_TABS: AdminTab[] = [
+  "products",
+  "offers",
+  "newsletter",
+  "bento",
+  "orders",
+  "categories",
+  "users",
+  "stories",
+  "trending",
+  "addresses",
+  "promos",
+  "analytics",
+];
 
 export default function AdminDashboardPage() {
   const { profile, setProfile } = useUserStore();
@@ -60,6 +82,8 @@ export default function AdminDashboardPage() {
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [addressesList, setAddressesList] = useState<any[]>([]);
   const [promosList, setPromosList] = useState<any[]>([]);
+  const [offersList, setOffersList] = useState<Offer[]>([]);
+  const [subscribersList, setSubscribersList] = useState<NewsletterSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -69,6 +93,7 @@ export default function AdminDashboardPage() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddStoryOpen, setIsAddStoryOpen] = useState(false);
   const [isAddTrendingOpen, setIsAddTrendingOpen] = useState(false);
+  const [isAddOfferOpen, setIsAddOfferOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
   // New Product Form State
@@ -102,15 +127,27 @@ export default function AdminDashboardPage() {
   // New Trending Keyword State
   const [newTrendingQuery, setNewTrendingQuery] = useState("");
 
+  // New Offer Form State (Empty by default)
+  const [newOfferTitle, setNewOfferTitle] = useState("");
+  const [newOfferSub, setNewOfferSub] = useState("");
+  const [newOfferDesc, setNewOfferDesc] = useState("");
+  const [newOfferBadge, setNewOfferBadge] = useState("");
+  const [newOfferImage, setNewOfferImage] = useState("");
+  const [newOfferOrigPrice, setNewOfferOrigPrice] = useState("");
+  const [newOfferPrice, setNewOfferPrice] = useState("");
+  const [newOfferSelectedProductIds, setNewOfferSelectedProductIds] = useState<string[]>([]);
+  const [newOfferOverlay, setNewOfferOverlay] = useState(false);
+
   // Editing Item States
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingStory, setEditingStory] = useState<Story | null>(null);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
 
   // Load live data from Supabase DB on mount
   const refreshData = async () => {
     setLoading(true);
-    const [prods, cats, stors, usrs, ords, trend, addrs, prmos] =
+    const [prods, cats, stors, usrs, ords, trend, addrs, prmos, offs, subs] =
       await Promise.all([
         getProducts(),
         getCategories(),
@@ -120,6 +157,8 @@ export default function AdminDashboardPage() {
         getAdminTrendingSearches(),
         getAdminAddresses(),
         getAdminPromoCodes(),
+        getOffers(),
+        getNewsletterSubscribers(),
       ]);
 
     setProductsList(prods);
@@ -130,6 +169,8 @@ export default function AdminDashboardPage() {
     setTrendingList(trend);
     setAddressesList(addrs);
     setPromosList(prmos);
+    setOffersList(offs);
+    setSubscribersList(subs);
 
     if (cats.length > 0) setNewProdCategory(cats[0].id);
     setLoading(false);
@@ -148,21 +189,9 @@ export default function AdminDashboardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const tabFromUrl = params.get("tab");
-      if (
-        tabFromUrl &&
-        [
-          "products",
-          "orders",
-          "categories",
-          "users",
-          "stories",
-          "trending",
-          "addresses",
-          "analytics",
-        ].includes(tabFromUrl)
-      ) {
-        setActiveTab(tabFromUrl as AdminTab);
+      const tabFromUrl = params.get("tab") as AdminTab;
+      if (tabFromUrl && ALL_ADMIN_TABS.includes(tabFromUrl)) {
+        setActiveTab(tabFromUrl);
       }
     }
   }, []);
@@ -552,6 +581,72 @@ export default function AdminDashboardPage() {
     });
   };
 
+  // Handlers for Offers & Bundles
+  const handleAddOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newOfferTitle || !newOfferPrice || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const res = await createOfferInDb({
+        title: newOfferTitle,
+        subtitle: newOfferSub || null,
+        description: newOfferDesc || null,
+        badge: newOfferBadge || "SPECIAL BUNDLE",
+        image_url: newOfferImage || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1000&q=80",
+        original_price: parseFloat(newOfferOrigPrice || newOfferPrice),
+        offer_price: parseFloat(newOfferPrice),
+        product_ids: newOfferSelectedProductIds,
+        show_in_overlay: newOfferOverlay,
+        is_active: true,
+      });
+
+      if (res) {
+        showNotification(`Offer bundle "${newOfferTitle}" created successfully!`);
+        setIsAddOfferOpen(false);
+        setNewOfferTitle("");
+        setNewOfferSub("");
+        setNewOfferDesc("");
+        setNewOfferSelectedProductIds([]);
+        await refreshData();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOffer || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      const res = await updateOfferInDb(editingOffer.id, editingOffer);
+      if (res) {
+        showNotification(`Offer bundle "${editingOffer.title}" updated!`);
+        setEditingOffer(null);
+        await refreshData();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteOffer = async (id: string) => {
+    confirmWithToast("Delete this Offer bundle?", async () => {
+      try {
+        setActionLoadingId(id);
+        const success = await deleteOfferInDb(id);
+        if (success) {
+          showNotification("Offer bundle deleted.");
+          await refreshData();
+        }
+      } finally {
+        setActionLoadingId(null);
+      }
+    });
+  };
+
   // Handlers for Trending Searches
   const handleAddTrending = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -626,6 +721,8 @@ export default function AdminDashboardPage() {
           trendingCount={trendingList.length}
           addressesCount={addressesList.length}
           promosCount={promosList.length}
+          offersCount={offersList.length}
+          subscribersCount={subscribersList.length}
         />
 
         {/* ACTIVE TAB CONTENTS */}
@@ -638,6 +735,34 @@ export default function AdminDashboardPage() {
             onEditProduct={(p) => setEditingProduct(p)}
             onDeleteProduct={handleDeleteProduct}
           />
+        )}
+
+        {activeTab === "offers" && (
+          <AdminOffersTab
+            offersList={offersList}
+            productsList={productsList}
+            actionLoadingId={actionLoadingId}
+            onOpenAddModal={() => {
+              setNewOfferTitle("");
+              setNewOfferSub("");
+              setNewOfferDesc("");
+              setNewOfferBadge("");
+              setNewOfferImage("");
+              setNewOfferOrigPrice("");
+              setNewOfferPrice("");
+              setNewOfferSelectedProductIds([]);
+              setNewOfferOverlay(false);
+              setIsAddOfferOpen(true);
+            }}
+            onEditOffer={(o) => setEditingOffer(o)}
+            onDeleteOffer={handleDeleteOffer}
+            onRefresh={refreshData}
+            onNotify={showNotification}
+          />
+        )}
+
+        {activeTab === "newsletter" && (
+          <AdminNewsletterTab onNotify={showNotification} onRefresh={refreshData} />
         )}
 
         {activeTab === "orders" && (
@@ -727,6 +852,7 @@ export default function AdminDashboardPage() {
       {/* ALL CREATE & EDIT MODALS */}
       <AdminModals
         categoriesList={categoriesList}
+        productsList={productsList}
         isSubmitting={isSubmitting}
         onFileUpload={handleFileUpload}
         isAddProductOpen={isAddProductOpen}
@@ -788,6 +914,30 @@ export default function AdminDashboardPage() {
         editingStory={editingStory}
         setEditingStory={setEditingStory}
         onUpdateStorySubmit={handleUpdateStory}
+        isAddOfferOpen={isAddOfferOpen}
+        onCloseAddOffer={() => setIsAddOfferOpen(false)}
+        newOfferTitle={newOfferTitle}
+        setNewOfferTitle={setNewOfferTitle}
+        newOfferSub={newOfferSub}
+        setNewOfferSub={setNewOfferSub}
+        newOfferDesc={newOfferDesc}
+        setNewOfferDesc={setNewOfferDesc}
+        newOfferBadge={newOfferBadge}
+        setNewOfferBadge={setNewOfferBadge}
+        newOfferImage={newOfferImage}
+        setNewOfferImage={setNewOfferImage}
+        newOfferOrigPrice={newOfferOrigPrice}
+        setNewOfferOrigPrice={setNewOfferOrigPrice}
+        newOfferPrice={newOfferPrice}
+        setNewOfferPrice={setNewOfferPrice}
+        newOfferSelectedProductIds={newOfferSelectedProductIds}
+        setNewOfferSelectedProductIds={setNewOfferSelectedProductIds}
+        newOfferOverlay={newOfferOverlay}
+        setNewOfferOverlay={setNewOfferOverlay}
+        onAddOfferSubmit={handleAddOffer}
+        editingOffer={editingOffer}
+        setEditingOffer={setEditingOffer}
+        onUpdateOfferSubmit={handleUpdateOffer}
       />
     </div>
   );

@@ -483,14 +483,21 @@ export default function CheckoutPage() {
                   )}
 
                   <div>
-                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">Phone Number</label>
+                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">Phone Number (Egyptian)</label>
                     <input
-                      type="text"
-                      placeholder="+20 100 000 0000"
+                      type="tel"
+                      maxLength={11}
+                      placeholder="01012345678"
                       value={shippingData.phone}
-                      onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setShippingData({
+                          ...shippingData,
+                          phone: e.target.value.replace(/\D/g, "").slice(0, 11),
+                        })
+                      }
                       className="w-full bg-slate-50 border border-slate-300 p-2.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-slate-900"
                     />
+                    <p className="text-[9px] text-slate-500 mt-0.5 font-mono normal-case">11 digits starting with 010, 011, 012, or 015</p>
                   </div>
 
                   <div className="sm:col-span-2">

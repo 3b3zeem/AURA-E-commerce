@@ -1,4 +1,4 @@
-import { Product, Category, Story, Profile, BentoItem } from "@/types";
+import { Product, Category, Story, Profile, BentoItem, Offer, NewsletterSubscriber } from "@/types";
 
 const ADMIN_HEADERS = {
   "x-admin-key": "aura-admin-token",
@@ -328,6 +328,22 @@ export async function createUserAddress(addressData: any): Promise<any | null> {
   try {
     const res = await fetch("/api/addresses", {
       method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(addressData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateUserAddress(addressData: any): Promise<any | null> {
+  try {
+    const res = await fetch("/api/addresses", {
+      method: "PUT",
       headers: ADMIN_HEADERS,
       body: JSON.stringify(addressData),
     });
@@ -903,3 +919,151 @@ export async function deleteAdminPromoCode(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// ==========================================
+// 12. NEWSLETTER SERVICES
+// ==========================================
+
+export async function subscribeNewsletter(email: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      notifyDataChanged();
+      return { success: true, message: data.message };
+    }
+    return { success: false, message: data.error || "Subscription failed" };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+}
+
+export async function getNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
+  try {
+    const res = await fetch("/api/admin/newsletter", {
+      headers: ADMIN_HEADERS,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteNewsletterSubscriber(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/newsletter?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function broadcastOfferEmailAlert(payload: {
+  offerTitle: string;
+  offerSubtitle?: string;
+  offerPrice: number;
+  originalPrice: number;
+  offerImage: string;
+  customMessage?: string;
+  products?: { name: string; price?: number; image?: string }[];
+}): Promise<{ success: boolean; count?: number; message?: string }> {
+  try {
+    const res = await fetch("/api/admin/newsletter/broadcast", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      return { success: true, count: data.recipientsCount, message: data.message };
+    }
+    return { success: false, message: data.error || "Broadcast failed" };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+}
+
+// ==========================================
+// 13. OFFERS & BUNDLES SERVICES
+// ==========================================
+
+export async function getOffers(overlayOnly = false): Promise<Offer[]> {
+  try {
+    const url = overlayOnly ? "/api/offers?overlay=true" : "/api/offers";
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function createOfferInDb(offerData: Partial<Offer>): Promise<Offer | null> {
+  try {
+    const res = await fetch("/api/admin/offers", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(offerData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateOfferInDb(id: string, updates: Partial<Offer>): Promise<Offer | null> {
+  try {
+    const res = await fetch("/api/admin/offers", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ id, ...updates }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteOfferInDb(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/offers?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function setOverlayFeaturedOffer(id: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/offers", {
+      method: "PATCH",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+

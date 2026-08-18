@@ -28,6 +28,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    
+    // Sanitize user_id if it's not a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (body.user_id && !uuidRegex.test(body.user_id)) {
+      delete body.user_id;
+    }
+
     const supabase = createClient();
 
     const { data, error } = await supabase
@@ -51,6 +58,12 @@ export async function PUT(request: Request) {
   try {
     const { id, ...updates } = await request.json();
     if (!id) return NextResponse.json({ error: 'Address ID required' }, { status: 400 });
+
+    // Sanitize user_id if it's not a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (updates.user_id && !uuidRegex.test(updates.user_id)) {
+      delete updates.user_id;
+    }
 
     const supabase = createClient();
     const { data, error } = await supabase

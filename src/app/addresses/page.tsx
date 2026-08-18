@@ -9,6 +9,7 @@ import { UserAddress } from "@/types";
 import {
   getUserAddresses,
   createUserAddress,
+  updateUserAddress,
   deleteUserAddress,
   setDefaultUserAddress,
 } from "@/lib/services/db";
@@ -30,6 +31,7 @@ export default function AddressesPage() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null);
   const [editingInstructionId, setEditingInstructionId] = useState<
     string | null
   >(null);
@@ -47,6 +49,7 @@ export default function AddressesPage() {
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [isDefault, setIsDefault] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   const fetchAddresses = async () => {
     setLoading(true);
@@ -74,12 +77,64 @@ export default function AddressesPage() {
     };
   }, [showModal]);
 
-  const handleAddAddress = async (e: React.FormEvent) => {
+  const handlePhoneChange = (val: string) => {
+    const clean = val.replace(/\D/g, "").slice(0, 11);
+    setPhone(clean);
+    if (clean.length > 0 && !clean.startsWith("0")) {
+      setPhoneError("Egyptian number must start with 0");
+    } else if (clean.length >= 3 && !/^(010|011|012|015)/.test(clean)) {
+      setPhoneError("Must start with 010, 011, 012, or 015");
+    } else if (clean.length > 0 && clean.length < 11) {
+      setPhoneError(`Must be 11 digits (${clean.length}/11)`);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const openAddModal = () => {
+    setEditingAddress(null);
+    setFullName(profile?.full_name || "");
+    setPhone(profile?.phone || "");
+    setStreetAddress("");
+    setBuildingNo("");
+    setCity("Cairo");
+    setStateRegion("Cairo");
+    setZipCode("11511");
+    setCountry("Egypt");
+    setDeliveryInstructions("");
+    setIsDefault(addresses.length === 0);
+    setPhoneError("");
+    setShowModal(true);
+  };
+
+  const openEditModal = (addr: UserAddress) => {
+    setEditingAddress(addr);
+    setFullName(addr.full_name || "");
+    setPhone(addr.phone_number || (addr as any).phone || "");
+    setStreetAddress(addr.street_address || "");
+    setBuildingNo(addr.building_no || "");
+    setCity(addr.city || "");
+    setStateRegion(addr.state_region || "");
+    setZipCode(addr.zip_code || "");
+    setCountry(addr.country || "Egypt");
+    setDeliveryInstructions(addr.delivery_instructions || "");
+    setIsDefault(addr.is_default || false);
+    setPhoneError("");
+    setShowModal(true);
+  };
+
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!streetAddress || !city || !phone) return;
 
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 11 || !/^(010|011|012|015)\d{8}$/.test(cleanPhone)) {
+      setPhoneError("Valid 11-digit Egyptian number required (010, 011, 012, 015)");
+      return;
+    }
+
     setSaving(true);
-    const created = await createUserAddress({
+    const payload = {
       user_id: profile?.id || "usr-guest",
       full_name: fullName || profile?.full_name || "Customer Name",
       street_address: streetAddress,
@@ -88,22 +143,24 @@ export default function AddressesPage() {
       state_region: stateRegion,
       zip_code: zipCode,
       country: country,
-      phone_number: phone,
+      phone_number: cleanPhone,
       delivery_instructions: deliveryInstructions,
-      is_default: isDefault || addresses.length === 0,
-    });
+      is_default: isDefault,
+    };
 
-    if (created) {
+    let result = null;
+    if (editingAddress) {
+      result = await updateUserAddress({ id: editingAddress.id, ...payload });
+    } else {
+      result = await createUserAddress({
+        ...payload,
+        is_default: isDefault || addresses.length === 0,
+      });
+    }
+
+    if (result) {
       await fetchAddresses();
       setShowModal(false);
-      // Reset form
-      setStreetAddress("");
-      setBuildingNo("");
-      setCity("");
-      setStateRegion("");
-      setZipCode("");
-      setDeliveryInstructions("");
-      setIsDefault(false);
     }
     setSaving(false);
   };
@@ -158,7 +215,7 @@ export default function AddressesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card 1: Add Address Box */}
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openAddModal}
           className="h-64 border-2 border-dashed border-slate-300 hover:border-slate-900 hover:bg-white transition-all flex flex-col items-center justify-center p-6 space-y-3 cursor-pointer group text-center bg-slate-50"
         >
           <div className="w-12 h-12 bg-white text-slate-900 flex items-center justify-center border border-slate-300 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-800 transition-colors">
@@ -249,7 +306,15 @@ export default function AddressesPage() {
 
             {/* Bottom Actions Row: Edit | Remove | Set as Default */}
             <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-bold uppercase">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => openEditModal(addr)}
+                  className="text-slate-900 underline hover:text-black cursor-pointer flex items-center gap-1"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-slate-800" />
+                  <span>Edit</span>
+                </button>
+                <span className="text-slate-300">|</span>
                 <button
                   onClick={() => handleDelete(addr.id)}
                   className="text-rose-600 hover:underline cursor-pointer"
@@ -271,7 +336,7 @@ export default function AddressesPage() {
         ))}
       </div>
 
-      {/* Modal: Add New Address */}
+      {/* Modal: Add or Edit Address */}
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 font-sans backdrop-blur-sm">
@@ -287,7 +352,7 @@ export default function AddressesPage() {
               <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-slate-900" />
                 <h2 className="text-lg font-black uppercase text-slate-900">
-                  Add New Address
+                  {editingAddress ? "Edit Shipping Address" : "Add New Address"}
                 </h2>
               </div>
               <button
@@ -300,7 +365,7 @@ export default function AddressesPage() {
 
             {/* Form */}
             <form
-              onSubmit={handleAddAddress}
+              onSubmit={handleSaveAddress}
               className="space-y-4 text-xs font-bold uppercase"
             >
               <div className="space-y-1">
@@ -316,15 +381,23 @@ export default function AddressesPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-slate-700">Phone Number</label>
+                <label className="block text-slate-700">Phone Number (Egyptian)</label>
                 <input
                   type="tel"
                   required
+                  maxLength={11}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+201011654789"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="01012345678"
+                  className={`w-full p-2.5 bg-slate-50 border text-slate-900 text-xs font-mono focus:outline-none ${
+                    phoneError ? "border-rose-500 focus:border-rose-600" : "border-slate-300 focus:border-slate-900"
+                  }`}
                 />
+                {phoneError ? (
+                  <p className="text-[10px] text-rose-600 font-bold mt-1 lowercase normal-case">{phoneError}</p>
+                ) : (
+                  <p className="text-[9px] text-slate-500 mt-0.5 font-mono normal-case">11 digits starting with 010, 011, 012, or 015</p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -430,7 +503,7 @@ export default function AddressesPage() {
                   disabled={saving}
                   className="px-6 py-3 bg-slate-900 text-white hover:bg-black text-xs font-bold uppercase border border-slate-800 cursor-pointer transition-colors"
                 >
-                  {saving ? "Saving..." : "Add Address"}
+                  {saving ? "Saving..." : editingAddress ? "Save Changes" : "Add Address"}
                 </button>
               </div>
             </form>

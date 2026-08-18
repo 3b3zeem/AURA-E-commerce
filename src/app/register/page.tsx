@@ -157,7 +157,7 @@ export default function RegisterPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ahmed@aura.eg"
+                placeholder="ahmed@aura.com"
                 className="w-full bg-slate-50 border border-slate-300 py-2.5 pl-9 pr-4 text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900"
               />
               <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />

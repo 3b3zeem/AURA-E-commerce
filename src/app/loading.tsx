@@ -12,7 +12,7 @@ export default function Loading() {
 
       <div className="text-center space-y-2">
         <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-black">
-          AURA<span className="text-neutral-500">.eg</span>
+          AURA
         </h2>
         <div className="flex items-center justify-center space-x-2 text-xs font-mono font-bold text-black uppercase">
           <RefreshCw className="w-4 h-4 animate-spin text-black" />

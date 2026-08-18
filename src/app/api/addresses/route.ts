@@ -1,37 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
-import { UserAddress } from '@/types';
-
-// In-memory fallback array for addresses if table doesn't exist yet
-let MEMORY_ADDRESSES: UserAddress[] = [
-  {
-    id: 'addr-1',
-    user_id: 'usr-default',
-    full_name: 'Ahmed Mostafa',
-    street_address: 'شارع رشيد بجوار مدرسة الصنايع',
-    building_no: '1111',
-    city: 'Minya El Qamh',
-    state_region: 'Ash Sharqia',
-    zip_code: '44711',
-    country: 'Egypt',
-    phone_number: '+201011654789',
-    delivery_instructions: 'Deliver to front door',
-    is_default: true,
-    created_at: new Date().toISOString(),
-  },
-];
 
 export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const { data, error } = await supabase.from('addresses').select('*').order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return NextResponse.json(MEMORY_ADDRESSES);
+    if (error || !data) {
+      return NextResponse.json([]);
     }
     return NextResponse.json(data);
   } catch {
-    return NextResponse.json(MEMORY_ADDRESSES);
+    return NextResponse.json([], { status: 500 });
   }
 }
 
@@ -40,36 +20,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const supabase = createClient();
 
-    const newAddress: UserAddress = {
-      id: `addr-${Date.now()}`,
-      user_id: body.user_id || 'usr-default',
-      full_name: body.full_name || 'Guest User',
-      street_address: body.street_address || '',
-      building_no: body.building_no || '',
-      city: body.city || '',
-      state_region: body.state_region || '',
-      zip_code: body.zip_code || '',
-      country: body.country || 'Egypt',
-      phone_number: body.phone_number || '',
-      delivery_instructions: body.delivery_instructions || '',
-      is_default: body.is_default || false,
-      created_at: new Date().toISOString(),
-    };
-
-    if (newAddress.is_default) {
-      MEMORY_ADDRESSES = MEMORY_ADDRESSES.map((a) => ({ ...a, is_default: false }));
+    if (body.is_default && body.user_id) {
+      await supabase.from('addresses').update({ is_default: false }).eq('user_id', body.user_id);
     }
 
-    MEMORY_ADDRESSES.unshift(newAddress);
+    const { data, error } = await supabase.from('addresses').insert(body).select().single();
 
-    // Attempt Supabase insert
-    try {
-      await supabase.from('addresses').insert(newAddress);
-    } catch {
-      // Continue with MEMORY_ADDRESSES return
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(newAddress, { status: 201 });
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Failed to save address' }, { status: 500 });
   }
@@ -82,13 +43,11 @@ export async function DELETE(request: Request) {
 
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-    MEMORY_ADDRESSES = MEMORY_ADDRESSES.filter((a) => a.id !== id);
+    const supabase = createClient();
+    const { error } = await supabase.from('addresses').delete().eq('id', id);
 
-    try {
-      const supabase = createClient();
-      await supabase.from('addresses').delete().eq('id', id);
-    } catch {
-      // Ignore fallback
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
@@ -100,17 +59,45 @@ export async function DELETE(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, action } = body;
+    const { id, action, user_id, ...updates } = body;
+
+    const supabase = createClient();
 
     if (action === 'set_default' && id) {
-      MEMORY_ADDRESSES = MEMORY_ADDRESSES.map((a) => ({
-        ...a,
-        is_default: a.id === id,
-      }));
+      if (user_id) {
+        await supabase.from('addresses').update({ is_default: false }).eq('user_id', user_id);
+      } else {
+        await supabase.from('addresses').update({ is_default: false }).neq('id', id);
+      }
+      await supabase.from('addresses').update({ is_default: true }).eq('id', id);
+      return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Failed to update address' }, { status: 500 });
+    if (!id) {
+      return NextResponse.json({ error: 'Address ID required' }, { status: 400 });
+    }
+
+    if (updates.is_default) {
+      if (user_id) {
+        await supabase.from('addresses').update({ is_default: false }).eq('user_id', user_id);
+      } else {
+        await supabase.from('addresses').update({ is_default: false }).neq('id', id);
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('addresses')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json(data);
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Failed to update address' }, { status: 500 });
   }
 }

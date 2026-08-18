@@ -16,6 +16,8 @@ import {
 
 export type AdminTab =
   | "analytics"
+  | "offers"
+  | "newsletter"
   | "bento"
   | "products"
   | "orders"
@@ -38,6 +40,8 @@ interface AdminTabsNavProps {
   addressesCount: number;
   promosCount?: number;
   bentoCount?: number;
+  offersCount?: number;
+  subscribersCount?: number;
 }
 
 export function AdminTabsNav({
@@ -52,9 +56,13 @@ export function AdminTabsNav({
   addressesCount,
   promosCount = 4,
   bentoCount = 4,
+  offersCount = 2,
+  subscribersCount = 2,
 }: AdminTabsNavProps) {
   const tabsList = [
     { id: "products", label: "Products", count: productsCount, icon: Package },
+    { id: "offers", label: "Offers/Bundles", count: offersCount, icon: Tag },
+    { id: "newsletter", label: "Newsletter", count: subscribersCount, icon: Sparkles },
     { id: "orders", label: "Orders", count: ordersCount, icon: ShoppingBag },
     {
       id: "categories",

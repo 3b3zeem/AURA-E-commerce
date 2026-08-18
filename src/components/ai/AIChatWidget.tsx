@@ -69,15 +69,16 @@ export function AIChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
       
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center justify-center w-14 h-14 bg-slate-900 text-white border border-slate-800 font-black hover:bg-black transition-colors shadow-none cursor-pointer"
+          className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-slate-900 text-white border border-slate-800 font-black hover:bg-black transition-all shadow-2xl rounded-full cursor-pointer group hover:scale-105"
+          title="AURA AI Assistant"
         >
-          <Bot className="w-7 h-7 text-white" />
+          <Bot className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:rotate-12 transition-transform" />
         </button>
       )}
 
@@ -85,10 +86,10 @@ export function AIChatWidget() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="w-[90vw] sm:w-96 h-[540px] bg-white border border-slate-300 text-slate-900 flex flex-col"
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+            className="w-[calc(100vw-2rem)] max-w-sm sm:w-96 h-[80vh] max-h-[520px] bg-white border border-slate-300 text-slate-900 flex flex-col shadow-2xl rounded-lg overflow-hidden"
           >
             {/* Widget Header */}
             <div className="px-5 py-4 bg-slate-100 text-slate-900 border-b border-slate-300 flex items-center justify-between">
