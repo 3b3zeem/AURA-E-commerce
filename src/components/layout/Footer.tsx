@@ -141,7 +141,7 @@ export function Footer() {
             </button>
           </form>
           {subscribed && (
-            <p className="text-[11px] font-bold text-emerald-600 uppercase">✓ Subscribed successfully!</p>
+            <p className="text-[11px] font-bold text-emerald-600 uppercase">Subscribed successfully!</p>
           )}
         </div>
       </div>

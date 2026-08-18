@@ -38,7 +38,7 @@ export default function ProfilePage() {
       description: "Instant EGP 50 off discount applied to your next purchase.",
       pointsCost: 500,
       discountAmount: 50,
-      badge: "🛍️ INSTANT CREDIT",
+      badge: "INSTANT CREDIT",
     },
     {
       id: "reward-100",
@@ -46,7 +46,7 @@ export default function ProfilePage() {
       description: "EGP 100 coupon code valid across all hardware categories.",
       pointsCost: 1000,
       discountAmount: 100,
-      badge: "🔥 POPULAR CHOICE",
+      badge: "POPULAR CHOICE",
     },
     {
       id: "reward-250",
@@ -54,7 +54,7 @@ export default function ProfilePage() {
       description: "EGP 250 big savings voucher for high-end orders.",
       pointsCost: 2500,
       discountAmount: 250,
-      badge: "👑 PLATINUM FAVORITE",
+      badge: "PLATINUM FAVORITE",
     },
     {
       id: "reward-500",
@@ -62,7 +62,7 @@ export default function ProfilePage() {
       description: "EGP 500 discount for serious tech collectors & builders.",
       pointsCost: 5000,
       discountAmount: 500,
-      badge: "💎 ULTIMATE SAVINGS",
+      badge: "ULTIMATE SAVINGS",
     },
   ];
 
@@ -102,7 +102,7 @@ export default function ProfilePage() {
 
     setRedeemedVouchers((prev) => [newVoucher, ...prev]);
 
-    toast.success(`🎉 Redeemed "${reward.title}"! Code: ${generatedCode}`, {
+    toast.success(`Redeemed "${reward.title}"! Code: ${generatedCode}`, {
       duration: 6000,
       style: {
         background: "#0f172a",
@@ -457,12 +457,12 @@ export default function ProfilePage() {
                         : 'bg-slate-100 text-slate-600 border-slate-300'
                     }`}>
                       {(loyaltyData.points ?? loyaltyPoints) >= 5000
-                        ? '👑 PLATINUM VIP'
+                        ? 'PLATINUM VIP'
                         : (loyaltyData.points ?? loyaltyPoints) >= 1500
-                        ? '🌟 GOLD VIP'
+                        ? 'GOLD VIP'
                         : (loyaltyData.points ?? loyaltyPoints) >= 500
-                        ? '🥈 SILVER VIP'
-                        : '🥉 BRONZE MEMBER'}
+                        ? 'SILVER VIP'
+                        : 'BRONZE MEMBER'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">

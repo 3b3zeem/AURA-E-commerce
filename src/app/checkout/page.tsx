@@ -749,11 +749,11 @@ export default function CheckoutPage() {
               </div>
               {finalTotal >= 1500 ? (
                 <p className="text-[10px] text-amber-300 font-mono font-bold">
-                  🔥 Includes +{finalTotal >= 5000 ? '1,200 (Platinum)' : finalTotal >= 3000 ? '600 (Gold)' : '250 (Silver)'} Automatic High-Value Bonus!
+                  Includes +{finalTotal >= 5000 ? '1,200 (Platinum)' : finalTotal >= 3000 ? '600 (Gold)' : '250 (Silver)'} Automatic High-Value Bonus!
                 </p>
               ) : (
                 <p className="text-[10px] text-slate-400 font-mono">
-                  💡 Spend {formatPrice(1500 - finalTotal)} more to unlock +250 Automatic Bonus Points!
+                  Spend {formatPrice(1500 - finalTotal)} more to unlock +250 Automatic Bonus Points!
                 </p>
               )}
             </div>

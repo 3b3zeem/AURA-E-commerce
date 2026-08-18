@@ -154,7 +154,7 @@ export default function OffersPage() {
 
                   {offer.show_in_overlay && (
                     <div className="absolute top-4 right-4 bg-slate-900 text-amber-400 font-bold px-2.5 py-1 text-[10px] uppercase font-mono border border-amber-400/40">
-                      ★ Featured Entrance Offer
+                      Featured Entrance Offer
                     </div>
                   )}
 
@@ -291,7 +291,7 @@ export default function OffersPage() {
             </form>
             {subscribed && (
               <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mt-2 font-mono">
-                ✓ You are on the VIP offer alert list!
+                You are on the VIP offer alert list!
               </p>
             )}
           </div>

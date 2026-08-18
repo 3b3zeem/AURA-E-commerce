@@ -179,7 +179,7 @@ export function ProductsFilterDrawer({
                             : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-900'
                         }`}
                       >
-                        {rating === 0 ? 'Any' : `${rating}+ ⭐`}
+                        {rating === 0 ? 'Any' : `${rating}+ Stars`}
                       </button>
                     ))}
                   </div>
@@ -194,7 +194,7 @@ export function ProductsFilterDrawer({
                       onChange={(e) => setFlashDealsOnly(e.target.checked)}
                       className="accent-slate-900 w-4 h-4 cursor-pointer"
                     />
-                    <span>Flash Deals Only ⚡</span>
+                    <span>Flash Deals Only</span>
                   </label>
 
                   <label className="flex items-center space-x-2 text-xs font-bold text-slate-900 cursor-pointer uppercase">

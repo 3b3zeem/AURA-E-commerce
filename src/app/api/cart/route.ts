@@ -51,6 +51,15 @@ export async function POST(request: Request) {
       .eq('product_id', product_id)
       .single();
 
+    // Record entry in persistent cart_history table for smart recommendations (never deleted)
+    try {
+      await supabase.from('cart_history').insert([{
+        user_id,
+        product_id,
+        category_name: product?.category?.name || product?.category || 'Electronics',
+      }]);
+    } catch {}
+
     if (existing) {
       const { data, error } = await supabase
         .from('cart_items')

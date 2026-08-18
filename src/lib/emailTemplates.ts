@@ -65,7 +65,7 @@ export function generateOfferEmailHtml(payload: OfferEmailPayload): string {
           <tr>
             <td style="padding: 36px 36px 12px 36px; text-align: center;">
               <span style="display: inline-block; background-color: #fef3c7; color: #92400e; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; padding: 6px 16px; border-radius: 9999px; border: 1px solid #fde68a; margin-bottom: 16px;">
-                ${discount ? `🔥 SPECIAL DEAL • SAVE ${discount}%` : '✨ VIP MEMBER EXCLUSIVE'}
+                ${discount ? `SPECIAL DEAL • SAVE ${discount}%` : 'VIP MEMBER EXCLUSIVE'}
               </span>
               <h1 style="margin: 0; font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1.25; letter-spacing: -0.5px;">
                 ${offerTitle}
@@ -144,7 +144,7 @@ export function generateOfferEmailHtml(payload: OfferEmailPayload): string {
             <td style="padding: 0 36px 24px 36px;">
               <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
                 <p style="margin: 0 0 14px 0; font-size: 12px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">
-                  📦 Included Items in this Bundle (${products.length}):
+                  Included Items in this Bundle (${products.length}):
                 </p>
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   ${products
@@ -159,7 +159,7 @@ export function generateOfferEmailHtml(payload: OfferEmailPayload): string {
                                 ? `<td width="44" style="padding-right: 12px;">
                                     <img src="${item.image}" alt="${item.name}" width="40" height="40" style="display: block; width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid #cbd5e1;">
                                    </td>`
-                                : `<td width="24" style="font-size: 14px; color: #10b981; font-weight: bold;">✓</td>`
+                                : `<td width="24" style="font-size: 14px; color: #10b981; font-weight: bold;">•</td>`
                             }
                             <td style="font-size: 13px; font-weight: 700; color: #1e293b;">
                               ${item.name}
@@ -190,13 +190,13 @@ export function generateOfferEmailHtml(payload: OfferEmailPayload): string {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top: 1px border-bottom: 1px solid #f1f5f9; padding: 16px 0;">
                 <tr>
                   <td width="33%" align="center" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    ⚡ Fast Delivery
+                    Fast Delivery
                   </td>
                   <td width="33%" align="center" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    🛡️ Official Warranty
+                    Official Warranty
                   </td>
                   <td width="33%" align="center" style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
-                    🔒 100% Authentic
+                    100% Authentic
                   </td>
                 </tr>
               </table>

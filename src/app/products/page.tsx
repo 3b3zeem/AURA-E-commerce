@@ -36,6 +36,8 @@ function ProductsContent() {
   const [minRating, setMinRating] = useState<number>(0);
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [flashDealsOnly, setFlashDealsOnly] = useState<boolean>(false);
+  const [recommendedOnly, setRecommendedOnly] = useState<boolean>(false);
+  const [recommendedProductIds, setRecommendedProductIds] = useState<string[]>([]);
   const [selectedBadge, setSelectedBadge] = useState<string>("all");
   const [sortBy, setSortBy] = useState<
     "featured" | "price-asc" | "price-desc" | "rating" | "newest"
@@ -51,16 +53,42 @@ function ProductsContent() {
   const [visibleCount, setVisibleCount] = useState<number>(BATCH_SIZE);
   const [isBatchLoading, setIsBatchLoading] = useState<boolean>(false);
 
+  // Fetch Recommended Product IDs from Supabase API
+  useEffect(() => {
+    async function fetchRecommendedIds() {
+      try {
+        let userId = 'guest-session';
+        if (typeof window !== 'undefined') {
+          const userStr = localStorage.getItem('aura-user-storage');
+          if (userStr) {
+            const parsed = JSON.parse(userStr);
+            if (parsed?.state?.profile?.id) userId = parsed.state.profile.id;
+          }
+        }
+        const res = await fetch(`/api/recommendations?userId=${userId}`);
+        if (res.ok) {
+          const recs = await res.json();
+          if (Array.isArray(recs)) {
+            setRecommendedProductIds(recs.map((r: any) => r.id));
+          }
+        }
+      } catch {}
+    }
+    fetchRecommendedIds();
+  }, []);
+
   // Read URL search params & SessionStorage on mount
   useEffect(() => {
     const catParam = searchParams.get("category");
     const flashParam = searchParams.get("flash");
+    const recommendedParam = searchParams.get("recommended");
     const searchParam = searchParams.get("search");
     const badgeParam = searchParams.get("badge");
     const limitParam = searchParams.get("limit");
 
     if (catParam) setSelectedCategory(catParam);
     if (flashParam === "true") setFlashDealsOnly(true);
+    if (recommendedParam === "true") setRecommendedOnly(true);
     if (searchParam) setSearchQuery(searchParam);
     if (badgeParam) setSelectedBadge(badgeParam);
 
@@ -140,6 +168,9 @@ function ProductsContent() {
         if (flashDealsOnly && !product.is_flash_deal) {
           return false;
         }
+        if (recommendedOnly && !recommendedProductIds.includes(product.id)) {
+          return false;
+        }
         if (selectedBadge !== "all" && product.badge !== selectedBadge) {
           return false;
         }
@@ -164,6 +195,8 @@ function ProductsContent() {
     minRating,
     inStockOnly,
     flashDealsOnly,
+    recommendedOnly,
+    recommendedProductIds,
     selectedBadge,
     sortBy,
   ]);
@@ -174,6 +207,7 @@ function ProductsContent() {
     if (selectedCategory !== "all") count++;
     if (searchQuery.trim() !== "") count++;
     if (flashDealsOnly) count++;
+    if (recommendedOnly) count++;
     if (inStockOnly) count++;
     if (selectedBadge !== "all") count++;
     if (minRating > 0) count++;
@@ -182,6 +216,7 @@ function ProductsContent() {
     selectedCategory,
     searchQuery,
     flashDealsOnly,
+    recommendedOnly,
     inStockOnly,
     selectedBadge,
     minRating,
@@ -217,6 +252,7 @@ function ProductsContent() {
     setMinRating(0);
     setInStockOnly(false);
     setFlashDealsOnly(false);
+    setRecommendedOnly(false);
     setSelectedBadge("all");
     setSortBy("featured");
 
@@ -226,6 +262,7 @@ function ProductsContent() {
       url.searchParams.delete("limit");
       url.searchParams.delete("category");
       url.searchParams.delete("flash");
+      url.searchParams.delete("recommended");
       url.searchParams.delete("search");
       url.searchParams.delete("badge");
       window.history.replaceState({}, "", url.pathname);
@@ -263,6 +300,8 @@ function ProductsContent() {
         products={products}
         flashDealsOnly={flashDealsOnly}
         setFlashDealsOnly={setFlashDealsOnly}
+        recommendedOnly={recommendedOnly}
+        setRecommendedOnly={setRecommendedOnly}
         activeFiltersCount={activeFiltersCount}
         setIsFilterDrawerOpen={setIsFilterDrawerOpen}
         sortBy={sortBy}

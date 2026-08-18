@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     await transporter.sendMail({
       from: smtpFrom,
       to: recipientEmails.join(', '),
-      subject: `🔥 Exclusive Offer Alert: ${offerTitle}`,
+      subject: `Exclusive Offer Alert: ${offerTitle}`,
       html: emailHtml,
     });
 

@@ -87,7 +87,7 @@ export function CartDrawer() {
                 <div className="flex items-center justify-between text-[11px] font-bold mb-1 uppercase">
                   <span className="text-slate-700">
                     {subtotal >= freeShippingThreshold
-                      ? '✓ Free Shipping Unlocked'
+                      ? 'Free Shipping Unlocked'
                       : `Add ${formatPrice(freeShippingThreshold - subtotal)} for Free Shipping`}
                   </span>
                   <span className="text-slate-900 font-mono">{Math.round(progressToFreeShipping)}%</span>

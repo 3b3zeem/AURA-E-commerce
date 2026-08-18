@@ -338,7 +338,7 @@ export function Navbar() {
           </button>
           <Link
             href="/"
-            className="flex items-center space-x-2 px-1 py-1 hover:opacity-95 transition-all flex-shrink-0"
+            className="flex items-center space-x-2 px-1 py-1 hover:opacity-95 flex-shrink-0 border border-transparent hover:border-black"
           >
             <img
               src="/logo.png"
@@ -451,7 +451,7 @@ export function Navbar() {
                 transition={{ duration: 0.15 }}
                 className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 z-50 overflow-hidden font-sans text-slate-900 p-4 space-y-4 shadow-none"
               >
-                {/* 1. 🔥 Trending Searches */}
+                {/* 1. Trending Searches */}
                 {trendingSearches.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center space-x-1.5 text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1.5">

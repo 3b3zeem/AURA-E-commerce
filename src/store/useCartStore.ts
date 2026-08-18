@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CartItem, Product } from '@/types';
+import { useUserStore } from '@/store/useUserStore';
 
 interface CartState {
   items: CartItem[];
@@ -47,21 +48,13 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({ items: [...currentItems, newItem], isOpen: true });
     }
 
-    // Sync to Supabase DB if user is logged in
-    const userStr = typeof window !== 'undefined' ? localStorage.getItem('aura-user-storage') : null;
-    if (userStr) {
-      try {
-        const parsed = JSON.parse(userStr);
-        const userId = parsed?.state?.profile?.id;
-        if (userId) {
-          fetch('/api/cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, product_id: product.id, quantity, product }),
-          }).catch(() => {});
-        }
-      } catch {}
-    }
+    // Sync to Supabase DB for persistent recommendations & cart state
+    const userId = useUserStore.getState().profile?.id || 'guest-session';
+    fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, product_id: product.id, quantity, product }),
+    }).catch(() => {});
   },
 
   removeItem: (cartItemId) => {

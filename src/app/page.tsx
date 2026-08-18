@@ -8,6 +8,7 @@ import { StoryHero } from '@/components/home/StoryHero';
 import { BentoGridHero } from '@/components/home/BentoGridHero';
 import { FlashDeals } from '@/components/home/FlashDeals';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
+import { RecommendedProductsSection } from '@/components/home/RecommendedProductsSection';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
@@ -56,7 +57,10 @@ export default function HomePage() {
       {/* 3. Flash Deals Section with Live Countdown */}
       <FlashDeals products={flashDealProducts.length > 0 ? flashDealProducts : products.slice(0, 3)} />
 
-      {/* 3. Category Grid Showcase */}
+      {/* 4. Recommended Products Section (Powered by Supabase AI Engine) */}
+      <RecommendedProductsSection />
+
+      {/* 5. Category Grid Showcase */}
       <CategoryGrid categories={categories} />
 
       {/* 4. Trending Innovations Showcase */}

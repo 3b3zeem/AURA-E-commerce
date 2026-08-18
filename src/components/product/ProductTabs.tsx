@@ -172,7 +172,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
               </div>
 
               <div className="text-xs text-white bg-slate-900 px-4 py-2 font-bold uppercase border border-slate-800">
-                🎁 Leave a review & earn +25 VIP Points!
+                Leave a review & earn +25 VIP Points!
               </div>
             </div>
 

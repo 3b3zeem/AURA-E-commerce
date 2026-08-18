@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   List,
   Zap,
+  Sparkles,
   X
 } from 'lucide-react';
 
@@ -23,6 +24,8 @@ interface ProductsTopBarProps {
   products: any[];
   flashDealsOnly: boolean;
   setFlashDealsOnly: (val: boolean) => void;
+  recommendedOnly?: boolean;
+  setRecommendedOnly?: (val: boolean) => void;
   activeFiltersCount: number;
   setIsFilterDrawerOpen: (val: boolean) => void;
   sortBy: string;
@@ -48,6 +51,8 @@ export function ProductsTopBar({
   products,
   flashDealsOnly,
   setFlashDealsOnly,
+  recommendedOnly = false,
+  setRecommendedOnly,
   activeFiltersCount,
   setIsFilterDrawerOpen,
   sortBy,
@@ -88,9 +93,24 @@ export function ProductsTopBar({
           )}
         </div>
 
-        {/* Controls: Flash Toggle + Advanced Modal Trigger + Sort */}
+        {/* Controls: Recommended + Flash Toggle + Advanced Modal Trigger + Sort */}
         <div className="flex flex-wrap items-center gap-3">
           
+          {/* Recommended Filter Toggle */}
+          {setRecommendedOnly && (
+            <button
+              onClick={() => setRecommendedOnly(!recommendedOnly)}
+              className={`px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider border flex items-center space-x-1.5 cursor-pointer transition-colors ${
+                recommendedOnly
+                  ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-none'
+                  : 'bg-slate-50 text-slate-700 border-slate-300 hover:border-slate-900'
+              }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${recommendedOnly ? 'fill-slate-950 text-slate-950' : 'text-amber-500'}`} />
+              <span>Recommended</span>
+            </button>
+          )}
+
           {/* Flash Deals Toggle Button */}
           <button
             onClick={() => setFlashDealsOnly(!flashDealsOnly)}
@@ -243,7 +263,7 @@ export function ProductsTopBar({
 
           {minRating > 0 && (
             <span className="px-2.5 py-1 bg-slate-100 border border-slate-300 text-slate-900 text-[11px] font-bold flex items-center space-x-1">
-              <span>Rating: {minRating}+ ⭐</span>
+              <span>Rating: {minRating}+ Stars</span>
               <X className="w-3 h-3 text-slate-600 hover:text-black cursor-pointer" onClick={() => setMinRating(0)} />
             </span>
           )}

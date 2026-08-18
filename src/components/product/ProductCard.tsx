@@ -40,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
           {product.is_flash_deal && (
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold text-[10px] uppercase tracking-wider border border-amber-300">
-              ⚡ Flash Deal
+              Flash Deal
             </span>
           )}
           {discount > 0 && (

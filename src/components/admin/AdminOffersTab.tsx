@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Tag, Plus, Edit, Trash2, Zap, Send, Check, Star, Sparkles } from "lucide-react";
+import { Tag, Plus, Edit, Trash2, Zap, Send, Check, Star, Sparkles, Package } from "lucide-react";
 import { Offer, Product } from "@/types";
 import { setOverlayFeaturedOffer, broadcastOfferEmailAlert } from "@/lib/services/db";
 import toast from "react-hot-toast";
@@ -201,7 +201,7 @@ export function AdminOffersTab({
                             />
                           ) : (
                             <div className="w-9 h-9 bg-slate-200 rounded flex items-center justify-center text-slate-500 font-bold text-xs flex-shrink-0">
-                              📦
+                              <Package className="w-4 h-4 text-slate-500" />
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
@@ -325,7 +325,7 @@ export function AdminOffersTab({
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="e.g. 🔥 Exclusive flash deal for our early subscribers! Available for 48 hours only..."
+                  placeholder="e.g. Exclusive flash deal for our early subscribers! Available for 48 hours only..."
                   value={customMsg}
                   onChange={(e) => setCustomMsg(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
