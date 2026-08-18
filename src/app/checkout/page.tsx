@@ -132,7 +132,7 @@ export default function CheckoutPage() {
     if (!cleanCode) return;
 
     setVerifyingPromo(true);
-    const res = await verifyPromoCode(cleanCode);
+    const res = await verifyPromoCode(cleanCode, profile?.id);
     setVerifyingPromo(false);
 
     if (res.success && res.promo) {
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
       });
       setPromoError('');
     } else {
-      setPromoError(res.message || 'Invalid or expired promo code');
+      setPromoError(res.message || 'Invalid or expired coupon code');
     }
   };
 
@@ -247,6 +247,7 @@ export default function CheckoutPage() {
           zipCode: shippingData.zipCode,
           country: shippingData.country,
           deliveryInstructions: shippingData.deliveryInstructions,
+          coupon_code: appliedPromo?.code || null,
         },
         items: mappedItems,
       });
@@ -652,11 +653,11 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Promo Code Input Box */}
+          {/* Coupon Code Input Box */}
           <div className="p-4 bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-900">
               <span className="flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-slate-900" /> Promo Code
+                <Tag className="w-3.5 h-3.5 text-slate-900" /> Coupon Code
               </span>
             </div>
 
@@ -680,7 +681,7 @@ export default function CheckoutPage() {
                 <div className="flex space-x-2">
                   <input
                     type="text"
-                    placeholder="e.g. AURA10"
+                    placeholder="Enter Coupon Code..."
                     value={promoCodeInput}
                     onChange={(e) => {
                       setPromoCodeInput(e.target.value);
@@ -700,7 +701,7 @@ export default function CheckoutPage() {
                   <p className="text-[10px] font-bold text-rose-600 uppercase">{promoError}</p>
                 )}
                 <p className="text-[10px] text-slate-500 font-mono">
-                  Active codes: <span className="font-bold text-slate-900">AURA10</span> (10%) • <span className="font-bold text-slate-900">CYBER20</span> (20%)
+                  Enter your valid coupon code to apply your instant discount.
                 </p>
               </div>
             )}

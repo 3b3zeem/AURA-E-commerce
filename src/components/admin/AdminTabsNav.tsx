@@ -72,7 +72,7 @@ export function AdminTabsNav({
     },
     { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "bento", label: "Bento CMS", count: bentoCount, icon: LayoutGrid },
-    { id: "promos", label: "Promo Codes", count: promosCount, icon: Tag },
+    { id: "promos", label: "Coupons", count: promosCount, icon: Tag },
     { id: "stories", label: "Stories", count: storiesCount, icon: Sparkles },
     { id: "trending", label: "Trending", count: trendingCount, icon: Flame },
     {

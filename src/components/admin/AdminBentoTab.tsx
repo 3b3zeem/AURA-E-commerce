@@ -119,8 +119,6 @@ export function AdminBentoTab({ bentoList, onRefresh, onNotify, onFileUpload }: 
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this Bento Card?')) return;
-
     try {
       setDeletingId(id);
       const success = await deleteBentoItemInDb(id);

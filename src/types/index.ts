@@ -48,6 +48,21 @@ export interface Product {
   in_stock?: boolean;
   rating_avg: number;
   reviews_count: number;
+  highlights?: string[];
+  usage_instructions?: string | null;
+  target_gender?: 'unisex' | 'men' | 'women' | string;
+  return_policy?: string | null;
+  delivery_info?: string | null;
+  min_order_qty?: number;
+  key_benefits?: string | null;
+  package_includes?: string[];
+  shelf_life?: string | null;
+  frequently_bought_together?: string[];
+  origin_country?: string | null;
+  care_instructions?: string | null;
+  brand?: string | null;
+  sku?: string | null;
+  faqs?: { question: string; answer: string }[];
   created_at: string;
   updated_at: string;
 }

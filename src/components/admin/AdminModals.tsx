@@ -2,20 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Loader2, Filter } from "lucide-react";
+import { X, Upload, Loader2, Filter, Plus, Trash2, Image as ImageIcon, ArrowRight, Edit2 } from "lucide-react";
 import { Product, Category, Story, Offer } from "@/types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 
-
 const PRODUCT_BADGE_OPTIONS = [
-  { value: "", label: "No Badge (None)" },
-  { value: "NEW", label: "NEW - جديد" },
-  { value: "HOT", label: "HOT - الأكثر طلباً" },
-  { value: "BESTSELLER", label: "BESTSELLER - الأكثر مبيعاً" },
-  { value: "LIMITED", label: "LIMITED - كمية محدودة" },
-  { value: "SALE", label: "SALE - خصم خاص" },
-  { value: "TRENDING", label: "TRENDING - تريند" },
-  { value: "PREMIUM", label: "PREMIUM - منتج فاخر" },
+  { value: "", label: "No Badge" },
+  { value: "NEW", label: "NEW" },
+  { value: "HOT", label: "HOT" },
+  { value: "BESTSELLER", label: "BESTSELLER" },
+  { value: "LIMITED", label: "LIMITED" },
+  { value: "SALE", label: "SALE" },
+  { value: "TRENDING", label: "TRENDING" },
+  { value: "PREMIUM", label: "PREMIUM" },
+];
+
+const TARGET_GENDER_OPTIONS = [
+  { value: "unisex", label: "Unisex" },
+  { value: "men", label: "Men" },
+  { value: "women", label: "Women" },
 ];
 
 interface AdminModalsProps {
@@ -45,10 +50,38 @@ interface AdminModalsProps {
   setNewProdCategory: (v: string) => void;
   newProdImage: string;
   setNewProdImage: (v: string) => void;
+  newProdImages?: string[];
+  setNewProdImages?: (imgs: string[]) => void;
   newProdFeatured: boolean;
   setNewProdFeatured: (v: boolean) => void;
   newProdFlashDeal: boolean;
   setNewProdFlashDeal: (v: boolean) => void;
+
+  newProdBrand?: string;
+  setNewProdBrand?: (v: string) => void;
+  newProdSku?: string;
+  setNewProdSku?: (v: string) => void;
+  newProdTargetGender?: string;
+  setNewProdTargetGender?: (v: string) => void;
+  newProdOriginCountry?: string;
+  setNewProdOriginCountry?: (v: string) => void;
+  newProdShelfLife?: string;
+  setNewProdShelfLife?: (v: string) => void;
+  newProdKeyBenefits?: string;
+  setNewProdKeyBenefits?: (v: string) => void;
+  newProdHighlights?: string;
+  setNewProdHighlights?: (v: string) => void;
+  newProdUsage?: string;
+  setNewProdUsage?: (v: string) => void;
+  newProdCare?: string;
+  setNewProdCare?: (v: string) => void;
+  newProdPackageIncludes?: string;
+  setNewProdPackageIncludes?: (v: string) => void;
+  newProdDeliveryInfo?: string;
+  setNewProdDeliveryInfo?: (v: string) => void;
+  newProdReturnPolicy?: string;
+  setNewProdReturnPolicy?: (v: string) => void;
+
   onAddProductSubmit: (e: React.FormEvent) => void;
 
   // Add Category Modal
@@ -151,10 +184,36 @@ export function AdminModals({
   setNewProdCategory,
   newProdImage,
   setNewProdImage,
+  newProdImages = [newProdImage],
+  setNewProdImages,
   newProdFeatured,
   setNewProdFeatured,
   newProdFlashDeal,
   setNewProdFlashDeal,
+  newProdBrand,
+  setNewProdBrand,
+  newProdSku,
+  setNewProdSku,
+  newProdTargetGender,
+  setNewProdTargetGender,
+  newProdOriginCountry,
+  setNewProdOriginCountry,
+  newProdShelfLife,
+  setNewProdShelfLife,
+  newProdKeyBenefits,
+  setNewProdKeyBenefits,
+  newProdHighlights,
+  setNewProdHighlights,
+  newProdUsage,
+  setNewProdUsage,
+  newProdCare,
+  setNewProdCare,
+  newProdPackageIncludes,
+  setNewProdPackageIncludes,
+  newProdDeliveryInfo,
+  setNewProdDeliveryInfo,
+  newProdReturnPolicy,
+  setNewProdReturnPolicy,
   onAddProductSubmit,
 
   isAddCategoryOpen,
@@ -228,6 +287,8 @@ export function AdminModals({
 }: AdminModalsProps) {
   const [addOfferCategoryFilter, setAddOfferCategoryFilter] = useState<string>("ALL");
   const [editOfferCategoryFilter, setEditOfferCategoryFilter] = useState<string>("ALL");
+  const [addTab, setAddTab] = useState<'basic' | 'gallery' | 'specs' | 'shipping'>('basic');
+  const [editTab, setEditTab] = useState<'basic' | 'gallery' | 'specs' | 'shipping'>('basic');
 
   const isAnyModalOpen = Boolean(
     isAddProductOpen ||
@@ -256,193 +317,537 @@ export function AdminModals({
       {/* MODAL 1: ADD PRODUCT */}
       <AnimatePresence>
         {isAddProductOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 w-full max-w-lg p-6 space-y-6 text-slate-900 max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-4xl bg-white border border-slate-200 shadow-2xl overflow-hidden text-slate-900 my-auto"
             >
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                <h3 className="text-lg font-black uppercase text-slate-900">
-                  Create New Product
-                </h3>
+              {/* Executive Dark Header */}
+              <div className="bg-slate-950 text-white p-5 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-white">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase tracking-wider text-white">
+                      Create New Product
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-mono">
+                      Supabase Live Catalog Infrastructure
+                    </p>
+                  </div>
+                </div>
                 <button
                   onClick={onCloseAddProduct}
-                  className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer border border-slate-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form
-                onSubmit={onAddProductSubmit}
-                className="space-y-4 text-xs font-semibold"
-              >
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Product Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newProdName}
-                    onChange={(e) => setNewProdName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    placeholder="e.g. AURA CyberHeadset Pro"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Category
-                    </label>
-                    <CustomSelect
-                      value={newProdCategory}
-                      onChange={(val) => setNewProdCategory(val)}
-                      placeholder="Select Category..."
-                      options={[
-                        { value: "", label: "Select Category..." },
-                        ...categoriesList.map((c) => ({ value: c.id, label: c.name })),
-                      ]}
-                      triggerClassName="w-full justify-between py-2.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">Badge Tag</label>
-                    <CustomSelect
-                      value={newProdBadge}
-                      onChange={(val) => setNewProdBadge(val)}
-                      options={PRODUCT_BADGE_OPTIONS}
-                      triggerClassName="w-full justify-between py-2.5 font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Price ($) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={newProdPrice}
-                      onChange={(e) => setNewProdPrice(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Original Price ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={newProdOrigPrice}
-                      onChange={(e) => setNewProdOrigPrice(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                      placeholder="Optional"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">Stock</label>
-                    <input
-                      type="number"
-                      value={newProdStock}
-                      onChange={(e) => setNewProdStock(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Image (Upload from Folder or URL)
-                  </label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <label className="px-3 py-2 bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs hover:border-slate-900 hover:text-slate-900 transition-colors cursor-pointer flex items-center space-x-1 whitespace-nowrap">
-                        <Upload className="w-3.5 h-3.5 text-slate-900" />
-                        <span>Choose File</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) =>
-                            onFileUpload(e, (url) => setNewProdImage(url))
-                          }
-                        />
-                      </label>
-                      <input
-                        type="text"
-                        value={newProdImage}
-                        onChange={(e) => setNewProdImage(e.target.value)}
-                        className="flex-1 bg-slate-50 border border-slate-300 p-2 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
-                        placeholder="Paste image URL..."
-                      />
-                    </div>
-                    {newProdImage && (
-                      <div className="relative w-16 h-16 border border-slate-200">
-                        <img
-                          src={newProdImage}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={newProdDesc}
-                    onChange={(e) => setNewProdDesc(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4 pt-1 text-slate-700">
-                  <label className="flex items-center space-x-2 cursor-pointer font-bold">
-                    <input
-                      type="checkbox"
-                      checked={newProdFeatured}
-                      onChange={(e) => setNewProdFeatured(e.target.checked)}
-                      className="w-4 h-4 accent-slate-900 cursor-pointer"
-                    />
-                    <span>Featured Product</span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer font-bold">
-                    <input
-                      type="checkbox"
-                      checked={newProdFlashDeal}
-                      onChange={(e) => setNewProdFlashDeal(e.target.checked)}
-                      className="w-4 h-4 accent-slate-900 cursor-pointer"
-                    />
-                    <span>Flash Deal Item</span>
-                  </label>
-                </div>
+              {/* Modern Tab Bar Header */}
+              <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setAddTab('basic')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    addTab === 'basic'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>BASIC & PRICING</span>
+                </button>
 
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase border border-slate-800 transition-all cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-50"
+                  type="button"
+                  onClick={() => setAddTab('gallery')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    addTab === 'gallery'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving Product...</span>
-                    </>
-                  ) : (
-                    <span>Save Product to Supabase</span>
-                  )}
+                  <ImageIcon className="w-4 h-4" />
+                  <span>MEDIA GALLERY</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAddTab('specs')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    addTab === 'specs'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>UNIVERSAL SPECS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAddTab('shipping')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    addTab === 'shipping'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>SHIPPING & USAGE</span>
+                </button>
+              </div>
+
+              {/* Main Form Content */}
+              <form onSubmit={onAddProductSubmit} className="flex flex-col">
+                <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto text-xs font-semibold">
+                  {/* TAB 1: BASIC & PRICING */}
+                  {addTab === 'basic' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">
+                          Product Title *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newProdName}
+                          onChange={(e) => setNewProdName(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 p-3 text-slate-900 font-bold text-sm focus:outline-none focus:border-slate-900"
+                          placeholder="e.g. AURA CyberHeadset Pro Edition"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Category</label>
+                          <CustomSelect
+                            value={newProdCategory}
+                            onChange={(val) => setNewProdCategory(val)}
+                            placeholder="Select Category..."
+                            options={[
+                              { value: "", label: "Select Category..." },
+                              ...categoriesList.map((c) => ({ value: c.id, label: c.name })),
+                            ]}
+                            triggerClassName="w-full justify-between py-2.5"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Badge Tag</label>
+                          <CustomSelect
+                            value={newProdBadge}
+                            onChange={(val) => setNewProdBadge(val)}
+                            options={PRODUCT_BADGE_OPTIONS}
+                            triggerClassName="w-full justify-between py-2.5 font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Price ($) *</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            value={newProdPrice}
+                            onChange={(e) => setNewProdPrice(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-sm focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Original Price ($)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={newProdOrigPrice}
+                            onChange={(e) => setNewProdOrigPrice(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-sm focus:outline-none focus:border-slate-900"
+                            placeholder="Optional"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Stock Quantity *</label>
+                          <input
+                            type="number"
+                            value={newProdStock}
+                            onChange={(e) => setNewProdStock(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-bold focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Description</label>
+                        <textarea
+                          rows={4}
+                          value={newProdDesc}
+                          onChange={(e) => setNewProdDesc(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 p-3 text-slate-900 leading-relaxed focus:outline-none focus:border-slate-900"
+                          placeholder="Write a clear, compelling description for the product..."
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-6 p-3.5 bg-slate-50 border border-slate-200">
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold">
+                          <input
+                            type="checkbox"
+                            checked={newProdFeatured}
+                            onChange={(e) => setNewProdFeatured(e.target.checked)}
+                            className="w-4 h-4 accent-slate-900 cursor-pointer"
+                          />
+                          <span>Featured Product</span>
+                        </label>
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold">
+                          <input
+                            type="checkbox"
+                            checked={newProdFlashDeal}
+                            onChange={(e) => setNewProdFlashDeal(e.target.checked)}
+                            className="w-4 h-4 accent-slate-900 cursor-pointer"
+                          />
+                          <span>Flash Deal Item</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: COVER & MEDIA GALLERY */}
+                  {addTab === 'gallery' && (
+                    <div className="space-y-6 animate-fadeIn">
+                      {/* Main Cover Image */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-3">
+                        <label className="block text-slate-900 font-black text-xs uppercase flex items-center gap-1.5">
+                          <ImageIcon className="w-4 h-4 text-slate-900" />
+                          Main Cover Image *
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <label className="px-4 py-2.5 bg-white border border-slate-300 text-slate-900 font-bold text-xs hover:border-slate-900 transition-colors cursor-pointer flex items-center space-x-1.5 whitespace-nowrap shadow-xs">
+                            <Upload className="w-4 h-4 text-slate-900" />
+                            <span>Upload File</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                onFileUpload(e, (url) => {
+                                  setNewProdImage(url);
+                                  if (setNewProdImages) {
+                                    const curr = [...(newProdImages || [])];
+                                    curr[0] = url;
+                                    setNewProdImages(curr);
+                                  }
+                                })
+                              }
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            value={newProdImage}
+                            onChange={(e) => {
+                              setNewProdImage(e.target.value);
+                              if (setNewProdImages) {
+                                const curr = [...(newProdImages || [])];
+                                curr[0] = e.target.value;
+                                setNewProdImages(curr);
+                              }
+                            }}
+                            className="flex-1 bg-white border border-slate-300 p-2.5 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                            placeholder="Paste Main Cover Image URL..."
+                          />
+                        </div>
+
+                        {newProdImage && (
+                          <div className="relative w-32 h-32 border-2 border-slate-900 mt-3 bg-white shadow-md">
+                            <img
+                              src={newProdImage}
+                              alt="Main Cover Preview"
+                              className="w-full h-full object-cover"
+                            />
+                            <span className="absolute bottom-0 inset-x-0 bg-slate-900 text-white text-[9px] font-black uppercase text-center py-1">
+                              MAIN COVER
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Secondary Thumbnails Gallery */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                          <label className="block text-slate-900 font-black text-xs uppercase">
+                            Thumbnails Gallery
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (setNewProdImages) {
+                                const curr = [...(newProdImages || [])];
+                                curr.push("");
+                                setNewProdImages(curr);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-white" />
+                            <span>Add Thumbnail</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {(newProdImages || [newProdImage]).map((imgUrl, idx) => (
+                            <div key={idx} className="flex items-center space-x-2 bg-white p-2.5 border border-slate-200 shadow-xs">
+                              <span className="text-[10px] font-mono font-bold text-slate-600 w-14 text-center bg-slate-100 py-1 border border-slate-200">
+                                {idx === 0 ? "MAIN COVER" : `#${idx}`}
+                              </span>
+
+                              <div className="w-12 h-12 border border-slate-300 flex-shrink-0 overflow-hidden bg-slate-100 relative">
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-[9px]">
+                                    Empty
+                                  </div>
+                                )}
+                              </div>
+
+                              <input
+                                type="text"
+                                value={imgUrl}
+                                onChange={(e) => {
+                                  if (setNewProdImages) {
+                                    const curr = [...(newProdImages || [])];
+                                    curr[idx] = e.target.value;
+                                    setNewProdImages(curr);
+                                    if (idx === 0) setNewProdImage(e.target.value);
+                                  } else if (idx === 0) {
+                                    setNewProdImage(e.target.value);
+                                  }
+                                }}
+                                className="flex-1 bg-slate-50 border border-slate-300 p-2 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                                placeholder={idx === 0 ? "Main image URL..." : `Thumbnail #${idx} URL...`}
+                              />
+
+                              <label className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 cursor-pointer">
+                                <Upload className="w-3.5 h-3.5 text-slate-800" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    onFileUpload(e, (url) => {
+                                      if (setNewProdImages) {
+                                        const curr = [...(newProdImages || [])];
+                                        curr[idx] = url;
+                                        setNewProdImages(curr);
+                                        if (idx === 0) setNewProdImage(url);
+                                      } else if (idx === 0) {
+                                        setNewProdImage(url);
+                                      }
+                                    })
+                                  }
+                                />
+                              </label>
+
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (setNewProdImages) {
+                                      const curr = (newProdImages || []).filter((_, i) => i !== idx);
+                                      setNewProdImages(curr);
+                                    }
+                                  }}
+                                  className="p-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 cursor-pointer transition-colors"
+                                  title="Delete Thumbnail"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: UNIVERSAL SPECS & HOOK */}
+                  {addTab === 'specs' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
+                          <input
+                            type="text"
+                            value={newProdBrand || ''}
+                            onChange={(e) => setNewProdBrand?.(e.target.value)}
+                            placeholder="e.g. AURA Official, Anker"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">SKU Code</label>
+                          <input
+                            type="text"
+                            value={newProdSku || ''}
+                            onChange={(e) => setNewProdSku?.(e.target.value)}
+                            placeholder="e.g. AUR-PRO-001"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Target Audience / Gender</label>
+                          <CustomSelect
+                            value={newProdTargetGender || 'unisex'}
+                            onChange={(val) => setNewProdTargetGender?.(val)}
+                            options={TARGET_GENDER_OPTIONS}
+                            triggerClassName="w-full justify-between py-2.5"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Country of Origin</label>
+                          <input
+                            type="text"
+                            value={newProdOriginCountry || ''}
+                            onChange={(e) => setNewProdOriginCountry?.(e.target.value)}
+                            placeholder="e.g. Germany, Japan"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Shelf Life / Warranty</label>
+                          <input
+                            type="text"
+                            value={newProdShelfLife || ''}
+                            onChange={(e) => setNewProdShelfLife?.(e.target.value)}
+                            placeholder="e.g. 24 Months Warranty"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Key Benefit Hook</label>
+                        <input
+                          type="text"
+                          value={newProdKeyBenefits || ''}
+                          onChange={(e) => setNewProdKeyBenefits?.(e.target.value)}
+                          placeholder="e.g. Ultra-fast 45W charging with active surge protection"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Product Highlights (Comma Separated)</label>
+                        <input
+                          type="text"
+                          value={newProdHighlights || ''}
+                          onChange={(e) => setNewProdHighlights?.(e.target.value)}
+                          placeholder="e.g. Fast Charging, Dual USB-C Ports, 2-Year Warranty"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: SHIPPING & INSTRUCTIONS */}
+                  {addTab === 'shipping' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Usage & Operation Instructions</label>
+                          <textarea
+                            rows={3}
+                            value={newProdUsage || ''}
+                            onChange={(e) => setNewProdUsage?.(e.target.value)}
+                            placeholder="Operating procedure and usage notes..."
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Care & Maintenance</label>
+                          <textarea
+                            rows={3}
+                            value={newProdCare || ''}
+                            onChange={(e) => setNewProdCare?.(e.target.value)}
+                            placeholder="Storage guidelines and care tips..."
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Package Includes (Comma Separated)</label>
+                        <input
+                          type="text"
+                          value={newProdPackageIncludes || ''}
+                          onChange={(e) => setNewProdPackageIncludes?.(e.target.value)}
+                          placeholder="e.g. 1x Main Charger Unit, 1x Type-C Cable, 1x User Manual"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Delivery & Shipping Info</label>
+                          <input
+                            type="text"
+                            value={newProdDeliveryInfo || ''}
+                            onChange={(e) => setNewProdDeliveryInfo?.(e.target.value)}
+                            placeholder="e.g. Express delivery within 24-48 hours"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Return & Inspection Policy</label>
+                          <input
+                            type="text"
+                            value={newProdReturnPolicy || ''}
+                            onChange={(e) => setNewProdReturnPolicy?.(e.target.value)}
+                            placeholder="e.g. Inspection upon delivery + 14-day hassle-free return"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Executive Sticky Footer */}
+                <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={onCloseAddProduct}
+                    className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold text-xs uppercase transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-8 py-3 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase border border-slate-800 transition-all cursor-pointer flex items-center space-x-2 shadow-lg disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Product...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Save Product to Supabase</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
@@ -753,275 +1158,646 @@ export function AdminModals({
       {/* EDIT MODAL 1: EDIT PRODUCT */}
       <AnimatePresence>
         {editingProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 w-full max-w-lg p-6 space-y-6 text-slate-900 max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-4xl bg-white border border-slate-200 shadow-2xl overflow-hidden text-slate-900 my-auto"
             >
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                <h3 className="text-lg font-black uppercase text-slate-900">Edit Product</h3>
+              {/* Executive Dark Header */}
+              <div className="bg-slate-950 text-white p-5 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-slate-800 border border-slate-700 text-amber-400">
+                    <Edit2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase tracking-wider text-white">
+                      Edit Product: {editingProduct.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-mono">
+                      ID: {editingProduct.id} • SKU: {editingProduct.sku || "N/A"}
+                    </p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setEditingProduct(null)}
-                  className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer border border-slate-800"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form
-                onSubmit={onUpdateProductSubmit}
-                className="space-y-4 text-xs font-semibold"
-              >
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Product Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingProduct.name}
-                    onChange={(e) =>
-                      setEditingProduct({
-                        ...editingProduct,
-                        name: e.target.value,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Slug (URL Identifier)
-                    </label>
-                    <input
-                      type="text"
-                      value={editingProduct.slug || ""}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          slug: e.target.value,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-[11px] focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Category
-                    </label>
-                    <CustomSelect
-                      value={editingProduct.category_id || ""}
-                      onChange={(val) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          category_id: val || null,
-                        })
-                      }
-                      placeholder="No Category"
-                      options={[
-                        { value: "", label: "No Category" },
-                        ...categoriesList.map((c) => ({ value: c.id, label: c.name })),
-                      ]}
-                      triggerClassName="w-full justify-between py-2.5"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Price ($) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={editingProduct.price}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          price: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">
-                      Original Price ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editingProduct.original_price || ""}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          original_price: parseFloat(e.target.value) || undefined,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-600 mb-1">Stock</label>
-                    <input
-                      type="number"
-                      value={editingProduct.stock ?? 10}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          stock: parseInt(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1">Badge Tag</label>
-                  <CustomSelect
-                    value={editingProduct.badge || ""}
-                    onChange={(val) =>
-                      setEditingProduct({
-                        ...editingProduct,
-                        badge: val,
-                      })
-                    }
-                    options={PRODUCT_BADGE_OPTIONS}
-                    triggerClassName="w-full justify-between py-2.5 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Image (Upload from Folder or URL)
-                  </label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <label className="px-3 py-2 bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs hover:border-slate-900 hover:text-slate-900 transition-colors cursor-pointer flex items-center space-x-1 whitespace-nowrap">
-                        <Upload className="w-3.5 h-3.5 text-slate-900" />
-                        <span>Choose File</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) =>
-                            onFileUpload(e, (url) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                images: [url],
-                              }),
-                            )
-                          }
-                        />
-                      </label>
-                      <input
-                        type="text"
-                        value={editingProduct.images?.[0] || ""}
-                        onChange={(e) =>
-                          setEditingProduct({
-                            ...editingProduct,
-                            images: [e.target.value],
-                          })
-                        }
-                        className="flex-1 bg-slate-50 border border-slate-300 p-2 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
-                        placeholder="Paste image URL..."
-                      />
-                    </div>
-                    {editingProduct.images?.[0] && (
-                      <div className="relative w-16 h-16 border border-slate-200">
-                        <img
-                          src={editingProduct.images[0]}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-600 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={editingProduct.description || ""}
-                    onChange={(e) =>
-                      setEditingProduct({
-                        ...editingProduct,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-4 pt-1 text-slate-700">
-                  <label className="flex items-center space-x-2 cursor-pointer font-bold">
-                    <input
-                      type="checkbox"
-                      checked={editingProduct.is_featured || false}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          is_featured: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 accent-slate-900 cursor-pointer"
-                    />
-                    <span>Featured Product</span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer font-bold">
-                    <input
-                      type="checkbox"
-                      checked={editingProduct.is_flash_deal || false}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          is_flash_deal: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 accent-slate-900 cursor-pointer"
-                    />
-                    <span>Flash Deal Item</span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer font-bold">
-                    <input
-                      type="checkbox"
-                      checked={editingProduct.in_stock ?? true}
-                      onChange={(e) =>
-                        setEditingProduct({
-                          ...editingProduct,
-                          in_stock: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 accent-slate-900 cursor-pointer"
-                    />
-                    <span>In Stock</span>
-                  </label>
-                </div>
+              {/* Modern Tab Bar Header */}
+              <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setEditTab('basic')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    editTab === 'basic'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>BASIC & PRICING</span>
+                </button>
 
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase border border-slate-800 transition-all cursor-pointer flex items-center justify-center space-x-2 disabled:opacity-50"
+                  type="button"
+                  onClick={() => setEditTab('gallery')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    editTab === 'gallery'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating Product...</span>
-                    </>
-                  ) : (
-                    <span>Update Product in Supabase</span>
-                  )}
+                  <ImageIcon className="w-4 h-4" />
+                  <span>MEDIA GALLERY</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditTab('specs')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    editTab === 'specs'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>UNIVERSAL SPECS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditTab('shipping')}
+                  className={`flex-1 py-3 px-4 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                    editTab === 'shipping'
+                      ? 'border-slate-900 text-slate-950 bg-white shadow-xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>SHIPPING & USAGE</span>
+                </button>
+              </div>
+
+              {/* Main Form Content */}
+              <form onSubmit={onUpdateProductSubmit} className="flex flex-col">
+                <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto text-xs font-semibold">
+                  {/* TAB 1: BASIC & PRICING */}
+                  {editTab === 'basic' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Product Title *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editingProduct.name}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              name: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-50 border border-slate-300 p-3 text-slate-900 font-bold text-sm focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">URL Slug</label>
+                          <input
+                            type="text"
+                            value={editingProduct.slug || ""}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                slug: e.target.value,
+                              })
+                            }
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Category</label>
+                          <CustomSelect
+                            value={editingProduct.category_id || ""}
+                            onChange={(val) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                category_id: val || null,
+                              })
+                            }
+                            placeholder="No Category"
+                            options={[
+                              { value: "", label: "No Category" },
+                              ...categoriesList.map((c) => ({ value: c.id, label: c.name })),
+                            ]}
+                            triggerClassName="w-full justify-between py-2.5"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Badge Tag</label>
+                          <CustomSelect
+                            value={editingProduct.badge || ""}
+                            onChange={(val) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                badge: val,
+                              })
+                            }
+                            options={PRODUCT_BADGE_OPTIONS}
+                            triggerClassName="w-full justify-between py-2.5 font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Price ($) *</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            value={editingProduct.price}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                price: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-sm focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Original Price ($)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editingProduct.original_price || ""}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                original_price: parseFloat(e.target.value) || undefined,
+                              })
+                            }
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono text-sm focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Stock Quantity *</label>
+                          <input
+                            type="number"
+                            value={editingProduct.stock ?? 10}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                stock: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-bold focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Description</label>
+                        <textarea
+                          rows={4}
+                          value={editingProduct.description || ""}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              description: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-50 border border-slate-300 p-3 text-slate-900 leading-relaxed focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap gap-6 p-3.5 bg-slate-50 border border-slate-200">
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold">
+                          <input
+                            type="checkbox"
+                            checked={editingProduct.is_featured || false}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                is_featured: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 accent-slate-900 cursor-pointer"
+                          />
+                          <span>Featured Product</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold">
+                          <input
+                            type="checkbox"
+                            checked={editingProduct.is_flash_deal || false}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                is_flash_deal: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 accent-slate-900 cursor-pointer"
+                          />
+                          <span>Flash Deal Item</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 cursor-pointer font-bold">
+                          <input
+                            type="checkbox"
+                            checked={editingProduct.in_stock ?? true}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                in_stock: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 accent-slate-900 cursor-pointer"
+                          />
+                          <span>In Stock Status</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: COVER & MEDIA GALLERY */}
+                  {editTab === 'gallery' && (
+                    <div className="space-y-6 animate-fadeIn">
+                      {/* Main Cover Image */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-3">
+                        <label className="block text-slate-900 font-black text-xs uppercase flex items-center gap-1.5">
+                          <ImageIcon className="w-4 h-4 text-slate-900" />
+                          Main Cover Image *
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <label className="px-4 py-2.5 bg-white border border-slate-300 text-slate-900 font-bold text-xs hover:border-slate-900 transition-colors cursor-pointer flex items-center space-x-1.5 whitespace-nowrap shadow-xs">
+                            <Upload className="w-4 h-4 text-slate-900" />
+                            <span>Upload File</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                onFileUpload(e, (url) => {
+                                  const curr = [...(editingProduct.images || [])];
+                                  curr[0] = url;
+                                  setEditingProduct({ ...editingProduct, images: curr });
+                                })
+                              }
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            value={editingProduct.images?.[0] || ""}
+                            onChange={(e) => {
+                              const curr = [...(editingProduct.images || [])];
+                              curr[0] = e.target.value;
+                              setEditingProduct({ ...editingProduct, images: curr });
+                            }}
+                            className="flex-1 bg-white border border-slate-300 p-2.5 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                            placeholder="Paste Main Cover Image URL..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Secondary Thumbnails Gallery */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                          <label className="block text-slate-900 font-black text-xs uppercase">
+                            Thumbnails Gallery
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const curr = [...(editingProduct.images || [])];
+                              curr.push("");
+                              setEditingProduct({ ...editingProduct, images: curr });
+                            }}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white text-[10px] font-bold uppercase flex items-center gap-1 cursor-pointer shadow-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-white" />
+                            <span>Add Thumbnail</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {(editingProduct.images || []).map((imgUrl, idx) => (
+                            <div key={idx} className="flex items-center space-x-2 bg-white p-2.5 border border-slate-200 shadow-xs">
+                              <span className="text-[10px] font-mono font-bold text-slate-600 w-14 text-center bg-slate-100 py-1 border border-slate-200">
+                                {idx === 0 ? "MAIN COVER" : `#${idx}`}
+                              </span>
+
+                              <div className="w-12 h-12 border border-slate-300 flex-shrink-0 overflow-hidden bg-slate-100 relative">
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-[9px]">
+                                    Empty
+                                  </div>
+                                )}
+                              </div>
+
+                              <input
+                                type="text"
+                                value={imgUrl}
+                                onChange={(e) => {
+                                  const curr = [...(editingProduct.images || [])];
+                                  curr[idx] = e.target.value;
+                                  setEditingProduct({ ...editingProduct, images: curr });
+                                }}
+                                className="flex-1 bg-slate-50 border border-slate-300 p-2 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                                placeholder={idx === 0 ? "Main image URL..." : `Thumbnail #${idx} URL...`}
+                              />
+
+                              <label className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 cursor-pointer">
+                                <Upload className="w-3.5 h-3.5 text-slate-800" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    onFileUpload(e, (url) => {
+                                      const curr = [...(editingProduct.images || [])];
+                                      curr[idx] = url;
+                                      setEditingProduct({ ...editingProduct, images: curr });
+                                    })
+                                  }
+                                />
+                              </label>
+
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const curr = editingProduct.images.filter((_, i) => i !== idx);
+                                    setEditingProduct({ ...editingProduct, images: curr });
+                                  }}
+                                  className="p-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 cursor-pointer transition-colors"
+                                  title="Delete Thumbnail"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: UNIVERSAL SPECS & HOOK */}
+                  {editTab === 'specs' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
+                          <input
+                            type="text"
+                            value={editingProduct.brand || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                brand: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. AURA Official, Anker"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">SKU Code</label>
+                          <input
+                            type="text"
+                            value={editingProduct.sku || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                sku: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. AUR-PRO-001"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 font-mono focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Target Audience / Gender</label>
+                          <CustomSelect
+                            value={editingProduct.target_gender || 'unisex'}
+                            onChange={(val) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                target_gender: val,
+                              })
+                            }
+                            options={TARGET_GENDER_OPTIONS}
+                            triggerClassName="w-full justify-between py-2.5"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Country of Origin</label>
+                          <input
+                            type="text"
+                            value={editingProduct.origin_country || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                origin_country: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. Germany, Japan"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Shelf Life / Warranty</label>
+                          <input
+                            type="text"
+                            value={editingProduct.shelf_life || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                shelf_life: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. 24 Months Warranty"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Key Benefit Hook</label>
+                        <input
+                          type="text"
+                          value={editingProduct.key_benefits || ''}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              key_benefits: e.target.value,
+                            })
+                          }
+                          placeholder="e.g. Ultra-fast 45W charging with active surge protection"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Product Highlights (Comma Separated)</label>
+                        <input
+                          type="text"
+                          value={
+                            Array.isArray(editingProduct.highlights)
+                              ? editingProduct.highlights.join(', ')
+                              : editingProduct.highlights || ''
+                          }
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              highlights: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                            })
+                          }
+                          placeholder="e.g. Fast Charging, Dual USB-C Ports, 2-Year Warranty"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: SHIPPING & INSTRUCTIONS */}
+                  {editTab === 'shipping' && (
+                    <div className="space-y-5 animate-fadeIn">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Usage & Operation Instructions</label>
+                          <textarea
+                            rows={3}
+                            value={editingProduct.usage_instructions || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                usage_instructions: e.target.value,
+                              })
+                            }
+                            placeholder="Operating procedure and usage notes..."
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Care & Maintenance</label>
+                          <textarea
+                            rows={3}
+                            value={editingProduct.care_instructions || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                care_instructions: e.target.value,
+                              })
+                            }
+                            placeholder="Storage guidelines and care tips..."
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-700 font-bold mb-1">Package Includes (Comma Separated)</label>
+                        <input
+                          type="text"
+                          value={
+                            Array.isArray(editingProduct.package_includes)
+                              ? editingProduct.package_includes.join(', ')
+                              : editingProduct.package_includes || ''
+                          }
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              package_includes: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                            })
+                          }
+                          placeholder="e.g. 1x Main Charger Unit, 1x Type-C Cable, 1x User Manual"
+                          className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Delivery & Shipping Info</label>
+                          <input
+                            type="text"
+                            value={editingProduct.delivery_info || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                delivery_info: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. Express delivery within 24-48 hours"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Return & Inspection Policy</label>
+                          <input
+                            type="text"
+                            value={editingProduct.return_policy || ''}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                return_policy: e.target.value,
+                              })
+                            }
+                            placeholder="e.g. Inspection upon delivery + 14-day hassle-free return"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Executive Sticky Footer */}
+                <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct(null)}
+                    className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-200 font-bold text-xs uppercase transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-8 py-3 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase border border-slate-800 transition-all cursor-pointer flex items-center space-x-2 shadow-lg disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Updating Product...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Update Product in Supabase</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

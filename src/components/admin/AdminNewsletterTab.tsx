@@ -30,8 +30,6 @@ export function AdminNewsletterTab({ onNotify, onRefresh }: AdminNewsletterTabPr
   }, []);
 
   const handleDelete = async (id: string, email: string) => {
-    if (!confirm(`Remove "${email}" from Newsletter subscribers?`)) return;
-
     try {
       setActionLoadingId(id);
       const success = await deleteNewsletterSubscriber(id);

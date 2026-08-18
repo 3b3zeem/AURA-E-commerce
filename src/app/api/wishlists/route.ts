@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
+import { checkRateLimit, getClientIp } from '@/lib/security/rateLimit';
+import { sanitizeObject } from '@/lib/security/sanitize';
+import { verifyRequestOrigin } from '@/lib/security/csrfGuard';
 
 // Public GET: Fetch current user's wishlist
 export async function GET(request: Request) {
@@ -24,7 +27,18 @@ export async function GET(request: Request) {
 // User POST: Add product to wishlist
 export async function POST(request: Request) {
   try {
-    const { user_id, product_id, product } = await request.json();
+    const csrf = verifyRequestOrigin(request);
+    if (!csrf.valid && csrf.response) return csrf.response;
+
+    const clientIp = getClientIp(request);
+    const rate = checkRateLimit(`wish_${clientIp}`, 30, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
+    const rawBody = await request.json();
+    const { user_id, product_id, product } = sanitizeObject(rawBody);
+
     if (!user_id || !product_id) {
       return NextResponse.json({ error: 'user_id and product_id required' }, { status: 400 });
     }
@@ -60,6 +74,9 @@ export async function POST(request: Request) {
 // User DELETE: Remove product from wishlist
 export async function DELETE(request: Request) {
   try {
+    const csrf = verifyRequestOrigin(request);
+    if (!csrf.valid && csrf.response) return csrf.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const userId = searchParams.get('userId');

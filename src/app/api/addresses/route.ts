@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
+import { checkRateLimit, getClientIp } from '@/lib/security/rateLimit';
+import { sanitizeObject } from '@/lib/security/sanitize';
+import { verifyRequestOrigin } from '@/lib/security/csrfGuard';
+import { isValidEgyptianPhone, isValidEmail } from '@/lib/security/validators';
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +21,29 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const csrf = verifyRequestOrigin(request);
+    if (!csrf.valid && csrf.response) return csrf.response;
+
+    const clientIp = getClientIp(request);
+    const rate = checkRateLimit(`addr_${clientIp}`, 15, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json({ error: 'Too many address updates. Please wait a minute.' }, { status: 429 });
+    }
+
+    const rawBody = await request.json();
+    const body = sanitizeObject(rawBody);
+
+    if (body.phone && !isValidEgyptianPhone(body.phone)) {
+      return NextResponse.json(
+        { error: 'Invalid Egyptian phone number. Must be 11 digits starting with 010, 011, 012, or 015' },
+        { status: 400 }
+      );
+    }
+
+    if (body.email && !isValidEmail(body.email)) {
+      return NextResponse.json({ error: 'Invalid or disposable email domain rejected.' }, { status: 400 });
+    }
+
     const supabase = createClient();
 
     if (body.is_default && body.user_id) {
@@ -38,6 +64,9 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const csrf = verifyRequestOrigin(request);
+    if (!csrf.valid && csrf.response) return csrf.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -58,8 +87,23 @@ export async function DELETE(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const body = await request.json();
+    const csrf = verifyRequestOrigin(request);
+    if (!csrf.valid && csrf.response) return csrf.response;
+
+    const rawBody = await request.json();
+    const body = sanitizeObject(rawBody);
     const { id, action, user_id, ...updates } = body;
+
+    if (updates.phone && !isValidEgyptianPhone(updates.phone)) {
+      return NextResponse.json(
+        { error: 'Invalid Egyptian phone number. Must be 11 digits starting with 010, 011, 012, or 015' },
+        { status: 400 }
+      );
+    }
+
+    if (updates.email && !isValidEmail(updates.email)) {
+      return NextResponse.json({ error: 'Invalid or disposable email domain rejected.' }, { status: 400 });
+    }
 
     const supabase = createClient();
 

@@ -2,24 +2,28 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { getProductById } from '@/lib/services/db';
+import { getProductById, getProducts } from '@/lib/services/db';
 import { Product } from '@/types';
 import { formatPrice, calculateDiscountPercentage } from '@/lib/utils';
 import { ProductTabs } from '@/components/product/ProductTabs';
+import { ProductBundleWizard } from '@/components/product/ProductBundleWizard';
 import { useCartStore } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
-import { Star, Heart, ShoppingBag, Share2, Check, ShieldCheck, Truck, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Star, Heart, ShoppingBag, Share2, Check, ShieldCheck, Truck, ArrowLeft, RefreshCw, Zap } from 'lucide-react';
+import { ExpressBuyModal } from '@/components/checkout/ExpressBuyModal';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState('');
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
 
   const { addItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useUserStore();
@@ -27,15 +31,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function loadProduct() {
       setLoading(true);
-      const prod = await getProductById(productId);
+      const [prod, catalog] = await Promise.all([
+        getProductById(productId),
+        getProducts(),
+      ]);
+
       if (prod) {
         setProduct(prod);
         setSelectedImage(prod.images[0] || '');
         const initialVariants: Record<string, string> = {};
-        prod.variants?.forEach((v) => {
+        prod.variants?.forEach((v: any) => {
           if (v.options.length > 0) initialVariants[v.name] = v.options[0];
         });
         setSelectedVariants(initialVariants);
+      }
+      if (Array.isArray(catalog)) {
+        setAllProducts(catalog);
       }
       setLoading(false);
     }
@@ -92,39 +103,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       {/* Main Grid: Gallery & Info */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         
-        {/* Left Column: Image Gallery */}
-        <div className="space-y-4">
-          <div className="relative aspect-square bg-white border border-slate-200 overflow-hidden group">
+        {/* Left Column: Image Gallery with Left Side Thumbnails */}
+        <div className="flex flex-col-reverse sm:flex-row gap-4 items-start">
+          {/* Left: Vertical Thumbnails Column */}
+          {product.images.length > 1 && (
+            <div className="flex sm:flex-col gap-3 max-h-[540px] w-full sm:w-auto shrink-0 py-1">
+              {product.images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedImage(img)}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 bg-white border transition-all flex-shrink-0 cursor-pointer overflow-hidden ${
+                    selectedImage === img
+                      ? 'border-slate-900 border-2 shadow-sm scale-105'
+                      : 'border-slate-200 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt={`${product.name} thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Right: Main Display Image */}
+          <div className="relative aspect-square w-full flex-1 bg-white border border-slate-200 overflow-hidden group">
             <img
               src={selectedImage || product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
             />
             {discount > 0 && (
-              <span className="absolute top-4 left-4 bg-slate-900 text-white text-xs font-black px-3 py-1 uppercase border border-slate-800">
+              <span className="absolute top-4 left-4 bg-slate-900 text-white text-xs font-black px-3 py-1 uppercase border border-slate-800 shadow-md">
                 SAVE {discount}%
               </span>
             )}
           </div>
-
-          {/* Thumbnails */}
-          {product.images.length > 1 && (
-            <div className="flex space-x-3 overflow-x-auto pb-2">
-              {product.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  className={`w-20 h-20 bg-white border transition-all flex-shrink-0 cursor-pointer ${
-                    selectedImage === img
-                      ? 'border-slate-900 border-2'
-                      : 'border-slate-200 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Right Column: Product Metadata & Actions */}
@@ -138,17 +150,49 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </h1>
             <p className="text-xs text-slate-600 leading-relaxed">{product.description}</p>
 
-            {/* Ratings */}
-            <div className="flex items-center space-x-4 pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {product.target_gender && (
+                <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 border border-slate-300">
+                  Target: {product.target_gender}
+                </span>
+              )}
+              {product.origin_country && (
+                <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 px-2 py-0.5 border border-slate-300">
+                  Origin: {product.origin_country}
+                </span>
+              )}
+              {product.min_order_qty && product.min_order_qty > 1 && (
+                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 border border-indigo-200">
+                  Min Qty: {product.min_order_qty}
+                </span>
+              )}
+            </div>
+
+            {/* Ratings & Stock Status */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 fill-current mr-1" />
                 <span className="text-xs font-bold text-slate-900">{product.rating_avg}</span>
               </div>
               <span className="text-xs text-slate-500 uppercase">({product.reviews_count} Verified Reviews)</span>
               <span className="text-xs text-slate-300">•</span>
-              <span className="text-xs text-emerald-600 font-bold uppercase">
-                {product.stock > 0 ? `In Stock (${product.stock} units)` : 'Out of Stock'}
-              </span>
+              
+              {/* Intelligent Stock Alert Indicator */}
+              {product.stock > 5 ? (
+                <span className="text-xs text-emerald-600 font-bold uppercase flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  In Stock
+                </span>
+              ) : product.stock > 0 ? (
+                <span className="text-xs text-amber-700 font-black uppercase flex items-center gap-1.5 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                  Only {product.stock} left in stock - Order soon!
+                </span>
+              ) : (
+                <span className="text-xs text-rose-600 font-bold uppercase">
+                  Out of Stock
+                </span>
+              )}
             </div>
           </div>
 
@@ -188,68 +232,109 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* Quantity & Cart Action Buttons */}
-          <div className="flex items-center space-x-4 pt-4 border-t border-slate-200">
-            <div className="flex items-center border border-slate-300 bg-white">
+          {/* Quantity & Cart Action Buttons - Clean Multi-Row Layout */}
+          <div className="space-y-3 pt-4 border-t border-slate-200">
+            {/* Row 1: Quantity Selector & Main Purchase CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-between sm:justify-start border border-slate-300 bg-white h-11 px-1">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="w-9 h-full flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                >
+                  -
+                </button>
+                <span className="px-4 text-xs font-mono font-bold text-slate-900">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="w-9 h-full flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Add To Bag */}
               <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                onClick={() => addItem(product, quantity, selectedVariants)}
+                className="flex-1 h-11 bg-slate-900 hover:bg-black text-white border border-slate-800 text-xs font-bold uppercase flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-sm"
               >
-                -
+                <ShoppingBag className="w-4 h-4 text-white" />
+                <span>Add {quantity} To Bag</span>
               </button>
-              <span className="px-4 py-2 text-xs font-bold w-10 text-center font-mono text-slate-900">{quantity}</span>
+
+              {/* 1-Click Express Buy Button */}
               <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
+                onClick={() => setIsExpressModalOpen(true)}
+                className="flex-1 h-11 bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300 text-xs font-black uppercase flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-md"
               >
-                +
+                <Zap className="w-4 h-4 text-slate-950" />
+                <span>Place Order</span>
               </button>
             </div>
 
-            <button
-              onClick={() => addItem(product, quantity, selectedVariants)}
-              className="flex-1 py-3 px-6 bg-slate-900 hover:bg-black text-white border border-slate-800 text-xs font-bold uppercase flex items-center justify-center space-x-2 transition-colors cursor-pointer"
-            >
-              <ShoppingBag className="w-4 h-4 text-white" />
-              <span>Add {quantity} To Shopping Bag</span>
-            </button>
+            {/* Row 2: Secondary Utility Actions (Wishlist, Share) */}
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <button
+                onClick={() => toggleWishlist(product.id)}
+                className={`flex-1 h-10 px-4 border text-xs font-bold uppercase flex items-center justify-center space-x-2 transition-colors cursor-pointer ${
+                  isLiked
+                    ? 'bg-rose-600 text-white border-rose-500'
+                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+                title="Add to Wishlist"
+              >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                <span className="text-[11px]">{isLiked ? 'Wishlisted' : 'Wishlist'}</span>
+              </button>
 
-            <button
-              onClick={() => toggleWishlist(product.id)}
-              className={`p-3 border transition-colors cursor-pointer ${
-                isLiked
-                  ? 'bg-rose-600 text-white border-rose-500'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
-
-            <button
-              onClick={handleShare}
-              className="p-3 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
-              title="Share URL"
-            >
-              {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Share2 className="w-5 h-5" />}
-            </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 h-10 px-4 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 text-xs font-bold uppercase flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+                title="Share Product Link"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span className="text-[11px] text-emerald-600">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-4 h-4" />
+                    <span className="text-[11px]">Share</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Guarantees */}
-          <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 text-xs uppercase text-slate-600 font-bold">
-            <div className="flex items-center space-x-2">
-              <Truck className="w-4 h-4 text-slate-900" />
-              <span>Express Delivery</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-4 h-4 text-slate-900" />
-              <span>2-Year Hardware Warranty</span>
+            {/* Guarantees */}
+            <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 text-xs uppercase text-slate-600 font-bold">
+              <div className="flex items-center space-x-2">
+                <Truck className="w-4 h-4 text-slate-900" />
+                <span>Express Delivery</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="w-4 h-4 text-slate-900" />
+                <span>2-Year Hardware Warranty</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs: Specifications & Customer Reviews */}
-      <ProductTabs product={product} />
-    </div>
+        {/* Frequently Bought Together / Bundle Savings Wizard */}
+        <ProductBundleWizard currentProduct={product} allProducts={allProducts} />
+
+        {/* Tabs: Specifications & Customer Reviews */}
+        <ProductTabs product={product} />
+
+        {/* Express Buy Modal */}
+        <ExpressBuyModal
+          product={product}
+          quantity={quantity}
+          selectedVariants={selectedVariants}
+          isOpen={isExpressModalOpen}
+          onClose={() => setIsExpressModalOpen(false)}
+        />
+      </div>
   );
 }

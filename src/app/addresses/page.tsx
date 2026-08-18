@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserStore } from "@/store/useUserStore";
 import { UserAddress } from "@/types";
+import toast from "react-hot-toast";
 import {
   getUserAddresses,
   createUserAddress,
@@ -159,21 +160,50 @@ export default function AddressesPage() {
     }
 
     if (result) {
+      toast.success(editingAddress ? "Address updated successfully" : "New address added");
       await fetchAddresses();
       setShowModal(false);
+    } else {
+      toast.error("Failed to save address");
     }
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to remove this address?")) {
-      await deleteUserAddress(id);
-      await fetchAddresses();
-    }
+  const handleDelete = (id: string) => {
+    toast(
+      (t) => (
+        <div className="space-y-2 font-sans text-xs">
+          <p className="font-bold text-slate-900 uppercase tracking-tight">
+            Delete this shipping address?
+          </p>
+          <div className="flex items-center space-x-2 pt-1">
+            <button
+              onClick={async () => {
+                toast.dismiss(t.id);
+                await deleteUserAddress(id);
+                toast.success("Address removed");
+                await fetchAddresses();
+              }}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-[10px] uppercase tracking-wider cursor-pointer border border-rose-700"
+            >
+              Yes, Delete
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold text-[10px] uppercase tracking-wider cursor-pointer border border-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 6000, position: "top-center" }
+    );
   };
 
   const handleSetDefault = async (id: string) => {
     await setDefaultUserAddress(id);
+    toast.success("Default address updated");
     await fetchAddresses();
   };
 

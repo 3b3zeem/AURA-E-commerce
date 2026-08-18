@@ -107,8 +107,23 @@ export default function AdminDashboardPage() {
   const [newProdImage, setNewProdImage] = useState(
     "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
   );
+  const [newProdImages, setNewProdImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
+  ]);
   const [newProdFeatured, setNewProdFeatured] = useState(false);
   const [newProdFlashDeal, setNewProdFlashDeal] = useState(false);
+  const [newProdBrand, setNewProdBrand] = useState("AURA Official");
+  const [newProdSku, setNewProdSku] = useState("");
+  const [newProdTargetGender, setNewProdTargetGender] = useState("unisex");
+  const [newProdOriginCountry, setNewProdOriginCountry] = useState("");
+  const [newProdShelfLife, setNewProdShelfLife] = useState("");
+  const [newProdKeyBenefits, setNewProdKeyBenefits] = useState("");
+  const [newProdHighlights, setNewProdHighlights] = useState("");
+  const [newProdUsage, setNewProdUsage] = useState("");
+  const [newProdCare, setNewProdCare] = useState("");
+  const [newProdPackageIncludes, setNewProdPackageIncludes] = useState("");
+  const [newProdDeliveryInfo, setNewProdDeliveryInfo] = useState("");
+  const [newProdReturnPolicy, setNewProdReturnPolicy] = useState("");
 
   // New Category Form State
   const [newCatName, setNewCatName] = useState("");
@@ -278,12 +293,28 @@ export default function AdminDashboardPage() {
           : undefined,
         stock: parseInt(newProdStock) || 10,
         category_id: newProdCategory || categoriesList[0]?.id || undefined,
-        images: [newProdImage],
+        images: newProdImages.filter(Boolean).length > 0 ? newProdImages.filter(Boolean) : [newProdImage],
         in_stock: true,
         rating_avg: 5.0,
         badge: newProdBadge || "NEW",
         is_featured: newProdFeatured,
         is_flash_deal: newProdFlashDeal,
+        brand: newProdBrand || "AURA Official",
+        sku: newProdSku || undefined,
+        target_gender: newProdTargetGender || "unisex",
+        origin_country: newProdOriginCountry || undefined,
+        shelf_life: newProdShelfLife || undefined,
+        key_benefits: newProdKeyBenefits || undefined,
+        highlights: newProdHighlights
+          ? newProdHighlights.split(",").map((s) => s.trim()).filter(Boolean)
+          : [],
+        usage_instructions: newProdUsage || undefined,
+        care_instructions: newProdCare || undefined,
+        package_includes: newProdPackageIncludes
+          ? newProdPackageIncludes.split(",").map((s) => s.trim()).filter(Boolean)
+          : [],
+        delivery_info: newProdDeliveryInfo || undefined,
+        return_policy: newProdReturnPolicy || undefined,
       });
 
       showNotification(
@@ -299,6 +330,18 @@ export default function AdminDashboardPage() {
       setNewProdBadge("NEW");
       setNewProdFeatured(false);
       setNewProdFlashDeal(false);
+      setNewProdBrand("AURA Official");
+      setNewProdSku("");
+      setNewProdTargetGender("unisex");
+      setNewProdOriginCountry("");
+      setNewProdShelfLife("");
+      setNewProdKeyBenefits("");
+      setNewProdHighlights("");
+      setNewProdUsage("");
+      setNewProdCare("");
+      setNewProdPackageIncludes("");
+      setNewProdDeliveryInfo("");
+      setNewProdReturnPolicy("");
       setIsAddProductOpen(false);
     } finally {
       setIsSubmitting(false);
@@ -873,10 +916,36 @@ export default function AdminDashboardPage() {
         setNewProdCategory={setNewProdCategory}
         newProdImage={newProdImage}
         setNewProdImage={setNewProdImage}
+        newProdImages={newProdImages}
+        setNewProdImages={setNewProdImages}
         newProdFeatured={newProdFeatured}
         setNewProdFeatured={setNewProdFeatured}
         newProdFlashDeal={newProdFlashDeal}
         setNewProdFlashDeal={setNewProdFlashDeal}
+        newProdBrand={newProdBrand}
+        setNewProdBrand={setNewProdBrand}
+        newProdSku={newProdSku}
+        setNewProdSku={setNewProdSku}
+        newProdTargetGender={newProdTargetGender}
+        setNewProdTargetGender={setNewProdTargetGender}
+        newProdOriginCountry={newProdOriginCountry}
+        setNewProdOriginCountry={setNewProdOriginCountry}
+        newProdShelfLife={newProdShelfLife}
+        setNewProdShelfLife={setNewProdShelfLife}
+        newProdKeyBenefits={newProdKeyBenefits}
+        setNewProdKeyBenefits={setNewProdKeyBenefits}
+        newProdHighlights={newProdHighlights}
+        setNewProdHighlights={setNewProdHighlights}
+        newProdUsage={newProdUsage}
+        setNewProdUsage={setNewProdUsage}
+        newProdCare={newProdCare}
+        setNewProdCare={setNewProdCare}
+        newProdPackageIncludes={newProdPackageIncludes}
+        setNewProdPackageIncludes={setNewProdPackageIncludes}
+        newProdDeliveryInfo={newProdDeliveryInfo}
+        setNewProdDeliveryInfo={setNewProdDeliveryInfo}
+        newProdReturnPolicy={newProdReturnPolicy}
+        setNewProdReturnPolicy={setNewProdReturnPolicy}
         onAddProductSubmit={handleAddProduct}
         isAddCategoryOpen={isAddCategoryOpen}
         onCloseAddCategory={() => setIsAddCategoryOpen(false)}

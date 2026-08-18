@@ -1,4 +1,12 @@
-import { Product, Category, Story, Profile, BentoItem, Offer, NewsletterSubscriber } from "@/types";
+import {
+  Product,
+  Category,
+  Story,
+  Profile,
+  BentoItem,
+  Offer,
+  NewsletterSubscriber,
+} from "@/types";
 
 const ADMIN_HEADERS = {
   "x-admin-key": "aura-admin-token",
@@ -101,9 +109,10 @@ export async function createCategoryInDb(
   description?: string,
 ): Promise<Category | null> {
   try {
-    const payload = typeof categoryData === "string"
-      ? { name: categoryData, description }
-      : categoryData;
+    const payload =
+      typeof categoryData === "string"
+        ? { name: categoryData, description }
+        : categoryData;
 
     const res = await fetch("/api/admin/categories", {
       method: "POST",
@@ -224,7 +233,10 @@ export async function deleteStoryInDb(id: string): Promise<boolean> {
 
 export async function getUsersFromDb(): Promise<Profile[]> {
   try {
-    const res = await fetch("/api/admin/users", { cache: "no-store", headers: ADMIN_HEADERS });
+    const res = await fetch("/api/admin/users", {
+      cache: "no-store",
+      headers: ADMIN_HEADERS,
+    });
     if (!res.ok) {
       const fallback = await fetch("/api/users", { cache: "no-store" });
       if (!fallback.ok) return [];
@@ -380,7 +392,9 @@ export async function setDefaultUserAddress(id: string): Promise<boolean> {
   }
 }
 
-export async function createAdminAddress(addressData: any): Promise<any | null> {
+export async function createAdminAddress(
+  addressData: any,
+): Promise<any | null> {
   try {
     const res = await fetch("/api/admin/addresses", {
       method: "POST",
@@ -396,7 +410,9 @@ export async function createAdminAddress(addressData: any): Promise<any | null> 
   }
 }
 
-export async function updateAdminAddress(addressData: any): Promise<any | null> {
+export async function updateAdminAddress(
+  addressData: any,
+): Promise<any | null> {
   try {
     const res = await fetch("/api/admin/addresses", {
       method: "PUT",
@@ -431,7 +447,10 @@ export async function deleteAdminAddress(id: string): Promise<boolean> {
 
 export async function getOrdersFromDb(): Promise<any[]> {
   try {
-    const res = await fetch("/api/admin/orders", { cache: "no-store", headers: ADMIN_HEADERS });
+    const res = await fetch("/api/admin/orders", {
+      cache: "no-store",
+      headers: ADMIN_HEADERS,
+    });
     if (!res.ok) return [];
     return await res.json();
   } catch {
@@ -493,7 +512,10 @@ export async function updateOrderStatusInDb(
 
 export async function deleteOrderInDb(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`/api/admin/orders?id=${id}`, { method: "DELETE", headers: ADMIN_HEADERS });
+    const res = await fetch(`/api/admin/orders?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
     if (res.ok) notifyDataChanged();
     return res.ok;
   } catch {
@@ -559,7 +581,7 @@ export async function addAdminTrendingSearch(query: string): Promise<boolean> {
 export async function updateAdminTrendingSearch(
   id: string,
   query: string,
-  search_count?: number
+  search_count?: number,
 ): Promise<boolean> {
   try {
     const res = await fetch("/api/admin/trending-searches", {
@@ -861,20 +883,37 @@ export async function getAdminPromoCodes(): Promise<any[]> {
   }
 }
 
-export async function verifyPromoCode(code: string): Promise<{ success: boolean; promo?: any; message?: string }> {
+export async function verifyPromoCode(
+  code: string,
+  userId?: string,
+): Promise<{ success: boolean; promo?: any; message?: string }> {
   try {
-    const res = await fetch(`/api/promo-codes?code=${encodeURIComponent(code)}`);
+    const url = userId
+      ? `/api/promo-codes?code=${encodeURIComponent(code)}&userId=${encodeURIComponent(userId)}`
+      : `/api/promo-codes?code=${encodeURIComponent(code)}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (res.ok && data.success) {
       return { success: true, promo: data.promo };
     }
-    return { success: false, message: data.message || "Invalid promo code" };
+    return {
+      success: false,
+      message: data.message || "Invalid or expired coupon",
+    };
   } catch {
-    return { success: false, message: "Error verifying promo code" };
+    return { success: false, message: "Error verifying coupon code" };
   }
 }
 
-export async function createAdminPromoCode(promoData: { code: string; discount_percent: number; is_active?: boolean }): Promise<any | null> {
+export async function createAdminPromoCode(promoData: {
+  code: string;
+  discount_percent: number;
+  max_uses?: number | null;
+  max_uses_per_user?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active?: boolean;
+}): Promise<any | null> {
   try {
     const res = await fetch("/api/admin/promo-codes", {
       method: "POST",
@@ -890,7 +929,16 @@ export async function createAdminPromoCode(promoData: { code: string; discount_p
   }
 }
 
-export async function updateAdminPromoCode(promoData: { id: string; code?: string; discount_percent?: number; is_active?: boolean }): Promise<any | null> {
+export async function updateAdminPromoCode(promoData: {
+  id: string;
+  code?: string;
+  discount_percent?: number;
+  max_uses?: number | null;
+  max_uses_per_user?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active?: boolean;
+}): Promise<any | null> {
   try {
     const res = await fetch("/api/admin/promo-codes", {
       method: "PUT",
@@ -924,7 +972,9 @@ export async function deleteAdminPromoCode(id: string): Promise<boolean> {
 // 12. NEWSLETTER SERVICES
 // ==========================================
 
-export async function subscribeNewsletter(email: string): Promise<{ success: boolean; message?: string }> {
+export async function subscribeNewsletter(
+  email: string,
+): Promise<{ success: boolean; message?: string }> {
   try {
     const res = await fetch("/api/newsletter", {
       method: "POST",
@@ -942,7 +992,9 @@ export async function subscribeNewsletter(email: string): Promise<{ success: boo
   }
 }
 
-export async function getNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
+export async function getNewsletterSubscribers(): Promise<
+  NewsletterSubscriber[]
+> {
   try {
     const res = await fetch("/api/admin/newsletter", {
       headers: ADMIN_HEADERS,
@@ -985,7 +1037,11 @@ export async function broadcastOfferEmailAlert(payload: {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      return { success: true, count: data.recipientsCount, message: data.message };
+      return {
+        success: true,
+        count: data.recipientsCount,
+        message: data.message,
+      };
     }
     return { success: false, message: data.error || "Broadcast failed" };
   } catch (err: any) {
@@ -1008,7 +1064,9 @@ export async function getOffers(overlayOnly = false): Promise<Offer[]> {
   }
 }
 
-export async function createOfferInDb(offerData: Partial<Offer>): Promise<Offer | null> {
+export async function createOfferInDb(
+  offerData: Partial<Offer>,
+): Promise<Offer | null> {
   try {
     const res = await fetch("/api/admin/offers", {
       method: "POST",
@@ -1024,7 +1082,10 @@ export async function createOfferInDb(offerData: Partial<Offer>): Promise<Offer 
   }
 }
 
-export async function updateOfferInDb(id: string, updates: Partial<Offer>): Promise<Offer | null> {
+export async function updateOfferInDb(
+  id: string,
+  updates: Partial<Offer>,
+): Promise<Offer | null> {
   try {
     const res = await fetch("/api/admin/offers", {
       method: "PUT",
@@ -1066,4 +1127,3 @@ export async function setOverlayFeaturedOffer(id: string): Promise<boolean> {
     return false;
   }
 }
-
