@@ -1,0 +1,16 @@
+# AURA E-Commerce Platform
+
+> Premium High-Fidelity Audio Hardware & Accessories
+
+## Overview
+AURA is an enterprise e-commerce platform specializing in high-fidelity audio equipment, planar headphones, studio IEMs, and custom audio hardware.
+
+## Key Sections
+- [Products](/products): Browse planar magnetic headphones, DACs, and audio accessories.
+- [Categories](/categories): Shop by category including Audio, Tech, and Accessories.
+- [Blogs](/blogs): Read articles, technical guides, and release announcements.
+- [Offers](/offers): Exclusive promotional discounts and bundle deals.
+- [Contact](/contact): 24/7 Concierge and customer support.
+
+## API & Agentic Access
+- Structured JSON API endpoints are accessible under `/api/` for product discovery, search, and support integration.

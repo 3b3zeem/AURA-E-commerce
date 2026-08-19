@@ -35,9 +35,9 @@ export function StoryHero({ stories }: StoryHeroProps) {
             <Flame className="w-3.5 h-3.5 text-amber-600" />
             <span>Featured Collections</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
             Curated Drops
-          </h1>
+          </h2>
           <p className="text-xs text-slate-600 mt-1 max-w-xl">
             Explore active product showcases and specs.
           </p>
