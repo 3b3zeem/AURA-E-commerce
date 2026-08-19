@@ -81,7 +81,7 @@ export async function GET() {
 
       return {
         ...s,
-        products: finalProducts,
+        products: finalProducts.slice(0, 4),
       };
     });
 
