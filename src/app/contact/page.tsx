@@ -114,7 +114,7 @@ export default function ContactPage() {
 
         {/* Support Cards Bar */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-colors shadow-sm">
+          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-all duration-300 hover:-translate-y-1 shadow-sm">
             <div className="p-3 bg-slate-900 text-white w-fit">
               <Mail className="w-5 h-5 text-white" />
             </div>
@@ -125,7 +125,7 @@ export default function ContactPage() {
             </a>
           </div>
 
-          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-colors shadow-sm">
+          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-all duration-300 hover:-translate-y-1 shadow-sm">
             <div className="p-3 bg-slate-900 text-white w-fit">
               <Phone className="w-5 h-5 text-white" />
             </div>
@@ -136,7 +136,7 @@ export default function ContactPage() {
             </a>
           </div>
 
-          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-colors shadow-sm">
+          <div className="p-6 bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-900 transition-all duration-300 hover:-translate-y-1 shadow-sm">
             <div className="p-3 bg-slate-900 text-white w-fit">
               <MapPin className="w-5 h-5 text-white" />
             </div>
@@ -158,7 +158,7 @@ export default function ContactPage() {
             </div>
 
             {submitted ? (
-              <div className="py-12 text-center space-y-4 bg-emerald-50 border border-emerald-200 p-6">
+              <div className="py-12 text-center space-y-4 bg-emerald-50 border border-emerald-200 p-6 animate-fadeIn">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
                 <h3 className="text-xl font-black uppercase text-emerald-900">Message Received!</h3>
                 <p className="text-xs text-emerald-800 max-w-md mx-auto">
@@ -207,6 +207,7 @@ export default function ContactPage() {
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-slate-900 font-medium"
                     >
+                      <option value="" disabled>Select Category...</option>
                       <option value="General Inquiry">General Inquiry</option>
                       <option value="Order & Shipping">Order & Shipping Status</option>
                       <option value="Warranty Claim">2-Year Warranty Claim</option>
@@ -286,7 +287,7 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* FAQ Section */}
+        {/* FAQ Section with Smooth Accordion Animations */}
         <section className="space-y-6 pt-6 border-t border-slate-200">
           <div className="text-center space-y-2 max-w-xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-black uppercase text-slate-900 tracking-tight">
@@ -296,32 +297,45 @@ export default function ContactPage() {
           </div>
 
           <div className="max-w-3xl mx-auto space-y-3">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="border border-slate-200 bg-slate-50 overflow-hidden"
-              >
-                <button
-                  onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between font-bold text-xs uppercase text-slate-900 hover:bg-slate-100 transition-colors"
+            {faqs.map((faq, idx) => {
+              const isOpen = activeFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className={`border transition-all duration-300 overflow-hidden ${
+                    isOpen
+                      ? 'border-slate-900 bg-white shadow-md'
+                      : 'border-slate-200 bg-slate-50 hover:border-slate-400'
+                  }`}
                 >
-                  <span className="flex items-center space-x-2">
-                    <HelpCircle className="w-4 h-4 text-slate-700 shrink-0" />
-                    <span>{faq.q}</span>
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-500 transition-transform ${
-                      activeFaq === idx ? 'rotate-180 text-slate-900' : ''
+                  <button
+                    onClick={() => setActiveFaq(isOpen ? null : idx)}
+                    className="w-full p-4 text-left flex items-center justify-between font-bold text-xs uppercase text-slate-900 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <HelpCircle className={`w-4 h-4 transition-colors duration-300 shrink-0 ${isOpen ? 'text-amber-600' : 'text-slate-500'}`} />
+                      <span className={isOpen ? 'text-slate-900 font-extrabold' : 'text-slate-800'}>{faq.q}</span>
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-500 transition-transform duration-300 shrink-0 ${
+                        isOpen ? 'rotate-180 text-slate-900' : ''
+                      }`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                     }`}
-                  />
-                </button>
-                {activeFaq === idx && (
-                  <div className="p-4 pt-0 text-xs text-slate-600 leading-relaxed border-t border-slate-200/60 bg-white">
-                    {faq.a}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="p-4 pt-2 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/50">
+                        {faq.a}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>
