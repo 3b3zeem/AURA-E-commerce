@@ -28,16 +28,22 @@
 ### 🛒 Storefront
 - **Apple-Inspired Bento Grid Hero** — Dynamic, asymmetrical homepage hero with 4 card types: Spotlight, Flash Deals, Store Guarantee, and Category Showcase.
 - **Story / Curated Drops Carousel** — App-store-style horizontal story bar with smart product auto-matching by keywords and categories.
+- **Product Card Image Carousel & Autoplay** — Automated slideshow with manual prev/next arrow navigation, framer-motion transitions, and direct action buttons (`View Specs` & `Place Order`).
+- **Recommended For You Section** — Dark-themed curated product showcase with multi-image carousel and 1-click Express Order checkout modal.
 - **Flash Deals Section** — Live countdown timers for limited-time offers.
 - **Category Grid Showcase** — Visual category browsing with featured imagery.
-- **Product Catalog** — Full product listing with filters, badges (NEW, HOT, SALE), and stock indicators.
-- **Product Detail Pages** — Image gallery, loyalty points preview, add-to-cart, and recommended products.
+- **Product Detail Pages** — Vertical thumbnail gallery, spec tabs, smooth scroll reset on navigation, and bundle recommendation wizard.
 
-### 🤖 AI Assistant
+### 🤖 AI Assistant & Customer Support
 - **Gemini-Powered Chat Widget** — Natural language product recommendations with Arabic & English support.
+- **Optimized Real-Time Customer Service** — React Query support ticket fetching throttled with `enabled` flag to eliminate redundant background API requests.
 - **Local Intent Engine** — Fallback local parser with category synonyms and strict budget filtering via Regex.
 - **Quick Prompt Chips** — One-tap prompts for headphones, gaming, skincare, and flash deals.
 - **Budget Enforcement** — AI never recommends products over the user's stated budget.
+
+### 🧪 Automated Testing Suite
+- **End-to-End Testing (Playwright)** — Full browser E2E test suite running real user journeys (catalog browsing, ProductCard interactions, Express Order modal).
+- **Unit Testing (Vitest)** — High-speed unit tests verifying core business logic and utility helpers (`formatPrice`, `calculateDiscountPercentage`).
 
 ### 🛡️ Auth & Users
 - Supabase Auth (Email / Magic Link)
@@ -46,24 +52,10 @@
 
 ### 🛒 Cart & Orders
 - Persistent cart synced to Supabase
+- 1-Click Express Order Confirmation Modal
 - Checkout flow with address management
 - Order status tracking (Pending → Processing → Shipped → Delivered)
 - Loyalty points system per purchase
-
-### 🎛️ Admin Dashboard
-A full CMS panel at `/admin` including:
-
-| Tab | Description |
-|-----|-------------|
-| **Products** | Add, edit, delete products with image upload, badges, flash deal toggle |
-| **Categories** | Manage product categories with images and slugs |
-| **Orders** | View and update order statuses |
-| **Users** | Manage user roles and profiles |
-| **Stories (Drops)** | Create and manage homepage curated drop campaigns |
-| **Bento CMS** | Manage all 4 Bento Grid Hero cards with image upload/URL and live preview |
-| **Trending Searches** | Manage trending search keywords shown to users |
-| **Addresses** | View all user delivery addresses |
-| **Analytics** | Store overview statistics |
 
 ---
 
@@ -75,6 +67,9 @@ A full CMS panel at `/admin` including:
 | UI | React 19 + Tailwind CSS 4 |
 | Animations | Framer Motion 13 |
 | Icons | Lucide React |
+| E2E Testing | Playwright |
+| Unit Testing | Vitest |
+| Data Fetching | React Query (@tanstack/react-query) |
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth |
 | Storage | Supabase Storage |
@@ -146,6 +141,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+### 4. Run Automated Tests
+
+```bash
+# Run End-to-End Tests with Playwright
+npm run test:e2e
+
+# Run Unit Tests with Vitest
+npm run test:unit
+```
+
 ---
 
 ## 📁 Project Structure
@@ -153,21 +158,24 @@ Open [http://localhost:3000](http://localhost:3000)
 ```
 src/
 ├── app/
-│   ├── api/          # REST API routes (products, orders, bento, AI, etc.)
+│   ├── api/          # REST API routes (products, orders, bento, AI, support, etc.)
 │   ├── admin/        # Admin dashboard page
 │   ├── products/     # Product listing & detail pages
 │   └── page.tsx      # Homepage
 ├── components/
 │   ├── admin/        # AdminProductsTab, AdminBentoTab, etc.
-│   ├── home/         # BentoGridHero, StoryHero, FlashDeals, CategoryGrid
-│   ├── product/      # ProductCard, ProductDetail
+│   ├── home/         # BentoGridHero, StoryHero, FlashDeals, RecommendedProductsSection
+│   ├── product/      # ProductCard (with Carousel & Action Grid), ProductDetail, ProductTabs
 │   ├── ai/           # AIChatWidget
 │   └── ui/           # CustomSelect, shared UI components
 ├── lib/
 │   ├── services/db.ts  # All Supabase service functions
 │   └── supabase/       # Supabase client setup
 ├── store/              # Zustand global state
-└── types/              # TypeScript interfaces (Product, BentoItem, etc.)
+├── types/              # TypeScript interfaces (Product, BentoItem, etc.)
+tests/
+├── e2e/                # Playwright End-to-End test suites
+└── unit/               # Vitest unit test suites
 ```
 
 ---

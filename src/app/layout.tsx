@@ -3,16 +3,25 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import "./globals.css";
+import dynamic from "next/dynamic";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { CartDrawer } from "@/components/cart/CartDrawer";
-import { AIChatWidget } from "@/components/ai/AIChatWidget";
-import { OfferOverlayModal } from "@/components/home/OfferOverlayModal";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+
+const CartDrawer = dynamic(
+  () => import("@/components/cart/CartDrawer").then((mod) => mod.CartDrawer)
+);
+const AIChatWidget = dynamic(
+  () => import("@/components/ai/AIChatWidget").then((mod) => mod.AIChatWidget)
+);
+const OfferOverlayModal = dynamic(
+  () => import("@/components/home/OfferOverlayModal").then((mod) => mod.OfferOverlayModal)
+);
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

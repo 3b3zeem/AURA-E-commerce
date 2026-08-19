@@ -2,8 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@/lib/supabase/client';
 
+// Simple In-Memory Rate Limiter (20 requests/minute per IP)
+const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  const maxRequests = 20;
+
+  const record = rateLimitMap.get(ip) || { count: 0, lastReset: now };
+
+  if (now - record.lastReset > windowMs) {
+    record.count = 1;
+    record.lastReset = now;
+  } else {
+    record.count += 1;
+  }
+
+  rateLimitMap.set(ip, record);
+  return record.count > maxRequests;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous-client';
+    if (checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment before asking again.' },
+        { status: 429 }
+      );
+    }
+
     const { message } = await req.json();
 
     if (!message || typeof message !== 'string') {

@@ -74,6 +74,8 @@ export function ProductCard({ product }: ProductCardProps) {
                 key={currentImgIndex}
                 src={images[currentImgIndex] || "/placeholder.jpg"}
                 alt={product.name}
+                loading="lazy"
+                decoding="async"
                 initial={{ opacity: 0.4, scale: 1.02 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0.4 }}

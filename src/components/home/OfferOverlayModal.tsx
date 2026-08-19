@@ -37,18 +37,8 @@ export function OfferOverlayModal() {
 
         setActiveOffer(selected);
 
-        // Check if user already dismissed this specific offer overlay in this session
-        const isDismissed = sessionStorage.getItem(
-          `aura_offer_dismissed_${selected.id}`,
-        );
-        if (!isDismissed) {
-          setTimeout(() => {
-            setIsOpen(true);
-            try {
-              sessionStorage.setItem(`aura_offer_shown_${selected.id}`, "true");
-            } catch {}
-          }, 500);
-        }
+        // Offer is available; floating trigger pill will be visible.
+        // Modal opens on user interaction via floating pill to preserve fast page loading and clean UX.
       }
     }
 
