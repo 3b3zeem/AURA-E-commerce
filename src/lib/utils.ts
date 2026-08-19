@@ -6,10 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+  if (typeof amount !== 'number' || isNaN(amount)) return '0 EGP';
+  return new Intl.NumberFormat('en-EG', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
+    currency: 'EGP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

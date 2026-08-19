@@ -156,20 +156,20 @@ export async function POST(req: NextRequest) {
 
         if (hasBudgetOverrun) {
           return {
-            reply: `عذراً، لا تتوفر خيارات تحت **$${maxBudget}** بالضبط في هذه الفئة، ولكن إليك أرخص المنتجات المتاحة القريبة من ميزانيتك:\n\n**${bestProduct.name}** بسعر **$${bestProduct.price}**.`,
+            reply: `عذراً، لا تتوفر خيارات تحت **${maxBudget} EGP** بالضبط في هذه الفئة، ولكن إليك أرخص المنتجات المتاحة القريبة من ميزانيتك:\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.`,
             recommendedProducts: topProducts,
           };
         }
 
         if (maxBudget !== null) {
           return {
-            reply: `إليك أفضل الاقتراحات المناسبة لميزانيتك (تحت **$${maxBudget}**):\n\n**${bestProduct.name}** بسعر **$${bestProduct.price}**.\n\nتفضل باستعراض القائمة وإضافتها لسلتك:`,
+            reply: `إليك أفضل الاقتراحات المناسبة لميزانيتك (تحت **${maxBudget} EGP**):\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.\n\nتفضل باستعراض القائمة وإضافتها لسلتك:`,
             recommendedProducts: topProducts,
           };
         }
 
         return {
-          reply: `إليك أفضل اقتراحات AURA المناسبة لطلبك:\n\n**${bestProduct.name}** بسعر **$${bestProduct.price}**.\n\nتأمل المنتجات التالية وأضف ما يناسبك للسلة:`,
+          reply: `إليك أفضل اقتراحات AURA المناسبة لطلبك:\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.\n\nتأمل المنتجات التالية وأضف ما يناسبك للسلة:`,
           recommendedProducts: topProducts,
         };
       }
