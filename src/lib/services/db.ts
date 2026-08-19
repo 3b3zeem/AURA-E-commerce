@@ -1127,3 +1127,23 @@ export async function setOverlayFeaturedOffer(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// ==========================================
+// 14. ANALYTICS & VISITOR SERVICES (Admin)
+// ==========================================
+
+export async function getAdminAnalytics(
+  timeframe: "today" | "7d" | "30d" | "all" = "7d"
+): Promise<any> {
+  try {
+    const res = await fetch(`/api/admin/analytics?timeframe=${timeframe}`, {
+      cache: "no-store",
+      headers: ADMIN_HEADERS,
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+

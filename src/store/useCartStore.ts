@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CartItem, Product } from '@/types';
 import { useUserStore } from '@/store/useUserStore';
+import { trackAddToCart } from '@/lib/analytics/tracker';
 
 interface CartState {
   items: CartItem[];
@@ -47,6 +48,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       };
       set({ items: [...currentItems, newItem], isOpen: true });
     }
+
+    // Analytics event track
+    try {
+      trackAddToCart(product.id, product.name, product.price);
+    } catch {}
 
     // Sync to Supabase DB for persistent recommendations & cart state
     const userId = useUserStore.getState().profile?.id || 'guest-session';

@@ -50,9 +50,12 @@ import { AdminPromoTab } from "@/components/admin/AdminPromoTab";
 import { AdminTrendingTab } from "@/components/admin/AdminTrendingTab";
 import { AdminAddressesTab } from "@/components/admin/AdminAddressesTab";
 import { AdminAnalyticsTab } from "@/components/admin/AdminAnalyticsTab";
+import { AdminCustomerServiceTab } from "@/components/admin/AdminCustomerServiceTab";
 import { AdminModals } from "@/components/admin/AdminModals";
 
 const ALL_ADMIN_TABS: AdminTab[] = [
+  "analytics",
+  "support",
   "products",
   "offers",
   "newsletter",
@@ -64,12 +67,11 @@ const ALL_ADMIN_TABS: AdminTab[] = [
   "trending",
   "addresses",
   "promos",
-  "analytics",
 ];
 
 export default function AdminDashboardPage() {
   const { profile, setProfile } = useUserStore();
-  const [activeTab, setActiveTab] = useState<AdminTab>("products");
+  const [activeTab, setActiveTab] = useState<AdminTab>("analytics");
 
   const isAdmin = profile?.role === "admin";
 
@@ -159,40 +161,75 @@ export default function AdminDashboardPage() {
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
 
-  // Load live data from Supabase DB on mount
-  const refreshData = async () => {
-    setLoading(true);
-    const [prods, cats, stors, usrs, ords, trend, addrs, prmos, offs, subs] =
-      await Promise.all([
-        getProducts(),
-        getCategories(),
-        getStories(),
-        getUsersFromDb(),
-        getOrdersFromDb(),
-        getAdminTrendingSearches(),
-        getAdminAddresses(),
-        getAdminPromoCodes(),
-        getOffers(),
-        getNewsletterSubscribers(),
-      ]);
-
-    setProductsList(prods);
-    setCategoriesList(cats);
-    setStoriesList(stors);
-    setUsersList(usrs);
-    setOrdersList(ords);
-    setTrendingList(trend);
-    setAddressesList(addrs);
-    setPromosList(prmos);
-    setOffersList(offs);
-    setSubscribersList(subs);
-
-    if (cats.length > 0) setNewProdCategory(cats[0].id);
-    setLoading(false);
+  // Lazy load data for the active tab only
+  const loadTabData = async (tab: AdminTab, isInitial = false) => {
+    if (isInitial && loading) setLoading(true);
+    try {
+      switch (tab) {
+        case "products": {
+          const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
+          setProductsList(prods);
+          setCategoriesList(cats);
+          if (cats.length > 0 && !newProdCategory) setNewProdCategory(cats[0].id);
+          break;
+        }
+        case "categories": {
+          const cats = await getCategories();
+          setCategoriesList(cats);
+          break;
+        }
+        case "stories": {
+          const stors = await getStories();
+          setStoriesList(stors);
+          break;
+        }
+        case "users": {
+          const usrs = await getUsersFromDb();
+          setUsersList(usrs);
+          break;
+        }
+        case "orders": {
+          const ords = await getOrdersFromDb();
+          setOrdersList(ords);
+          break;
+        }
+        case "trending": {
+          const trend = await getAdminTrendingSearches();
+          setTrendingList(trend);
+          break;
+        }
+        case "addresses": {
+          const addrs = await getAdminAddresses();
+          setAddressesList(addrs);
+          break;
+        }
+        case "promos": {
+          const prmos = await getAdminPromoCodes();
+          setPromosList(prmos);
+          break;
+        }
+        case "offers": {
+          const [offs, prods] = await Promise.all([getOffers(), getProducts()]);
+          setOffersList(offs);
+          setProductsList(prods);
+          break;
+        }
+        case "newsletter": {
+          const subs = await getNewsletterSubscribers();
+          setSubscribersList(subs);
+          break;
+        }
+      }
+    } finally {
+      if (isInitial) setLoading(false);
+    }
   };
+
+  const refreshData = () => loadTabData(activeTab, false);
 
   const changeTab = (tab: AdminTab) => {
     setActiveTab(tab);
+    loadTabData(tab, false);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", tab);
@@ -207,13 +244,22 @@ export default function AdminDashboardPage() {
       const tabFromUrl = params.get("tab") as AdminTab;
       if (tabFromUrl && ALL_ADMIN_TABS.includes(tabFromUrl)) {
         setActiveTab(tabFromUrl);
+        loadTabData(tabFromUrl, true);
+      } else {
+        loadTabData("products", true);
       }
+    } else {
+      loadTabData("products", true);
     }
   }, []);
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    const handleSilentRefresh = () => loadTabData(activeTab, false);
+    window.addEventListener("aura_data_changed", handleSilentRefresh);
+    return () => {
+      window.removeEventListener("aura_data_changed", handleSilentRefresh);
+    };
+  }, [activeTab]);
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -284,7 +330,7 @@ export default function AdminDashboardPage() {
 
     try {
       setIsSubmitting(true);
-      await createProductInDb({
+      const res = await createProductInDb({
         name: newProdName,
         description: newProdDesc || "Premium Monochrome AURA item.",
         price: parseFloat(newProdPrice),
@@ -317,10 +363,12 @@ export default function AdminDashboardPage() {
         return_policy: newProdReturnPolicy || undefined,
       });
 
-      showNotification(
-        `Product "${newProdName}" added successfully to Supabase!`,
-      );
-      await refreshData();
+      if (res) {
+        setProductsList((prev) => [res, ...prev]);
+        showNotification(
+          `Product "${newProdName}" added successfully to Supabase!`,
+        );
+      }
 
       setNewProdName("");
       setNewProdDesc("");
@@ -355,8 +403,10 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateProductInDb(editingProduct.id, editingProduct);
       if (res) {
+        setProductsList((prev) =>
+          prev.map((p) => (p.id === res.id ? res : p))
+        );
         showNotification(`Product "${editingProduct.name}" updated!`);
-        await refreshData();
         setEditingProduct(null);
       }
     } finally {
@@ -408,11 +458,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete this Product?", async () => {
       try {
         setActionLoadingId(id);
-        const success = await deleteProductInDb(id);
-        if (success) {
-          setProductsList((prev) => prev.filter((p) => p.id !== id));
-          showNotification("Product removed from database.");
-        }
+        setProductsList((prev) => prev.filter((p) => p.id !== id));
+        showNotification("Product removed from database.");
+        await deleteProductInDb(id);
       } finally {
         setActionLoadingId(null);
       }
@@ -441,8 +489,8 @@ export default function AdminDashboardPage() {
       });
 
       if (newCat) {
+        setCategoriesList((prev) => [...prev, newCat]);
         showNotification(`Category "${newCatName}" added to database!`);
-        await refreshData();
       }
 
       setNewCatName("");
@@ -463,8 +511,10 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateCategoryInDb(editingCategory.id, editingCategory);
       if (res) {
+        setCategoriesList((prev) =>
+          prev.map((c) => (c.id === res.id ? res : c))
+        );
         showNotification(`Category "${editingCategory.name}" updated!`);
-        await refreshData();
         setEditingCategory(null);
       }
     } finally {
@@ -476,13 +526,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete this Category?", async () => {
       try {
         setActionLoadingId(id);
-        const success = await deleteCategoryInDb(id);
-        if (success) {
-          showNotification("Category deleted successfully.");
-          await refreshData();
-        } else {
-          showNotification("Failed to delete category.");
-        }
+        setCategoriesList((prev) => prev.filter((c) => c.id !== id));
+        showNotification("Category deleted successfully.");
+        await deleteCategoryInDb(id);
       } finally {
         setActionLoadingId(null);
       }
@@ -502,8 +548,8 @@ export default function AdminDashboardPage() {
         newStoryImg,
       );
       if (newStor) {
+        setStoriesList((prev) => [newStor, ...prev]);
         showNotification(`Campaign Story "${newStoryTitle}" published!`);
-        await refreshData();
       }
 
       setNewStoryTitle("");
@@ -521,8 +567,10 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateStoryInDb(editingStory.id, editingStory);
       if (res) {
+        setStoriesList((prev) =>
+          prev.map((s) => (s.id === res.id ? res : s))
+        );
         showNotification(`Story "${editingStory.title}" updated!`);
-        await refreshData();
         setEditingStory(null);
       }
     } finally {
@@ -534,11 +582,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete this Campaign Story?", async () => {
       try {
         setActionLoadingId(id);
-        const success = await deleteStoryInDb(id);
-        if (success) {
-          showNotification("Story removed from database.");
-          await refreshData();
-        }
+        setStoriesList((prev) => prev.filter((s) => s.id !== id));
+        showNotification("Story removed from database.");
+        await deleteStoryInDb(id);
       } finally {
         setActionLoadingId(null);
       }
@@ -550,11 +596,11 @@ export default function AdminDashboardPage() {
     try {
       setActionLoadingId(user.id);
       const newRole = user.role === "admin" ? "customer" : "admin";
-      const success = await updateUserRoleInDb(user.id, newRole);
-      if (success) {
-        showNotification(`Updated role for ${user.full_name} to ${newRole}`);
-        await refreshData();
-      }
+      setUsersList((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+      );
+      showNotification(`Updated role for ${user.full_name} to ${newRole}`);
+      await updateUserRoleInDb(user.id, newRole);
     } finally {
       setActionLoadingId(null);
     }
@@ -564,11 +610,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete this User Profile?", async () => {
       try {
         setActionLoadingId(userId);
-        const success = await deleteUserInDb(userId);
-        if (success) {
-          showNotification("User account removed.");
-          await refreshData();
-        }
+        setUsersList((prev) => prev.filter((u) => u.id !== userId));
+        showNotification("User account removed.");
+        await deleteUserInDb(userId);
       } finally {
         setActionLoadingId(null);
       }
@@ -579,13 +623,13 @@ export default function AdminDashboardPage() {
   const handleOrderStatusChange = async (orderId: string, status: string) => {
     try {
       setActionLoadingId(orderId);
-      const success = await updateOrderStatusInDb(orderId, status);
-      if (success) {
-        showNotification(
-          `Order #${orderId.slice(0, 8)} status updated to ${status}`,
-        );
-        await refreshData();
-      }
+      setOrdersList((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+      );
+      showNotification(
+        `Order #${orderId.slice(0, 8)} status updated to ${status}`,
+      );
+      await updateOrderStatusInDb(orderId, status);
     } finally {
       setActionLoadingId(null);
     }
@@ -595,27 +639,23 @@ export default function AdminDashboardPage() {
     confirmWithToast(`Delete Order #${orderId.slice(0, 8)}?`, async () => {
       try {
         setActionLoadingId(orderId);
-        const success = await deleteOrderInDb(orderId);
-        if (success) {
-          toast.success(`Order #${orderId.slice(0, 8)} removed successfully`, {
-            style: {
-              background: "#0f172a",
-              color: "#ffffff",
-              borderRadius: "0px",
-              fontSize: "12px",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-              border: "1px solid #1e293b",
-            },
-            iconTheme: {
-              primary: "#10b981",
-              secondary: "#ffffff",
-            },
-          });
-          await refreshData();
-        } else {
-          toast.error("Failed to remove order from database");
-        }
+        setOrdersList((prev) => prev.filter((o) => o.id !== orderId));
+        toast.success(`Order #${orderId.slice(0, 8)} removed successfully`, {
+          style: {
+            background: "#0f172a",
+            color: "#ffffff",
+            borderRadius: "0px",
+            fontSize: "12px",
+            fontWeight: "bold",
+            textTransform: "uppercase",
+            border: "1px solid #1e293b",
+          },
+          iconTheme: {
+            primary: "#10b981",
+            secondary: "#ffffff",
+          },
+        });
+        await deleteOrderInDb(orderId);
       } catch (err: any) {
         toast.error(err?.message || "Failed to remove order");
       } finally {
@@ -645,13 +685,13 @@ export default function AdminDashboardPage() {
       });
 
       if (res) {
+        setOffersList((prev) => [res, ...prev]);
         showNotification(`Offer bundle "${newOfferTitle}" created successfully!`);
         setIsAddOfferOpen(false);
         setNewOfferTitle("");
         setNewOfferSub("");
         setNewOfferDesc("");
         setNewOfferSelectedProductIds([]);
-        await refreshData();
       }
     } finally {
       setIsSubmitting(false);
@@ -666,9 +706,11 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateOfferInDb(editingOffer.id, editingOffer);
       if (res) {
+        setOffersList((prev) =>
+          prev.map((o) => (o.id === res.id ? res : o))
+        );
         showNotification(`Offer bundle "${editingOffer.title}" updated!`);
         setEditingOffer(null);
-        await refreshData();
       }
     } finally {
       setIsSubmitting(false);
@@ -679,11 +721,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete this Offer bundle?", async () => {
       try {
         setActionLoadingId(id);
-        const success = await deleteOfferInDb(id);
-        if (success) {
-          showNotification("Offer bundle deleted.");
-          await refreshData();
-        }
+        setOffersList((prev) => prev.filter((o) => o.id !== id));
+        showNotification("Offer bundle deleted.");
+        await deleteOfferInDb(id);
       } finally {
         setActionLoadingId(null);
       }
@@ -697,6 +737,17 @@ export default function AdminDashboardPage() {
 
     try {
       setIsSubmitting(true);
+      const newTrendItem = {
+        id: 'trend_' + Date.now(),
+        query: newTrendingQuery,
+        search_count: 1,
+        created_at: new Date().toISOString(),
+      };
+      setTrendingList((prev) => [newTrendItem, ...prev]);
+      showNotification(`Added "${newTrendingQuery}" to Trending Searches!`);
+      setNewTrendingQuery("");
+      setIsAddTrendingOpen(false);
+
       await fetch("/api/admin/trending-searches", {
         method: "POST",
         headers: {
@@ -705,11 +756,6 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({ query: newTrendingQuery }),
       });
-
-      showNotification(`Added "${newTrendingQuery}" to Trending Searches!`);
-      setNewTrendingQuery("");
-      setIsAddTrendingOpen(false);
-      await refreshData();
     } finally {
       setIsSubmitting(false);
     }
@@ -719,11 +765,9 @@ export default function AdminDashboardPage() {
     confirmWithToast("Delete Search Keyword?", async () => {
       try {
         setActionLoadingId(id);
-        const success = await deleteTrendingSearch(id);
-        if (success) {
-          toast.success("Search term removed");
-          await refreshData();
-        }
+        setTrendingList((prev) => prev.filter((t) => t.id !== id));
+        toast.success("Search term removed");
+        await deleteTrendingSearch(id);
       } finally {
         setActionLoadingId(null);
       }
@@ -751,7 +795,7 @@ export default function AdminDashboardPage() {
       {/* ADMIN HEADER */}
       <AdminHeader isAdmin={isAdmin} onMakeMeAdmin={handleMakeMeAdmin} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <div className="px-4 sm:px-6 pt-6">
         {/* TAB NAVIGATION GRID */}
         <AdminTabsNav
           activeTab={activeTab}
@@ -890,6 +934,8 @@ export default function AdminDashboardPage() {
             ordersCount={ordersList.length}
           />
         )}
+
+        {activeTab === "support" && <AdminCustomerServiceTab />}
       </div>
 
       {/* ALL CREATE & EDIT MODALS */}

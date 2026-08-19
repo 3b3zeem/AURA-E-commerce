@@ -25,6 +25,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useUserStore } from '@/store/useUserStore';
+import { useUserOrders } from '@/hooks/useStoreData';
 import toast from 'react-hot-toast';
 
 function OrderTrackingContent() {
@@ -32,9 +33,10 @@ function OrderTrackingContent() {
   const queryId = searchParams.get('id') || searchParams.get('orderId') || '';
 
   const [searchQuery, setSearchQuery] = useState(queryId);
+  const { profile } = useUserStore();
+  const { data: fetchedOrders = [], isLoading: loading } = useUserOrders(profile?.id);
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [updating, setUpdating] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -47,53 +49,24 @@ function OrderTrackingContent() {
     phone: '',
   });
 
-  const { profile } = useUserStore();
-
-  // Load all user orders from DB
-  const loadOrders = async () => {
-    setLoading(true);
-    setErrorMsg('');
-    try {
-      const endpoint = profile?.id ? `/api/orders?userId=${profile.id}` : '/api/orders';
-      const res = await fetch(endpoint);
-      if (res.ok) {
-        const orders = await res.json();
-        if (Array.isArray(orders)) {
-          setUserOrders(orders);
-
-          // Find target order if queryId exists, otherwise default to latest order
-          if (queryId) {
-            const cleanTarget = queryId.trim().toLowerCase();
-            const found = orders.find((o: any) => {
-              const idStr = String(o.id || '').toLowerCase();
-              const formatted = idStr.length > 8 ? `ord-${idStr.slice(0, 6)}` : idStr;
-              const phone = String(o.shipping_address?.phone || '').toLowerCase();
-              return idStr.includes(cleanTarget) || formatted.includes(cleanTarget) || phone.includes(cleanTarget);
-            });
-
-            if (found) {
-              setActiveOrder(found);
-              setSearchQuery(queryId);
-            } else if (orders.length > 0) {
-              setActiveOrder(orders[0]);
-            } else {
-              setErrorMsg('No order found matching your search.');
-            }
-          } else if (orders.length > 0) {
-            setActiveOrder(orders[0]);
-          }
-        }
-      }
-    } catch {
-      setErrorMsg('Failed to load orders. Please try refreshing.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadOrders();
-  }, [queryId, profile?.id]);
+    if (fetchedOrders.length > 0) {
+      setUserOrders(fetchedOrders);
+      if (queryId) {
+        const cleanTarget = queryId.trim().toLowerCase();
+        const found = fetchedOrders.find((o: any) => {
+          const idStr = String(o.id || '').toLowerCase();
+          const formatted = idStr.length > 8 ? `ord-${idStr.slice(0, 6)}` : idStr;
+          const phone = String(o.shipping_address?.phone || '').toLowerCase();
+          return idStr.includes(cleanTarget) || formatted.includes(cleanTarget) || phone.includes(cleanTarget);
+        });
+        if (found) setActiveOrder(found);
+        else setActiveOrder(fetchedOrders[0]);
+      } else {
+        setActiveOrder(fetchedOrders[0]);
+      }
+    }
+  }, [fetchedOrders, queryId]);
 
   const executeCancelOrder = async () => {
     if (!activeOrder) return;

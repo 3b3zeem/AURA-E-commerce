@@ -1,32 +1,58 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, use } from 'react';
-import Link from 'next/link';
-import { getProductById, getProducts } from '@/lib/services/db';
-import { Product } from '@/types';
-import { formatPrice, calculateDiscountPercentage } from '@/lib/utils';
-import { ProductTabs } from '@/components/product/ProductTabs';
-import { ProductBundleWizard } from '@/components/product/ProductBundleWizard';
-import { useCartStore } from '@/store/useCartStore';
-import { useUserStore } from '@/store/useUserStore';
-import { Star, Heart, ShoppingBag, Share2, Check, ShieldCheck, Truck, ArrowLeft, RefreshCw, Zap } from 'lucide-react';
-import { ExpressBuyModal } from '@/components/checkout/ExpressBuyModal';
+import React, { useState, useEffect, use } from "react";
+import Link from "next/link";
+import { getProductById, getProducts } from "@/lib/services/db";
+import { Product } from "@/types";
+import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
+import { ProductTabs } from "@/components/product/ProductTabs";
+import { ProductBundleWizard } from "@/components/product/ProductBundleWizard";
+import { ProductCard } from "@/components/product/ProductCard";
+import { useCartStore } from "@/store/useCartStore";
+import { useUserStore } from "@/store/useUserStore";
+import {
+  Star,
+  Heart,
+  ShoppingBag,
+  Share2,
+  Check,
+  ShieldCheck,
+  Truck,
+  ArrowLeft,
+  RefreshCw,
+  Zap,
+} from "lucide-react";
+import { ExpressBuyModal } from "@/components/checkout/ExpressBuyModal";
+import { trackProductView } from "@/lib/analytics/tracker";
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState('');
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState<
+    Record<string, string>
+  >({});
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
   const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
 
   const { addItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useUserStore();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [productId]);
 
   useEffect(() => {
     async function loadProduct() {
@@ -38,12 +64,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       if (prod) {
         setProduct(prod);
-        setSelectedImage(prod.images[0] || '');
+        setSelectedImage(prod.images[0] || "");
         const initialVariants: Record<string, string> = {};
         prod.variants?.forEach((v: any) => {
           if (v.options.length > 0) initialVariants[v.name] = v.options[0];
         });
         setSelectedVariants(initialVariants);
+
+        // Track product view event
+        try {
+          trackProductView(prod.id, prod.name, prod.price);
+        } catch {}
       }
       if (Array.isArray(catalog)) {
         setAllProducts(catalog);
@@ -57,7 +88,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center text-slate-900 font-sans space-y-4">
         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-slate-900" />
-        <p className="text-xs uppercase font-bold text-slate-600">Loading Product Details...</p>
+        <p className="text-xs uppercase font-bold text-slate-600">
+          Loading Product Details...
+        </p>
       </div>
     );
   }
@@ -65,8 +98,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center text-slate-900 font-sans space-y-4">
-        <h1 className="text-2xl font-black uppercase text-slate-900">Product Not Found</h1>
-        <Link href="/products" className="px-6 py-3 bg-slate-900 text-white font-bold text-xs uppercase border border-slate-800 inline-block hover:bg-black transition-colors">
+        <h1 className="text-2xl font-black uppercase text-slate-900">
+          Product Not Found
+        </h1>
+        <Link
+          href="/products"
+          className="px-6 py-3 bg-slate-900 text-white font-bold text-xs uppercase border border-slate-800 inline-block hover:bg-black transition-colors"
+        >
           Return to Catalog
         </Link>
       </div>
@@ -79,7 +117,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     : 0;
 
   const handleShare = () => {
-    if (typeof window !== 'undefined' && navigator.clipboard) {
+    if (typeof window !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -88,21 +126,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="w-full min-h-screen bg-[#f8fafc] px-4 sm:px-6 lg:px-8 py-8 space-y-12 text-slate-900 font-sans">
-      
       {/* Breadcrumb / Back button */}
       <div className="flex items-center space-x-2 text-xs text-slate-600 uppercase font-bold">
-        <Link href="/products" className="hover:text-slate-900 flex items-center gap-1 transition-colors">
+        <Link
+          href="/products"
+          className="hover:text-slate-900 flex items-center gap-1 transition-colors"
+        >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Catalog
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-slate-600">{product.category?.name || 'Products'}</span>
+        <span className="text-slate-600">
+          {product.category?.name || "Products"}
+        </span>
         <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-black truncate">{product.name}</span>
+        <span className="text-slate-900 font-black truncate">
+          {product.name}
+        </span>
       </div>
 
       {/* Main Grid: Gallery & Info */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
         {/* Left Column: Image Gallery with Left Side Thumbnails */}
         <div className="flex flex-col-reverse sm:flex-row gap-4 items-start">
           {/* Left: Vertical Thumbnails Column */}
@@ -114,11 +157,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   onClick={() => setSelectedImage(img)}
                   className={`w-16 h-16 sm:w-20 sm:h-20 bg-white border transition-all flex-shrink-0 cursor-pointer overflow-hidden ${
                     selectedImage === img
-                      ? 'border-slate-900 border-2 shadow-sm scale-105'
-                      : 'border-slate-200 opacity-60 hover:opacity-100'
+                      ? "border-slate-900 border-2 shadow-sm scale-105"
+                      : "border-slate-200 opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={img} alt={`${product.name} thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`${product.name} thumbnail ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -143,12 +190,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-6">
           <div className="space-y-2 border-b border-slate-200 pb-6">
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
-              {product.category?.name || 'Hardware'}
+              {product.category?.name || "Hardware"}
             </span>
             <h1 className="text-2xl sm:text-4xl font-black uppercase text-slate-900 tracking-tight leading-tight">
               {product.name}
             </h1>
-            <p className="text-xs text-slate-600 leading-relaxed">{product.description}</p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {product.description}
+            </p>
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {product.target_gender && (
@@ -172,11 +221,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 fill-current mr-1" />
-                <span className="text-xs font-bold text-slate-900">{product.rating_avg}</span>
+                <span className="text-xs font-bold text-slate-900">
+                  {product.rating_avg}
+                </span>
               </div>
-              <span className="text-xs text-slate-500 uppercase">({product.reviews_count} Verified Reviews)</span>
+              <span className="text-xs text-slate-500 uppercase">
+                ({product.reviews_count} Verified Reviews)
+              </span>
               <span className="text-xs text-slate-300">•</span>
-              
+
               {/* Intelligent Stock Alert Indicator */}
               {product.stock > 5 ? (
                 <span className="text-xs text-emerald-600 font-bold uppercase flex items-center gap-1.5">
@@ -198,7 +251,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Pricing */}
           <div className="flex items-baseline space-x-4">
-            <span className="text-3xl font-black text-slate-900 font-mono">{formatPrice(product.price)}</span>
+            <span className="text-3xl font-black text-slate-900 font-mono">
+              {formatPrice(product.price)}
+            </span>
             {product.original_price && (
               <span className="text-base line-through text-slate-400 font-mono">
                 {formatPrice(product.original_price)}
@@ -211,16 +266,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="space-y-4 pt-4 border-t border-slate-200">
               {product.variants.map((v) => (
                 <div key={v.name} className="space-y-2">
-                  <span className="text-xs font-bold text-slate-700 uppercase block">{v.name}:</span>
+                  <span className="text-xs font-bold text-slate-700 uppercase block">
+                    {v.name}:
+                  </span>
                   <div className="flex flex-wrap gap-2">
                     {v.options.map((opt) => (
                       <button
                         key={opt}
-                        onClick={() => setSelectedVariants({ ...selectedVariants, [v.name]: opt })}
+                        onClick={() =>
+                          setSelectedVariants({
+                            ...selectedVariants,
+                            [v.name]: opt,
+                          })
+                        }
                         className={`px-3 py-1.5 text-xs font-bold uppercase border transition-all cursor-pointer ${
                           selectedVariants[v.name] === opt
-                            ? 'bg-slate-900 text-white border-slate-800'
-                            : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900 hover:text-slate-900'
+                            ? "bg-slate-900 text-white border-slate-800"
+                            : "bg-white text-slate-700 border-slate-300 hover:border-slate-900 hover:text-slate-900"
                         }`}
                       >
                         {opt}
@@ -244,7 +306,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 >
                   -
                 </button>
-                <span className="px-4 text-xs font-mono font-bold text-slate-900">{quantity}</span>
+                <span className="px-4 text-xs font-mono font-bold text-slate-900">
+                  {quantity}
+                </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
                   className="w-9 h-full flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold cursor-pointer transition-colors"
@@ -278,13 +342,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 onClick={() => toggleWishlist(product.id)}
                 className={`flex-1 h-10 px-4 border text-xs font-bold uppercase flex items-center justify-center space-x-2 transition-colors cursor-pointer ${
                   isLiked
-                    ? 'bg-rose-600 text-white border-rose-500'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                    ? "bg-rose-600 text-white border-rose-500"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                 }`}
                 title="Add to Wishlist"
               >
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                <span className="text-[11px]">{isLiked ? 'Wishlisted' : 'Wishlist'}</span>
+                <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+                <span className="text-[11px]">
+                  {isLiked ? "Wishlisted" : "Wishlist"}
+                </span>
               </button>
 
               <button
@@ -295,7 +361,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-600" />
-                    <span className="text-[11px] text-emerald-600">Copied!</span>
+                    <span className="text-[11px] text-emerald-600">
+                      Copied!
+                    </span>
                   </>
                 ) : (
                   <>
@@ -307,34 +375,80 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-            {/* Guarantees */}
-            <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 text-xs uppercase text-slate-600 font-bold">
-              <div className="flex items-center space-x-2">
-                <Truck className="w-4 h-4 text-slate-900" />
-                <span>Express Delivery</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <ShieldCheck className="w-4 h-4 text-slate-900" />
-                <span>2-Year Hardware Warranty</span>
-              </div>
+          {/* Guarantees */}
+          <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 text-xs uppercase text-slate-600 font-bold">
+            <div className="flex items-center space-x-2">
+              <Truck className="w-4 h-4 text-slate-900" />
+              <span>Express Delivery</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <ShieldCheck className="w-4 h-4 text-slate-900" />
+              <span>2-Year Hardware Warranty</span>
             </div>
           </div>
         </div>
-
-        {/* Frequently Bought Together / Bundle Savings Wizard */}
-        <ProductBundleWizard currentProduct={product} allProducts={allProducts} />
-
-        {/* Tabs: Specifications & Customer Reviews */}
-        <ProductTabs product={product} />
-
-        {/* Express Buy Modal */}
-        <ExpressBuyModal
-          product={product}
-          quantity={quantity}
-          selectedVariants={selectedVariants}
-          isOpen={isExpressModalOpen}
-          onClose={() => setIsExpressModalOpen(false)}
-        />
       </div>
+
+      {/* Frequently Bought Together / Bundle Savings Wizard */}
+      <ProductBundleWizard currentProduct={product} allProducts={allProducts} />
+
+      {/* Tabs: Specifications & Customer Reviews */}
+      <ProductTabs product={product} />
+
+      {/* Similar / Related Products Section */}
+      {(() => {
+        const similarProducts = allProducts
+          .filter(
+            (p) =>
+              p.id !== product.id &&
+              (p.category_id === product.category_id ||
+                p.category?.name === product.category?.name),
+          )
+          .slice(0, 4);
+
+        const fallbackProducts =
+          similarProducts.length > 0
+            ? similarProducts
+            : allProducts.filter((p) => p.id !== product.id).slice(0, 4);
+
+        if (fallbackProducts.length === 0) return null;
+
+        return (
+          <div className="pt-8 border-t border-slate-200 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                  Curated Recommendations
+                </span>
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                  Similar & Related Products
+                </h2>
+              </div>
+              <Link
+                href="/products"
+                className="text-xs font-mono font-bold text-slate-700 hover:text-slate-900 uppercase underline"
+              >
+                View All Catalog
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+              {fallbackProducts.map((simProd) => (
+                <ProductCard key={simProd.id} product={simProd} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Express Buy Modal */}
+      <ExpressBuyModal
+        product={product}
+        quantity={quantity}
+        selectedVariants={selectedVariants}
+        isOpen={isExpressModalOpen}
+        onClose={() => setIsExpressModalOpen(false)}
+      />
+    </div>
   );
 }

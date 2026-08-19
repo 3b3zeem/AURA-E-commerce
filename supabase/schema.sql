@@ -403,3 +403,113 @@ CREATE POLICY "Anyone can subscribe to newsletter" ON public.newsletter_subscrib
 CREATE POLICY "Everyone can select newsletter" ON public.newsletter_subscribers FOR SELECT USING (true);
 CREATE POLICY "Everyone can manage newsletter subscribers" ON public.newsletter_subscribers FOR ALL USING (true);
 
+-- =======================================================
+-- 16. ANALYTICS & VISITOR EVENTS TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+    id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    path TEXT NOT NULL,
+    page_title TEXT,
+    visitor_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    device_type TEXT DEFAULT 'Desktop',
+    browser TEXT,
+    os TEXT,
+    meta JSONB DEFAULT '{}'::jsonb NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON public.analytics_events(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_visitor ON public.analytics_events(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON public.analytics_events(event_type);
+
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can insert analytics events" ON public.analytics_events;
+DROP POLICY IF EXISTS "Everyone can view analytics events" ON public.analytics_events;
+
+CREATE POLICY "Anyone can insert analytics events" ON public.analytics_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "Everyone can view analytics events" ON public.analytics_events FOR SELECT USING (true);
+
+-- =======================================================
+-- 17. ADMIN NOTIFICATIONS TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    user_email TEXT,
+    amount NUMERIC,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_read ON public.admin_notifications(read);
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_created ON public.admin_notifications(created_at DESC);
+
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can insert admin notifications" ON public.admin_notifications;
+DROP POLICY IF EXISTS "Everyone can manage admin notifications" ON public.admin_notifications;
+
+CREATE POLICY "Anyone can insert admin notifications" ON public.admin_notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Everyone can manage admin notifications" ON public.admin_notifications FOR ALL USING (true);
+
+-- =======================================================
+-- 18. CUSTOMER SUPPORT TICKETS TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.support_tickets (
+    id TEXT PRIMARY KEY,
+    ticket_code TEXT NOT NULL,
+    user_identity TEXT NOT NULL,
+    user_email TEXT,
+    subject TEXT NOT NULL,
+    status TEXT DEFAULT 'open' NOT NULL, -- 'open', 'in_progress', 'solved', 'closed'
+    assigned_admin_email TEXT,
+    assigned_admin_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON public.support_tickets(status);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON public.support_tickets(user_identity);
+
+-- =======================================================
+-- 19. CUSTOMER SUPPORT MESSAGES TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.support_messages (
+    id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL REFERENCES public.support_tickets(id) ON DELETE CASCADE,
+    sender_type TEXT NOT NULL, -- 'user', 'admin'
+    sender_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_messages_ticket ON public.support_messages(ticket_id);
+
+-- =======================================================
+-- 20. ADMIN STATUS TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.admin_status (
+    admin_email TEXT PRIMARY KEY,
+    admin_name TEXT NOT NULL,
+    status TEXT DEFAULT 'offline' NOT NULL, -- 'available', 'busy', 'offline'
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.support_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_status ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Everyone manage support_tickets" ON public.support_tickets FOR ALL USING (true);
+CREATE POLICY "Everyone manage support_messages" ON public.support_messages FOR ALL USING (true);
+CREATE POLICY "Everyone manage admin_status" ON public.admin_status FOR ALL USING (true);
+
+
+
+

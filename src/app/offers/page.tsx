@@ -1,31 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Zap, Sparkles, ShoppingBag, Clock, ShieldCheck, CheckCircle2, ArrowRight, Tag, Mail } from "lucide-react";
 import { Offer } from "@/types";
-import { getOffers, subscribeNewsletter } from "@/lib/services/db";
+import { subscribeNewsletter } from "@/lib/services/db";
+import { useOffers } from "@/hooks/useStoreData";
 import { useCartStore } from "@/store/useCartStore";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function OffersPage() {
-  const [offersList, setOffersList] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: offersList = [], isLoading: loading } = useOffers();
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
 
   const { addItem, openCart } = useCartStore();
-
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const data = await getOffers();
-      setOffersList(data);
-      setLoading(false);
-    }
-    loadData();
-  }, []);
 
   const handleAddBundleToCart = (offer: Offer) => {
     setAddingId(offer.id);

@@ -52,6 +52,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message || 'Subscription failed' }, { status: 400 });
     }
 
+    // Broadcast notification to Admin
+    try {
+      const notifUrl = new URL("/api/admin/notifications", req.url).toString();
+      await fetch(notifUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "newsletter",
+          title: "New Newsletter Subscriber",
+          message: `Subscriber registered: ${cleanEmail}`,
+          userEmail: cleanEmail,
+        }),
+      });
+    } catch {}
+
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Subscription failed' }, { status: 500 });

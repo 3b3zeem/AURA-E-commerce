@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { getUserAddresses, createUserAddress, verifyPromoCode, createOrderInDb } from '@/lib/services/db';
 import { UserAddress } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { trackPurchaseCompleted } from '@/lib/analytics/tracker';
 import {
   Truck,
   CreditCard,
@@ -261,6 +262,11 @@ export default function CheckoutPage() {
       console.log('=== REAL GENERATED ORDER ID ===', realId);
 
       setPlacedOrderId(realId);
+
+      // Track purchase event for analytics
+      try {
+        trackPurchaseCompleted(realId, finalTotal, items.length);
+      } catch {}
 
       if (pointsDeducted > 0) {
         addLoyaltyPoints(-pointsDeducted);

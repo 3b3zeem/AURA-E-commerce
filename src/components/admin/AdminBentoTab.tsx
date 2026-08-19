@@ -6,6 +6,8 @@ import { BentoItem, BentoBoxType } from '@/types';
 import { createBentoItemInDb, updateBentoItemInDb, deleteBentoItemInDb } from '@/lib/services/db';
 
 
+import { useBentoItems } from '@/hooks/useStoreData';
+
 interface AdminBentoTabProps {
   bentoList?: BentoItem[];
   onRefresh?: () => void;
@@ -15,37 +17,17 @@ interface AdminBentoTabProps {
 
 export function AdminBentoTab({ bentoList, onRefresh, onNotify, onFileUpload }: AdminBentoTabProps) {
   const toast = onNotify || ((msg: string) => console.log(msg));
-  const [items, setItems] = useState<BentoItem[]>(bentoList || []);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: fetchedBentoItems = [], isLoading, refetch } = useBentoItems();
+  const items = fetchedBentoItems.length > 0 ? fetchedBentoItems : bentoList || [];
+
   const [editingItem, setEditingItem] = useState<BentoItem | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchItems = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch('/api/bento', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setItems(data);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch bento items:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
-
   const handleRefresh = () => {
-    fetchItems();
+    refetch();
     if (onRefresh) onRefresh();
   };
 

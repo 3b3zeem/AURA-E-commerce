@@ -18,6 +18,8 @@ import { Product, Review } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { useUserStore } from '@/store/useUserStore';
 
+import { useProductReviews, useAddReviewMutation } from '@/hooks/useStoreData';
+
 interface ProductTabsProps {
   product: Product;
 }
@@ -26,71 +28,34 @@ type TabType = 'overview' | 'specs' | 'usage' | 'shipping' | 'reviews';
 
 export function ProductTabs({ product }: ProductTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const { profile, addLoyaltyPoints } = useUserStore();
 
-  useEffect(() => {
-    async function loadReviews() {
-      try {
-        const res = await fetch(`/api/reviews?productId=${product.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) setReviews(data);
-        }
-      } catch {}
-    }
-    if (product?.id) loadReviews();
-  }, [product?.id]);
-
+  const { data: reviews = [] } = useProductReviews(product?.id || '');
+  const addReviewMutation = useAddReviewMutation();
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState(false);
 
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const newRev: Review = {
-      id: `rev-${Date.now()}`,
-      product_id: product.id,
-      user_id: profile?.id || 'guest',
-      profile: profile || {
-        id: 'guest',
-        email: 'user@aura.com',
-        full_name: 'Verified Customer',
-        avatar_url: null,
-        phone: null,
-        role: 'customer',
-        loyalty_points: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      rating: newRating,
-      comment: newComment,
-      created_at: new Date().toISOString(),
-    };
+    if (profile?.id) {
+      try {
+        await addReviewMutation.mutateAsync({
+          product_id: product.id,
+          user_id: profile.id,
+          rating: newRating,
+          comment: newComment,
+        });
+      } catch {}
+    }
 
-    setReviews([newRev, ...reviews]);
     setNewComment('');
     addLoyaltyPoints(25);
     setReviewSuccessMsg(true);
     setTimeout(() => setReviewSuccessMsg(false), 4000);
-
-    if (profile?.id) {
-      try {
-        await fetch('/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            product_id: product.id,
-            user_id: profile.id,
-            rating: newRating,
-            comment: newComment,
-          }),
-        });
-      } catch {}
-    }
   };
 
   const defaultFaqs = [
@@ -183,7 +148,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
             {product.key_benefits && (
               <div className="p-4 bg-amber-50 border border-amber-200 text-slate-900 space-y-1">
                 <h5 className="font-black uppercase text-amber-950 flex items-center gap-1.5 text-xs">
-                  💡 Key Benefit:
+                  Key Benefit:
                 </h5>
                 <p className="text-xs font-bold text-amber-900">{product.key_benefits}</p>
               </div>
@@ -193,7 +158,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
             {product.highlights && product.highlights.length > 0 && (
               <div className="p-5 bg-slate-900 text-white rounded-none border border-slate-800 space-y-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                  ⚡ Key Product Highlights:
+                  Key Product Highlights:
                 </h4>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium">
                   {product.highlights.map((item, idx) => (
@@ -258,7 +223,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
           <div className="space-y-6 max-w-3xl">
             <div className="p-5 bg-indigo-50 border border-indigo-200 text-slate-900 space-y-2">
               <h5 className="font-black uppercase text-indigo-950 flex items-center gap-1.5 text-xs">
-                📖 Usage & Application Guide:
+                Usage & Application Guide:
               </h5>
               <p className="text-xs font-medium text-indigo-900 leading-relaxed">
                 {product.usage_instructions || 'استخدم المنتج طبقاً لإرشادات التشغيل المرفقة في الكتالوج لضمان الأداء الفائق والنتائج المباشرة.'}
@@ -267,7 +232,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
 
             <div className="p-5 bg-slate-50 border border-slate-200 text-slate-900 space-y-2">
               <h5 className="font-black uppercase text-slate-950 flex items-center gap-1.5 text-xs">
-                🧼 Storage & Maintenance Tips:
+                Storage & Maintenance Tips:
               </h5>
               <p className="text-xs font-medium text-slate-700 leading-relaxed">
                 {product.care_instructions || 'يحفظ في مكان جاف بعيداً عن درجات الحرارة المباشرة. يفضل تنظيف الأسطح بقطعة قماش ناعمة للحفاظ على جودة وسلاسة التصنيع.'}

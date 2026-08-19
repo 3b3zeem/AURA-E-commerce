@@ -24,6 +24,7 @@ import { useUserStore } from "@/store/useUserStore";
 import { getCategories, getUserAddresses } from "@/lib/services/db";
 import { Category, UserAddress } from "@/types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { UserNotificationCenter } from "@/components/layout/UserNotificationCenter";
 
 export function Navbar() {
   const { getTotalItems, openCart } = useCartStore();
@@ -49,9 +50,13 @@ export function Navbar() {
   }, [mobileMenuOpen]);
 
   const { setProfile, setToken } = useUserStore();
+  const syncedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     async function syncUserData(userId: string) {
+      if (!userId || syncedUserIdRef.current === userId) return;
+      syncedUserIdRef.current = userId;
+
       try {
         const [cartRes, wishRes] = await Promise.all([
           fetch(`/api/cart?userId=${userId}`),
@@ -143,6 +148,7 @@ export function Navbar() {
               setToken(null);
               useUserStore.getState().clearUser();
               useCartStore.getState().setItems([]);
+              syncedUserIdRef.current = null;
               return;
             }
             if (session) {
@@ -151,28 +157,6 @@ export function Navbar() {
             if (session?.user) {
               const u = session.user;
               syncUserData(u.id);
-              const gName = u.user_metadata?.full_name || u.user_metadata?.name;
-              const gAvatar =
-                u.user_metadata?.avatar_url || u.user_metadata?.picture;
-
-              const { data: pData } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", u.id)
-                .single();
-
-              setProfile({
-                id: u.id,
-                email: u.email || "",
-                full_name:
-                  pData?.full_name || gName || u.email?.split("@")[0] || "User",
-                avatar_url: pData?.avatar_url || gAvatar || null,
-                phone: pData?.phone || null,
-                role: pData?.role || "customer",
-                loyalty_points: pData?.loyalty_points || 100,
-                created_at: pData?.created_at || new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
             }
           },
         );
@@ -195,9 +179,11 @@ export function Navbar() {
     loadCategories();
   }, []);
 
+  const profileId = profile?.id;
+
   useEffect(() => {
     async function fetchUserAddress() {
-      if (profile) {
+      if (profileId) {
         const addrs = await getUserAddresses();
         if (Array.isArray(addrs) && addrs.length > 0) {
           const def = addrs.find((a: UserAddress) => a.is_default) || addrs[0];
@@ -219,16 +205,20 @@ export function Navbar() {
     return () => {
       window.removeEventListener("aura_data_changed", handleDataChange);
     };
-  }, [profile]);
+  }, [profileId]);
 
   // Search States
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [trendingSearches, setTrendingSearches] = useState<string[]>([]);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const hasFetchedTrendingRef = useRef(false);
 
-  // Load Trending from API
+  // Lazy load Trending ONLY when search input is clicked/focused
   useEffect(() => {
+    if (!isSearchFocused || hasFetchedTrendingRef.current) return;
+    hasFetchedTrendingRef.current = true;
+
     async function fetchTrending() {
       try {
         const res = await fetch("/api/trending-searches");
@@ -246,7 +236,7 @@ export function Navbar() {
       }
     }
     fetchTrending();
-  }, []);
+  }, [isSearchFocused]);
 
   // Click Outside to close search dropdown
   useEffect(() => {
@@ -626,6 +616,9 @@ export function Navbar() {
             <span className="text-[10px] text-slate-500">Returns</span>
             <span className="text-xs font-bold text-slate-900">& Orders</span>
           </Link>
+
+          {/* USER NOTIFICATION CENTER BELL */}
+          <UserNotificationCenter />
 
           {/* Cart Icon & Counter */}
           <button

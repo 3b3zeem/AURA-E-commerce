@@ -1,38 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { getCategories, getProducts } from '@/lib/services/db';
-import { Category, Product } from '@/types';
+import { useCategories, useProducts } from '@/hooks/useStoreData';
 import { ArrowRight, Layers, RefreshCw, FolderX } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function CategoriesShowcasePage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      const cats = await getCategories();
-      const prods = await getProducts();
-      setCategories(cats);
-      setProducts(prods);
-      setLoading(false);
-    }
-    loadData();
-
-    const handleDataChanged = () => {
-      loadData();
-    };
-
-    window.addEventListener("aura_data_changed", handleDataChanged);
-    window.addEventListener("focus", handleDataChanged);
-    return () => {
-      window.removeEventListener("aura_data_changed", handleDataChanged);
-      window.removeEventListener("focus", handleDataChanged);
-    };
-  }, []);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const loading = categoriesLoading || productsLoading;
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-10 space-y-10 bg-white text-black font-sans">
@@ -66,7 +43,7 @@ export default function CategoriesShowcasePage() {
           actionHref="/products"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {categories.map((cat) => {
             const catProducts = products.filter((p) => p.category_id === cat.id);
 

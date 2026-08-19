@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useBentoItems } from '@/hooks/useStoreData';
 import {
   Sparkles,
   Zap,
@@ -17,25 +18,7 @@ import {
 import { BentoItem } from '@/types';
 
 export function BentoGridHero() {
-  const [bentoItems, setBentoItems] = useState<BentoItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadBento() {
-      try {
-        const res = await fetch('/api/bento');
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) setBentoItems(data);
-        }
-      } catch (err) {
-        console.error('Failed to load Bento grid:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadBento();
-  }, []);
+  const { data: bentoItems = [], isLoading } = useBentoItems();
 
   const spotlight = bentoItems.find((i) => i.box_type === 'spotlight');
   const flash = bentoItems.find((i) => i.box_type === 'flash_deals');
@@ -43,7 +26,7 @@ export function BentoGridHero() {
   const categories = bentoItems.find((i) => i.box_type === 'categories');
 
   // Don't render section if no items loaded yet
-  if (loading) {
+  if (isLoading) {
     return (
       <section className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-center h-48 text-slate-400">

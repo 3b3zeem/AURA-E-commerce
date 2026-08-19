@@ -12,10 +12,12 @@ import {
   BarChart3,
   LayoutGrid,
   Tag,
+  Headset,
 } from "lucide-react";
 
 export type AdminTab =
   | "analytics"
+  | "support"
   | "offers"
   | "newsletter"
   | "bento"
@@ -60,9 +62,13 @@ export function AdminTabsNav({
   subscribersCount = 2,
 }: AdminTabsNavProps) {
   const tabsList = [
+    { id: "analytics", label: "Analytics", count: null, icon: BarChart3 },
+    { id: "support", label: "Customer Service", count: null, icon: Headset },
+    { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "products", label: "Products", count: productsCount, icon: Package },
     { id: "offers", label: "Offers/Bundles", count: offersCount, icon: Tag },
-    { id: "newsletter", label: "Newsletter", count: subscribersCount, icon: Sparkles },
+    { id: "trending", label: "Trending", count: trendingCount, icon: Flame },
+    { id: "promos", label: "Coupons", count: promosCount, icon: Tag },
     { id: "orders", label: "Orders", count: ordersCount, icon: ShoppingBag },
     {
       id: "categories",
@@ -70,18 +76,20 @@ export function AdminTabsNav({
       count: categoriesCount,
       icon: Layers,
     },
-    { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "bento", label: "Bento CMS", count: bentoCount, icon: LayoutGrid },
-    { id: "promos", label: "Coupons", count: promosCount, icon: Tag },
     { id: "stories", label: "Stories", count: storiesCount, icon: Sparkles },
-    { id: "trending", label: "Trending", count: trendingCount, icon: Flame },
+    {
+      id: "newsletter",
+      label: "Newsletter",
+      count: subscribersCount,
+      icon: Sparkles,
+    },
     {
       id: "addresses",
       label: "Addresses",
       count: addressesCount,
       icon: MapPin,
     },
-    { id: "analytics", label: "Analytics", count: null, icon: BarChart3 },
   ];
 
   return (

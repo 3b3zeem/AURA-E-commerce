@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { getProducts, getStories, getCategories } from '@/lib/services/db';
-import { Product, Story, Category } from '@/types';
+import { useProducts, useStories, useCategories } from '@/hooks/useStoreData';
 import { StoryHero } from '@/components/home/StoryHero';
 import { BentoGridHero } from '@/components/home/BentoGridHero';
 import { FlashDeals } from '@/components/home/FlashDeals';
@@ -13,35 +12,9 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      const prods = await getProducts();
-      const stors = await getStories();
-      const cats = await getCategories();
-
-      setProducts(prods);
-      setStories(stors);
-      setCategories(cats);
-      setLoading(false);
-    }
-    loadData();
-
-    const handleDataChanged = () => {
-      loadData();
-    };
-
-    window.addEventListener("aura_data_changed", handleDataChanged);
-    window.addEventListener("focus", handleDataChanged);
-    return () => {
-      window.removeEventListener("aura_data_changed", handleDataChanged);
-      window.removeEventListener("focus", handleDataChanged);
-    };
-  }, []);
+  const { data: products = [] } = useProducts();
+  const { data: stories = [] } = useStories();
+  const { data: categories = [] } = useCategories();
 
   const flashDealProducts = products.filter((p) => p.is_flash_deal);
   const featuredProducts = products.filter((p) => p.is_featured);
@@ -57,10 +30,10 @@ export default function HomePage() {
       {/* 3. Flash Deals Section with Live Countdown */}
       <FlashDeals products={flashDealProducts.length > 0 ? flashDealProducts : products.slice(0, 3)} />
 
-      {/* 4. Recommended Products Section (Powered by Supabase AI Engine) */}
+      {/* 5. Recommended Products Section (Powered by Supabase AI Engine) */}
       <RecommendedProductsSection />
 
-      {/* 5. Category Grid Showcase */}
+      {/* 6. Category Grid Showcase */}
       <CategoryGrid categories={categories} />
 
       {/* 4. Trending Innovations Showcase */}

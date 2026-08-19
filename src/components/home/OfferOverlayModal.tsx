@@ -179,12 +179,12 @@ export function OfferOverlayModal() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-4xl max-h-[90vh] sm:max-h-[calc(100vh-4rem)] bg-white border-2 border-slate-900 z-10 text-slate-900 font-sans my-auto overflow-y-auto sm:overflow-hidden rounded-sm"
+              className="relative w-full max-w-2xl max-h-[calc(100vh-4rem)] md:max-h-[90vh] bg-white border-2 border-slate-900 z-10 text-slate-900 font-sans my-auto"
             >
               {/* Close Button */}
               <button
                 onClick={handleClose}
-                className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 p-1.5 sm:p-2 bg-slate-900/90 hover:bg-slate-900 text-white rounded-full transition-colors cursor-pointer shadow-lg border border-slate-700"
+                className="absolute -top-12 -right-12 sm:top-3 sm:right-3 z-30 p-1.5 sm:p-2 bg-slate-900/90 hover:bg-slate-900 text-white rounded-full transition-colors cursor-pointer shadow-lg border border-slate-700"
                 title="Close"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />

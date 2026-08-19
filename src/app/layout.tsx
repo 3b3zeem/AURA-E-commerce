@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
+import { Suspense } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { AIChatWidget } from "@/components/ai/AIChatWidget";
 import { OfferOverlayModal } from "@/components/home/OfferOverlayModal";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -77,6 +79,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { QueryProvider } from "@/providers/QueryProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -101,12 +105,17 @@ export default function RootLayout({
             }),
           }}
         />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <CartDrawer />
-        <AIChatWidget />
-        <OfferOverlayModal />
+        <QueryProvider>
+          <Suspense fallback={null}>
+            <AnalyticsTracker />
+          </Suspense>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <CartDrawer />
+          <AIChatWidget />
+          <OfferOverlayModal />
+        </QueryProvider>
       </body>
     </html>
   );

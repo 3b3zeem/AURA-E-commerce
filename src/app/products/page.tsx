@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { getProducts, getCategories } from "@/lib/services/db";
-import { Product, Category } from "@/types";
+import { useProducts, useCategories, useRecommendationsQuery } from "@/hooks/useStoreData";
+import { useUserStore } from "@/store/useUserStore";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { ProductsTopBar } from "@/components/products/ProductsTopBar";
 import { ProductsGrid } from "@/components/products/ProductsGrid";
@@ -25,9 +25,9 @@ const BADGES = [
 function ProductsContent() {
   const searchParams = useSearchParams();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const loading = productsLoading || categoriesLoading;
 
   // Advanced Filter States
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -37,7 +37,6 @@ function ProductsContent() {
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [flashDealsOnly, setFlashDealsOnly] = useState<boolean>(false);
   const [recommendedOnly, setRecommendedOnly] = useState<boolean>(false);
-  const [recommendedProductIds, setRecommendedProductIds] = useState<string[]>([]);
   const [selectedBadge, setSelectedBadge] = useState<string>("all");
   const [sortBy, setSortBy] = useState<
     "featured" | "price-asc" | "price-desc" | "rating" | "newest"
@@ -53,29 +52,9 @@ function ProductsContent() {
   const [visibleCount, setVisibleCount] = useState<number>(BATCH_SIZE);
   const [isBatchLoading, setIsBatchLoading] = useState<boolean>(false);
 
-  // Fetch Recommended Product IDs from Supabase API
-  useEffect(() => {
-    async function fetchRecommendedIds() {
-      try {
-        let userId = 'guest-session';
-        if (typeof window !== 'undefined') {
-          const userStr = localStorage.getItem('aura-user-storage');
-          if (userStr) {
-            const parsed = JSON.parse(userStr);
-            if (parsed?.state?.profile?.id) userId = parsed.state.profile.id;
-          }
-        }
-        const res = await fetch(`/api/recommendations?userId=${userId}`);
-        if (res.ok) {
-          const recs = await res.json();
-          if (Array.isArray(recs)) {
-            setRecommendedProductIds(recs.map((r: any) => r.id));
-          }
-        }
-      } catch {}
-    }
-    fetchRecommendedIds();
-  }, []);
+  const { profile } = useUserStore();
+  const { data: recsList = [] } = useRecommendationsQuery(profile?.id || '');
+  const recommendedProductIds = useMemo(() => recsList.map((r: any) => r.id), [recsList]);
 
   // Read URL search params & SessionStorage on mount
   useEffect(() => {
@@ -103,31 +82,11 @@ function ProductsContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    async function loadData() {
-      const prods = await getProducts();
-      const cats = await getCategories();
-      setProducts(prods);
-      setCategories(cats);
-
-      if (prods.length > 0) {
-        const highestPrice = Math.max(...prods.map((p) => p.price));
-        setMaxPrice(Math.ceil(highestPrice));
-      }
-      setLoading(false);
+    if (products.length > 0) {
+      const highestPrice = Math.max(...products.map((p) => p.price));
+      setMaxPrice(Math.ceil(highestPrice));
     }
-    loadData();
-
-    const handleDataChanged = () => {
-      loadData();
-    };
-
-    window.addEventListener("aura_data_changed", handleDataChanged);
-    window.addEventListener("focus", handleDataChanged);
-    return () => {
-      window.removeEventListener("aura_data_changed", handleDataChanged);
-      window.removeEventListener("focus", handleDataChanged);
-    };
-  }, []);
+  }, [products]);
 
   const updateVisibleCount = (newCount: number) => {
     setVisibleCount(newCount);
