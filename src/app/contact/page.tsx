@@ -172,7 +172,13 @@ export default function ContactPage() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
+                data-webmcp-form="contact-support-form"
+                data-webmcp-name="Contact Support Form"
+                data-webmcp-action="submit_support_ticket"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold uppercase text-slate-700 block">Your Full Name *</label>

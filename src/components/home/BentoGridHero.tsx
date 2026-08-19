@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useBentoItems } from '@/hooks/useStoreData';
+import React from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useBentoItems } from "@/hooks/useStoreData";
 import {
   Sparkles,
   Zap,
@@ -14,38 +14,81 @@ import {
   RotateCcw,
   CheckCircle2,
   Loader2,
-} from 'lucide-react';
-import { BentoItem } from '@/types';
+} from "lucide-react";
+import { BentoItem } from "@/types";
 
 export function BentoGridHero() {
   const { data: bentoItems = [], isLoading } = useBentoItems();
 
-  const spotlight = bentoItems.find((i) => i.box_type === 'spotlight');
-  const flash = bentoItems.find((i) => i.box_type === 'flash_deals');
-  const guarantee = bentoItems.find((i) => i.box_type === 'guarantee');
-  const categories = bentoItems.find((i) => i.box_type === 'categories');
+  const fallbackSpotlight: BentoItem = {
+    id: "default-spotlight",
+    box_type: "spotlight",
+    title: "AURA CYBERHEADSET PRO '28",
+    subtitle: "NEXT-GEN PLANAR ACOUSTICS",
+    description:
+      "Beryllium-coated 50mm dynamic drivers with 48kHz lossless wireless streaming & magnetic ear cushions.",
+    image_url:
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=75",
+    cta_text: "EXPLORE HEADSET",
+    cta_link: "/products",
+    badge_text: "STAR SPOTLIGHT",
+    display_order: 1,
+    is_active: true,
+  };
 
-  // Don't render section if no items loaded yet
-  if (isLoading) {
-    return (
-      <section className="w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-12 font-sans min-h-[580px]">
-        <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
-          <div className="h-4 w-64 bg-slate-200 dark:bg-slate-800 animate-pulse" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 auto-rows-[280px]">
-          <div className="lg:col-span-2 lg:row-span-2 bg-slate-900 animate-pulse border border-slate-800" />
-          <div className="bg-slate-900 animate-pulse border border-slate-800" />
-          <div className="bg-slate-900 animate-pulse border border-slate-800" />
-        </div>
-      </section>
-    );
-  }
+  const fallbackFlash: BentoItem = {
+    id: "default-flash",
+    box_type: "flash_deals",
+    title: "DAILY TECH DROPS",
+    description: "Limited flagship drops refreshed every 24 hours.",
+    image_url:
+      "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=500&q=75",
+    cta_text: "CLAIM DEAL",
+    cta_link: "/products",
+    badge_text: "LIMITED DROP",
+    discount_percentage: 25,
+    display_order: 2,
+    is_active: true,
+  };
 
-  if (bentoItems.length === 0) return null;
+  const fallbackGuarantee: BentoItem = {
+    id: "default-guarantee",
+    box_type: "guarantee",
+    title: "THE AURA HARDWARE PROMISE",
+    description: "Direct 2-year warranty replacement & 24/7 concierge.",
+    cta_text: "OUR PROMISE",
+    cta_link: "/about",
+    badge_text: "VERIFIED",
+    display_order: 3,
+    is_active: true,
+  };
+
+  const fallbackCategories: BentoItem = {
+    id: "default-categories",
+    box_type: "categories",
+    title: "EXPLORE AUDIO & TECH CATALOG",
+    description:
+      "Browse flagship planar headphones, IEM monitors & smart workstation gear.",
+    image_url:
+      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=75",
+    cta_text: "BROWSE ALL",
+    cta_link: "/products",
+    badge_text: "CATALOG",
+    display_order: 4,
+    is_active: true,
+  };
+
+  const spotlight =
+    bentoItems.find((i) => i.box_type === "spotlight") || fallbackSpotlight;
+  const flash =
+    bentoItems.find((i) => i.box_type === "flash_deals") || fallbackFlash;
+  const guarantee =
+    bentoItems.find((i) => i.box_type === "guarantee") || fallbackGuarantee;
+  const categories =
+    bentoItems.find((i) => i.box_type === "categories") || fallbackCategories;
 
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-12 font-sans">
-
       {/* Section Label */}
       <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center space-x-2">
@@ -61,7 +104,6 @@ export function BentoGridHero() {
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 auto-rows-[280px]">
-
         {/* SPOTLIGHT — 2×2 */}
         {spotlight && (
           <motion.div
@@ -84,7 +126,7 @@ export function BentoGridHero() {
             <div className="absolute top-6 left-6 z-10">
               <span className="px-3 py-1.5 bg-slate-900/90 text-white border border-slate-700 text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 backdrop-blur-md">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>{spotlight.badge_text || 'STAR SPOTLIGHT'}</span>
+                <span>{spotlight.badge_text || "STAR SPOTLIGHT"}</span>
               </span>
             </div>
 
@@ -104,10 +146,10 @@ export function BentoGridHero() {
               )}
               <div className="pt-2">
                 <Link
-                  href={spotlight.cta_link || '/products'}
+                  href={spotlight.cta_link || "/products"}
                   className="inline-flex items-center space-x-2 px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 font-black text-xs uppercase tracking-wider border border-white transition-all transform hover:-translate-y-0.5 shadow-lg"
                 >
-                  <span>{spotlight.cta_text || 'SHOP NOW'}</span>
+                  <span>{spotlight.cta_text || "SHOP NOW"}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -135,7 +177,7 @@ export function BentoGridHero() {
             <div className="relative z-10 flex items-center justify-between">
               <span className="px-2.5 py-1 bg-amber-400 text-slate-900 text-[10px] font-black uppercase tracking-wider flex items-center space-x-1">
                 <Zap className="w-3 h-3 fill-slate-900 animate-bounce" />
-                <span>{flash.badge_text || 'LIMITED DROP'}</span>
+                <span>{flash.badge_text || "LIMITED DROP"}</span>
               </span>
               {flash.discount_percentage && (
                 <span className="font-mono text-xs font-black text-amber-400 bg-slate-950/80 px-2 py-0.5 border border-amber-400/30">
@@ -148,12 +190,14 @@ export function BentoGridHero() {
               <h3 className="text-lg font-black uppercase text-white tracking-tight leading-snug">
                 {flash.title}
               </h3>
-              <p className="text-xs text-slate-300 line-clamp-2">{flash.description}</p>
+              <p className="text-xs text-slate-300 line-clamp-2">
+                {flash.description}
+              </p>
               <Link
-                href={flash.cta_link || '/products?flash=true'}
+                href={flash.cta_link || "/products?flash=true"}
                 className="inline-flex items-center space-x-2 pt-2 text-xs font-bold text-amber-400 hover:text-amber-300 uppercase tracking-wider group-hover:underline"
               >
-                <span>{flash.cta_text || 'CLAIM DEAL'}</span>
+                <span>{flash.cta_text || "CLAIM DEAL"}</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -174,7 +218,7 @@ export function BentoGridHero() {
               </div>
               <span className="text-[10px] font-mono font-black text-emerald-950 bg-emerald-100 px-2 py-0.5 border border-emerald-300 uppercase flex items-center space-x-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-800" />
-                <span>{guarantee.badge_text || 'VERIFIED'}</span>
+                <span>{guarantee.badge_text || "VERIFIED"}</span>
               </span>
             </div>
 
@@ -199,10 +243,10 @@ export function BentoGridHero() {
             </div>
 
             <Link
-              href={guarantee.cta_link || '/about'}
+              href={guarantee.cta_link || "/about"}
               className="inline-flex items-center justify-between pt-2 border-t border-slate-100 text-xs font-bold text-slate-900 uppercase tracking-wider"
             >
-              <span>{guarantee.cta_text || 'OUR PROMISE'}</span>
+              <span>{guarantee.cta_text || "OUR PROMISE"}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
@@ -227,28 +271,29 @@ export function BentoGridHero() {
             <div className="relative z-10 space-y-2 max-w-lg">
               <span className="px-2.5 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider inline-flex items-center space-x-1">
                 <Grid className="w-3 h-3 text-white" />
-                <span>{categories.badge_text || 'CATALOG'}</span>
+                <span>{categories.badge_text || "CATALOG"}</span>
               </span>
               <h3 className="text-xl sm:text-2xl font-black uppercase text-slate-900 tracking-tight leading-tight">
                 {categories.title}
               </h3>
               {categories.description && (
-                <p className="text-xs text-slate-600 leading-relaxed">{categories.description}</p>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {categories.description}
+                </p>
               )}
             </div>
 
             <div className="relative z-10 flex-shrink-0 w-full sm:w-auto">
               <Link
-                href={categories.cta_link || '/products'}
+                href={categories.cta_link || "/products"}
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 px-6 py-3.5 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider border border-slate-900 transition-all transform hover:-translate-y-0.5 shadow-md"
               >
-                <span>{categories.cta_text || 'BROWSE ALL'}</span>
+                <span>{categories.cta_text || "BROWSE ALL"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </motion.div>
         )}
-
       </div>
     </section>
   );

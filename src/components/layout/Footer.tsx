@@ -230,7 +230,13 @@ export function Footer() {
           <p className="text-xs text-slate-600">
             Subscribe for early access to product drops and release alerts.
           </p>
-          <form onSubmit={handleSubscribe} className="flex space-x-2">
+          <form
+            onSubmit={handleSubscribe}
+            className="flex space-x-2"
+            data-webmcp-form="newsletter-subscribe-form"
+            data-webmcp-name="Newsletter Subscription Form"
+            data-webmcp-action="subscribe_newsletter"
+          >
             <input
               type="email"
               placeholder="Your email address..."
