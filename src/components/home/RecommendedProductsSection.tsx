@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '@/types';
 import { useUserStore } from '@/store/useUserStore';
 import { useCartStore } from '@/store/useCartStore';
-import { useRecommendationsQuery } from '@/hooks/useStoreData';
+import { useRecommendationsQuery, useProducts } from '@/hooks/useStoreData';
 import { ExpressBuyModal } from '@/components/checkout/ExpressBuyModal';
 import { formatPrice } from '@/lib/utils';
 import {
@@ -178,12 +178,14 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
 export function RecommendedProductsSection() {
   const [showAll, setShowAll] = useState(false);
   const profile = useUserStore((state) => state.profile);
-
-  const { data: products = [], isLoading: loading } = useRecommendationsQuery(
+  const { data: allProducts = [] } = useProducts();
+  const { data: recommendations = [], isLoading: loading } = useRecommendationsQuery(
     profile?.id || ''
   );
 
-  if (loading) {
+  const products = recommendations.length > 0 ? recommendations : allProducts.slice(0, 5);
+
+  if (loading && allProducts.length === 0) {
     return (
       <div className="w-full py-14 px-4 sm:px-6 lg:px-8 bg-slate-900 border-t border-b border-slate-800 font-sans min-h-[400px]">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -201,7 +203,9 @@ export function RecommendedProductsSection() {
     );
   }
 
-  if (!products || products.length === 0) return null;
+  if (!products || products.length === 0) {
+    return null;
+  }
 
   const visibleProducts = showAll ? products : products.slice(0, 5);
 
