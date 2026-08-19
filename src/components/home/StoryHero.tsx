@@ -49,15 +49,20 @@ export function StoryHero({ stories }: StoryHeroProps) {
         </div>
       </div>
 
-      {/* Stories Horizontal Cards or Empty State */}
+      {/* Stories Horizontal Cards or Skeleton State */}
       {stories.length === 0 ? (
-        <EmptyState
-          icon={Flame}
-          title="No Active Curated Drops"
-          description="Curated drops and story collections will be available soon."
-          actionText="Explore Hardware Catalog"
-          actionHref="/products"
-        />
+        <div className="flex space-x-5 overflow-x-auto pb-4 min-h-[384px]">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 w-64 h-96 bg-slate-900 border border-slate-800 animate-pulse p-6 flex flex-col justify-end space-y-3"
+            >
+              <div className="h-4 w-20 bg-slate-800" />
+              <div className="h-6 w-40 bg-slate-800" />
+              <div className="h-3 w-28 bg-slate-800" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="flex space-x-5 overflow-x-auto pb-4">
           {stories.map((story, idx) => (

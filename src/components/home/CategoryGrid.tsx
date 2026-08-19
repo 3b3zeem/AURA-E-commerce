@@ -23,13 +23,20 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
       </div>
 
       {categories.length === 0 ? (
-        <EmptyState
-          icon={FolderX}
-          title="No Categories Available"
-          description="Categories will appear here once added to the database."
-          actionText="Browse All Products"
-          actionHref="/products"
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[320px]">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-white border border-slate-200 p-5 flex flex-col justify-between animate-pulse min-h-[300px]"
+            >
+              <div className="space-y-3">
+                <div className="h-5 w-32 bg-slate-200" />
+                <div className="w-full h-48 bg-slate-100 border border-slate-200" />
+              </div>
+              <div className="h-4 w-24 bg-slate-200 mt-2" />
+            </div>
+          ))}
+        </div>
       ) : (
         /* Amazon-style 4-column Category Card Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
