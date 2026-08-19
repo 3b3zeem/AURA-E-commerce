@@ -64,8 +64,9 @@ export function useProducts() {
     window.addEventListener('aura_data_changed', handleDataChanged);
 
     const supabase = createClient();
+    const channelId = `products_rt_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('realtime_products_query_sync')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         queryClient.invalidateQueries({ queryKey: ['products'] });
       })

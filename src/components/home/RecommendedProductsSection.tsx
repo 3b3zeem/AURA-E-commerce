@@ -113,7 +113,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
           <div className="flex items-center space-x-1 text-amber-400 text-[10px]">
             <Star className="w-3 h-3 fill-amber-400" />
             <span className="font-mono font-bold">{product.rating_avg || 4.8}</span>
-            <span className="text-slate-500">({product.reviews_count || 12})</span>
+            <span className="text-slate-400 font-medium">({product.reviews_count || 12})</span>
           </div>
 
           <h3 className="text-xs sm:text-sm font-bold uppercase text-white truncate group-hover:text-amber-400 transition-colors">
@@ -125,7 +125,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
               {formatPrice(product.price)}
             </span>
             {product.original_price && product.original_price > product.price && (
-              <span className="text-xs text-slate-500 line-through">
+              <span className="text-xs text-slate-400 line-through">
                 {formatPrice(product.original_price)}
               </span>
             )}
@@ -185,7 +185,7 @@ export function RecommendedProductsSection() {
 
   if (loading) {
     return (
-      <div className="w-full py-12 px-4 sm:px-6 lg:px-8 bg-slate-900 border-t border-b border-slate-800 font-sans">
+      <div className="w-full py-14 px-4 sm:px-6 lg:px-8 bg-slate-900 border-t border-b border-slate-800 font-sans min-h-[400px]">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="h-6 w-48 bg-slate-800 animate-pulse rounded" />
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

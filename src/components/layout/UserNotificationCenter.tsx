@@ -110,8 +110,9 @@ export function UserNotificationCenter() {
   // SUPABASE REALTIME CACHE INVALIDATION FOR NOTIFICATION CENTER
   useEffect(() => {
     const supabase = createClient();
+    const channelId = `user_notif_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel(`user_notif_center_cache_${userIdentity}`)
+      .channel(channelId)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "support_messages" },

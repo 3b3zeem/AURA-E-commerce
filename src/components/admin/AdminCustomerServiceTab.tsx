@@ -107,8 +107,9 @@ export function AdminCustomerServiceTab() {
     if (!selectedTicket?.id) return;
     const supabase = createClient();
 
+    const channelId = `admin_chat_rt_${selectedTicket.id}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel(`admin_chat_realtime_${selectedTicket.id}`)
+      .channel(channelId)
       .on(
         "postgres_changes",
         {

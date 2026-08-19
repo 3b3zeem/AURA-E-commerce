@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Tag,
   Headset,
+  BookOpen,
 } from "lucide-react";
 
 export type AdminTab =
@@ -21,6 +22,7 @@ export type AdminTab =
   | "offers"
   | "newsletter"
   | "bento"
+  | "blogs"
   | "products"
   | "orders"
   | "categories"
@@ -44,6 +46,7 @@ interface AdminTabsNavProps {
   bentoCount?: number;
   offersCount?: number;
   subscribersCount?: number;
+  blogsCount?: number;
 }
 
 export function AdminTabsNav({
@@ -60,12 +63,14 @@ export function AdminTabsNav({
   bentoCount = 4,
   offersCount = 2,
   subscribersCount = 2,
+  blogsCount = 4,
 }: AdminTabsNavProps) {
   const tabsList = [
     { id: "analytics", label: "Analytics", count: null, icon: BarChart3 },
     { id: "support", label: "Customer Service", count: null, icon: Headset },
     { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "products", label: "Products", count: productsCount, icon: Package },
+    { id: "blogs", label: "Blogs", count: blogsCount, icon: BookOpen },
     { id: "offers", label: "Offers/Bundles", count: offersCount, icon: Tag },
     { id: "trending", label: "Trending", count: trendingCount, icon: Flame },
     { id: "promos", label: "Coupons", count: promosCount, icon: Tag },

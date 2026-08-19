@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag,
@@ -330,9 +331,12 @@ export function Navbar() {
             href="/"
             className="flex items-center space-x-2 px-1 py-1 hover:opacity-95 flex-shrink-0 border border-transparent hover:border-black"
           >
-            <img
+            <Image
               src="/logo.png"
               alt="AURA Logo"
+              width={32}
+              height={32}
+              priority
               className="w-7 h-7 sm:w-8 sm:h-8 object-cover border border-slate-900"
             />
             <div className="flex flex-col">
@@ -350,12 +354,12 @@ export function Navbar() {
         {!profile ? (
           <Link
             href="/login?redirect=/addresses"
-            className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 border border-rose-300 hover:border-rose-500 bg-rose-50 cursor-pointer transition-all flex-shrink-0"
+            className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1.5 border border-rose-400 hover:border-rose-600 bg-rose-100/90 cursor-pointer transition-all flex-shrink-0"
             title="Sign In to Set Address"
           >
-            <MapPin className="w-4 h-4 text-rose-600 mt-1" />
+            <MapPin className="w-4 h-4 text-rose-800 mt-1" />
             <div className="flex flex-col text-left leading-tight">
-              <span className="text-[9px] text-rose-600 font-bold uppercase tracking-wider">
+              <span className="text-[9px] text-rose-800 font-extrabold uppercase tracking-wider">
                 Login Required
               </span>
               <span className="text-xs font-bold text-slate-900 tracking-tight">

@@ -1,15 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Sparkles, ShieldCheck, Truck, RefreshCw, Headphones, ArrowRight, Check, Tag } from 'lucide-react';
-import { useUserStore } from '@/store/useUserStore';
-import { subscribeNewsletter } from '@/lib/services/db';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import Link from "next/link";
+import {
+  Sparkles,
+  ShieldCheck,
+  Truck,
+  RefreshCw,
+  Headphones,
+  ArrowRight,
+  Check,
+  Tag,
+} from "lucide-react";
+import { useUserStore } from "@/store/useUserStore";
+import { subscribeNewsletter } from "@/lib/services/db";
+import toast from "react-hot-toast";
 
 export function Footer() {
   const { profile } = useUserStore();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,7 +31,7 @@ export function Footer() {
 
       if (res.success) {
         setSubscribed(true);
-        setEmail('');
+        setEmail("");
         toast.success(res.message || "Subscribed successfully!");
         setTimeout(() => setSubscribed(false), 4000);
       } else {
@@ -40,8 +49,12 @@ export function Footer() {
             <Truck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-900">Express Shipping</h4>
-            <p className="text-[11px] text-slate-500">Dispatch within 24 hours</p>
+            <h4 className="text-xs font-black uppercase text-slate-900">
+              Express Shipping
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              Dispatch within 24 hours
+            </p>
           </div>
         </div>
 
@@ -50,8 +63,12 @@ export function Footer() {
             <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-900">2-Year Warranty</h4>
-            <p className="text-[11px] text-slate-500">Hardware replacement protection</p>
+            <h4 className="text-xs font-black uppercase text-slate-900">
+              2-Year Warranty
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              Hardware replacement protection
+            </p>
           </div>
         </div>
 
@@ -60,7 +77,9 @@ export function Footer() {
             <RefreshCw className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-900">Hassle-Free Returns</h4>
+            <h4 className="text-xs font-black uppercase text-slate-900">
+              Hassle-Free Returns
+            </h4>
             <p className="text-[11px] text-slate-500">30 days return policy</p>
           </div>
         </div>
@@ -70,51 +89,134 @@ export function Footer() {
             <Headphones className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-900">24/7 AI Concierge</h4>
-            <p className="text-[11px] text-slate-500">Instant assistant support</p>
+            <h4 className="text-xs font-black uppercase text-slate-900">
+              24/7 AI Concierge
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              Instant assistant support
+            </p>
           </div>
         </div>
       </div>
 
       {/* Main Footer Links */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-        
         {/* Brand info */}
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 bg-slate-900 text-white flex items-center justify-center font-black border border-slate-800">
               <Sparkles className="w-5 h-5 fill-current text-white" />
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 font-mono">aura</span>
+            <span className="text-xl font-black tracking-tight text-slate-900 font-mono">
+              aura
+            </span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            High-performance hardware & smart tech accessories engineered with precision craftsmanship.
+            High-performance hardware & smart tech accessories engineered with
+            precision craftsmanship.
           </p>
         </div>
 
         {/* Links Column 1 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">Navigation</h4>
+          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+            Navigation
+          </h4>
           <ul className="space-y-2 text-xs text-slate-700 font-bold uppercase">
-            <li><Link href="/offers" className="text-amber-600 hover:text-amber-700 font-black transition-colors flex items-center gap-1.5"><Tag className="w-3.5 h-3.5 text-amber-600" /> Exclusive Offers & Bundles</Link></li>
-            <li><Link href="/products" className="hover:text-slate-900 transition-colors underline">Catalog Explorer</Link></li>
-            <li><Link href="/categories" className="hover:text-slate-900 transition-colors underline">Product Categories</Link></li>
-            <li><Link href="/order-tracking" className="hover:text-slate-900 transition-colors underline">Order Tracking</Link></li>
+            <li>
+              <Link
+                href="/offers"
+                className="text-amber-800 hover:text-amber-950 font-black transition-colors flex items-center gap-1.5"
+              >
+                <Tag className="w-3.5 h-3.5 text-amber-800" /> Exclusive Offers
+                & Bundles
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/about"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                About AURA
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/products"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Catalog Explorer
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blogs"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Journal & Blogs
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/categories"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Product Categories
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Contact & Support
+              </Link>
+            </li>
           </ul>
         </div>
 
         {/* Links Column 2 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">Customer Care</h4>
+          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+            Customer Care
+          </h4>
           <ul className="space-y-2 text-xs text-slate-700 font-bold uppercase">
             {profile && (
-              <li><Link href="/profile" className="hover:text-slate-900 transition-colors underline">User Profile</Link></li>
+              <li>
+                <Link
+                  href="/profile"
+                  className="hover:text-slate-900 transition-colors underline"
+                >
+                  User Profile
+                </Link>
+              </li>
             )}
-            <li><Link href="/cart" className="hover:text-slate-900 transition-colors underline">Shopping Cart</Link></li>
+            <li>
+              <Link
+                href="/cart"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Shopping Cart
+              </Link>
+            </li>
             {profile && (
               <>
-                <li><Link href="/addresses" className="hover:text-slate-900 transition-colors underline">Your Addresses</Link></li>
-                <li><Link href="/checkout" className="hover:text-slate-900 transition-colors underline">Checkout</Link></li>
+                <li>
+                  <Link
+                    href="/addresses"
+                    className="hover:text-slate-900 transition-colors underline"
+                  >
+                    Your Addresses
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/checkout"
+                    className="hover:text-slate-900 transition-colors underline"
+                  >
+                    Checkout
+                  </Link>
+                </li>
               </>
             )}
           </ul>
@@ -122,8 +224,12 @@ export function Footer() {
 
         {/* Newsletter */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">Newsletter</h4>
-          <p className="text-xs text-slate-600">Subscribe for early access to product drops and release alerts.</p>
+          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+            Newsletter
+          </h4>
+          <p className="text-xs text-slate-600">
+            Subscribe for early access to product drops and release alerts.
+          </p>
           <form onSubmit={handleSubscribe} className="flex space-x-2">
             <input
               type="email"
@@ -135,13 +241,21 @@ export function Footer() {
             <button
               type="submit"
               disabled={submitting}
+              aria-label="Subscribe to newsletter"
               className="px-4 bg-slate-900 text-white hover:bg-black transition-colors flex items-center justify-center border border-slate-800 cursor-pointer disabled:opacity-50"
             >
-              {subscribed ? <Check className="w-4 h-4 text-white" /> : <ArrowRight className="w-4 h-4 text-white" />}
+              <span className="sr-only">Subscribe</span>
+              {subscribed ? (
+                <Check className="w-4 h-4 text-white" />
+              ) : (
+                <ArrowRight className="w-4 h-4 text-white" />
+              )}
             </button>
           </form>
           {subscribed && (
-            <p className="text-[11px] font-bold text-emerald-600 uppercase">Subscribed successfully!</p>
+            <p className="text-[11px] font-bold text-emerald-600 uppercase">
+              Subscribed successfully!
+            </p>
           )}
         </div>
       </div>

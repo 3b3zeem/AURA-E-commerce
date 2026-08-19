@@ -27,7 +27,7 @@ export function AdminPromoTab({
 
   // Form State
   const [code, setCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState("15");
+  const [discountPercent, setDiscountPercent] = useState("");
   const [maxUses, setMaxUses] = useState("");
   const [maxUsesPerUser, setMaxUsesPerUser] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -45,7 +45,7 @@ export function AdminPromoTab({
   const openAddModal = () => {
     setEditingPromo(null);
     setCode("");
-    setDiscountPercent("15");
+    setDiscountPercent("");
     setMaxUses("");
     setMaxUsesPerUser("");
     setStartDate("");

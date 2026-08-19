@@ -510,6 +510,54 @@ CREATE POLICY "Everyone manage support_tickets" ON public.support_tickets FOR AL
 CREATE POLICY "Everyone manage support_messages" ON public.support_messages FOR ALL USING (true);
 CREATE POLICY "Everyone manage admin_status" ON public.admin_status FOR ALL USING (true);
 
+-- =======================================================
+-- 21. BLOGS & ARTICLES TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.blogs (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    summary TEXT NOT NULL,
+    content TEXT NOT NULL,
+    cover_image TEXT NOT NULL,
+    category TEXT DEFAULT 'Tech' NOT NULL,
+    author_name TEXT NOT NULL,
+    author_avatar TEXT,
+    read_time_minutes INT DEFAULT 5 NOT NULL,
+    published_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    tags TEXT[] DEFAULT '{}'::text[] NOT NULL,
+    is_featured BOOLEAN DEFAULT false NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_blogs_slug ON public.blogs(slug);
+CREATE INDEX IF NOT EXISTS idx_blogs_category ON public.blogs(category);
+CREATE INDEX IF NOT EXISTS idx_blogs_featured ON public.blogs(is_featured);
+
+ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Blogs are readable by everyone" ON public.blogs;
+DROP POLICY IF EXISTS "Everyone can manage blogs" ON public.blogs;
+
+CREATE POLICY "Blogs are readable by everyone" ON public.blogs FOR SELECT USING (true);
+CREATE POLICY "Everyone can manage blogs" ON public.blogs FOR ALL USING (true);
+
+-- =======================================================
+-- 22. BLOG CATEGORIES TABLE
+-- =======================================================
+CREATE TABLE IF NOT EXISTS public.blog_categories (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    name TEXT UNIQUE NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Blog categories readable by everyone" ON public.blog_categories FOR SELECT USING (true);
+CREATE POLICY "Everyone can manage blog_categories" ON public.blog_categories FOR ALL USING (true);
+
+
 
 
 

@@ -46,8 +46,10 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                 {/* Category Featured Image Frame */}
                 <Link href={`/products?category=${category.id}`} className="block group overflow-hidden bg-slate-50 mb-3 border border-slate-200">
                   <img
-                    src={category.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80'}
+                    src={category.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=75'}
                     alt={category.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </Link>

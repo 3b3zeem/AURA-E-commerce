@@ -80,6 +80,29 @@ export interface Story {
   created_at: string;
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  cover_image: string;
+  category: string;
+  author_name: string;
+  author_avatar?: string;
+  read_time_minutes: number;
+  published_at: string;
+  tags: string[];
+  is_featured?: boolean;
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  created_at?: string;
+}
+
 export interface WishlistItem {
   id: string;
   user_id: string;

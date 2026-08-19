@@ -32,8 +32,9 @@ import {
   updateOfferInDb,
   deleteOfferInDb,
   getNewsletterSubscribers,
+  getBlogsFromDb,
 } from "@/lib/services/db";
-import { Product, Category, Story, Profile, Offer, NewsletterSubscriber } from "@/types";
+import { Product, Category, Story, Profile, Offer, NewsletterSubscriber, BlogPost } from "@/types";
 import { CheckCircle2 } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -51,11 +52,13 @@ import { AdminTrendingTab } from "@/components/admin/AdminTrendingTab";
 import { AdminAddressesTab } from "@/components/admin/AdminAddressesTab";
 import { AdminAnalyticsTab } from "@/components/admin/AdminAnalyticsTab";
 import { AdminCustomerServiceTab } from "@/components/admin/AdminCustomerServiceTab";
+import { AdminBlogsTab } from "@/components/admin/AdminBlogsTab";
 import { AdminModals } from "@/components/admin/AdminModals";
 
 const ALL_ADMIN_TABS: AdminTab[] = [
   "analytics",
   "support",
+  "blogs",
   "products",
   "offers",
   "newsletter",
@@ -86,6 +89,7 @@ export default function AdminDashboardPage() {
   const [promosList, setPromosList] = useState<any[]>([]);
   const [offersList, setOffersList] = useState<Offer[]>([]);
   const [subscribersList, setSubscribersList] = useState<NewsletterSubscriber[]>([]);
+  const [blogsList, setBlogsList] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -101,20 +105,16 @@ export default function AdminDashboardPage() {
   // New Product Form State
   const [newProdName, setNewProdName] = useState("");
   const [newProdDesc, setNewProdDesc] = useState("");
-  const [newProdPrice, setNewProdPrice] = useState("299.99");
+  const [newProdPrice, setNewProdPrice] = useState("");
   const [newProdOrigPrice, setNewProdOrigPrice] = useState("");
-  const [newProdStock, setNewProdStock] = useState("10");
-  const [newProdBadge, setNewProdBadge] = useState("NEW");
+  const [newProdStock, setNewProdStock] = useState("");
+  const [newProdBadge, setNewProdBadge] = useState("");
   const [newProdCategory, setNewProdCategory] = useState("");
-  const [newProdImage, setNewProdImage] = useState(
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-  );
-  const [newProdImages, setNewProdImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80",
-  ]);
+  const [newProdImage, setNewProdImage] = useState("");
+  const [newProdImages, setNewProdImages] = useState<string[]>([]);
   const [newProdFeatured, setNewProdFeatured] = useState(false);
   const [newProdFlashDeal, setNewProdFlashDeal] = useState(false);
-  const [newProdBrand, setNewProdBrand] = useState("AURA Official");
+  const [newProdBrand, setNewProdBrand] = useState("");
   const [newProdSku, setNewProdSku] = useState("");
   const [newProdTargetGender, setNewProdTargetGender] = useState("unisex");
   const [newProdOriginCountry, setNewProdOriginCountry] = useState("");
@@ -137,9 +137,7 @@ export default function AdminDashboardPage() {
   // New Story Form State
   const [newStoryTitle, setNewStoryTitle] = useState("");
   const [newStorySub, setNewStorySub] = useState("");
-  const [newStoryImg, setNewStoryImg] = useState(
-    "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-  );
+  const [newStoryImg, setNewStoryImg] = useState("");
 
   // New Trending Keyword State
   const [newTrendingQuery, setNewTrendingQuery] = useState("");
@@ -217,6 +215,11 @@ export default function AdminDashboardPage() {
         case "newsletter": {
           const subs = await getNewsletterSubscribers();
           setSubscribersList(subs);
+          break;
+        }
+        case "blogs": {
+          const blgs = await getBlogsFromDb();
+          setBlogsList(blgs);
           break;
         }
       }
@@ -372,13 +375,15 @@ export default function AdminDashboardPage() {
 
       setNewProdName("");
       setNewProdDesc("");
-      setNewProdPrice("299.99");
+      setNewProdPrice("");
       setNewProdOrigPrice("");
-      setNewProdStock("10");
-      setNewProdBadge("NEW");
+      setNewProdStock("");
+      setNewProdBadge("");
       setNewProdFeatured(false);
       setNewProdFlashDeal(false);
-      setNewProdBrand("AURA Official");
+      setNewProdBrand("");
+      setNewProdImage("");
+      setNewProdImages([]);
       setNewProdSku("");
       setNewProdTargetGender("unisex");
       setNewProdOriginCountry("");
@@ -523,6 +528,37 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteCategory = async (id: string) => {
+    const targetCat = categoriesList.find((c) => c.id === id);
+    const catNameLower = (targetCat?.name || "").toLowerCase().trim();
+    const catSlugLower = (targetCat?.slug || "").toLowerCase().trim();
+
+    const assignedProducts = productsList.filter((p) => {
+      const pCatId = p.category_id || "";
+      const rawCat = typeof p.category === "string" ? p.category : p.category?.name || "";
+      const pCatName = rawCat.toLowerCase().trim();
+      return (
+        pCatId === id ||
+        (catNameLower && pCatName === catNameLower) ||
+        (catSlugLower && pCatName === catSlugLower)
+      );
+    });
+
+    if (assignedProducts.length > 0) {
+      toast.error(
+        `Cannot delete category "${targetCat?.name || "Department"}" because ${assignedProducts.length} product(s) are assigned to it.`,
+        {
+          duration: 5000,
+          style: {
+            background: "#fff1f2",
+            color: "#be123c",
+            border: "1px solid #fecdd3",
+            fontWeight: "bold",
+          },
+        }
+      );
+      return;
+    }
+
     confirmWithToast("Delete this Category?", async () => {
       try {
         setActionLoadingId(id);
@@ -810,9 +846,14 @@ export default function AdminDashboardPage() {
           promosCount={promosList.length}
           offersCount={offersList.length}
           subscribersCount={subscribersList.length}
+          blogsCount={blogsList.length}
         />
 
         {/* ACTIVE TAB CONTENTS */}
+        {activeTab === "blogs" && (
+          <AdminBlogsTab blogs={blogsList} onRefresh={refreshData} />
+        )}
+
         {activeTab === "products" && (
           <AdminProductsTab
             productsList={productsList}

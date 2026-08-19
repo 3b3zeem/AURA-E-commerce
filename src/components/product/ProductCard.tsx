@@ -147,7 +147,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-xs font-bold text-slate-800">
                 {product.rating_avg}
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] font-bold text-slate-700">
                 ({product.reviews_count})
               </span>
             </div>
@@ -161,7 +161,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   {formatPrice(product.price)}
                 </span>
                 {product.original_price && (
-                  <span className="text-[11px] text-slate-400 line-through font-mono">
+                  <span className="text-[11px] text-slate-600 font-semibold line-through font-mono">
                     {formatPrice(product.original_price)}
                   </span>
                 )}

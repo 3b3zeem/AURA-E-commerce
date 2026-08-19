@@ -123,8 +123,9 @@ export function AIChatWidget() {
     const supabase = createClient();
 
     // 1. Subscribe to Ticket updates
+    const ticketChannelId = `user_ticket_cache_${userIdentity}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const ticketChannel = supabase
-      .channel(`user_ticket_cache_${userIdentity}`)
+      .channel(ticketChannelId)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'support_tickets' },
@@ -136,8 +137,9 @@ export function AIChatWidget() {
       .subscribe();
 
     // 2. Subscribe to Messages updates (instant push <50ms)
+    const messagesChannelId = `user_messages_cache_${userIdentity}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const messagesChannel = supabase
-      .channel(`user_messages_cache_${userIdentity}`)
+      .channel(messagesChannelId)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'support_messages' },
