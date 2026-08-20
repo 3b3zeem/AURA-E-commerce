@@ -330,13 +330,43 @@ export function Navbar() {
     }
   };
 
+  // Smart Scroll Header (Hide on Scroll Down, Show on Scroll Up)
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Always show at top of page or if mobile/account dropdown/search is open
+      if (currentScrollY < 60 || mobileMenuOpen || accountDropdownOpen || isSearchFocused) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollYRef.current + 8) {
+        // Scrolling DOWN -> Hide navbar (slide up)
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollYRef.current - 8) {
+        // Scrolling UP -> Show navbar (slide down)
+        setIsVisible(true);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [mobileMenuOpen, accountDropdownOpen, isSearchFocused]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     executeSearch(searchQuery);
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full font-sans border-b border-slate-200 bg-white">
+    <header
+      className={`sticky top-0 z-50 w-full font-sans border-b border-slate-200 bg-white transition-transform duration-300 ease-in-out ${
+        isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full shadow-none pointer-events-none"
+      }`}
+    >
       {/* TOP MAIN ROW: Clean Light Header */}
       <div className="bg-white text-slate-900 px-3 sm:px-4 py-2 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 border-b border-slate-200">
         {/* 1. Mobile Menu Toggle & Brand Logo */}

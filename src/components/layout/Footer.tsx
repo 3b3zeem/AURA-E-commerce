@@ -42,6 +42,14 @@ export function Footer() {
 
   return (
     <footer className="bg-white text-slate-900 text-xs border-t border-slate-200 font-sans w-full mt-12">
+      {/* Full-width Back to Top Button */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="w-full py-3.5 bg-white hover:bg-slate-50 text-slate-900 text-xs font-bold tracking-wider text-center transition-colors cursor-pointer block border-b border-slate-200 active:bg-slate-100"
+      >
+        Back to top
+      </button>
       {/* Value Proposition Highlights */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-10 border-b border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div className="flex items-center space-x-3 p-4 bg-slate-50 border border-slate-200">
