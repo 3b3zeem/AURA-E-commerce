@@ -362,7 +362,8 @@ export function Navbar() {
   };
 
   return (
-    <header
+    <>
+      <header
       className={`sticky top-0 z-50 w-full font-sans border-b border-slate-200 bg-white transition-transform duration-300 ease-in-out ${
         isVisible ? "translate-y-0 shadow-sm" : "-translate-y-full shadow-none pointer-events-none"
       }`}
@@ -759,104 +760,111 @@ export function Navbar() {
           ))}
         </div>
       </div>
+    </header>
 
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="relative w-80 bg-white text-slate-900 h-full border-r border-slate-300 flex flex-col z-10 overflow-y-auto">
-            <div className="bg-slate-100 text-slate-900 p-4 flex items-center justify-between border-b border-slate-300">
-              <div className="flex items-center space-x-2">
-                <User className="w-6 h-6 text-slate-900" />
-                <span className="font-bold text-sm">
-                  Hello, {profile?.full_name || "Sign in"}
-                </span>
+    {/* Mobile Menu Drawer (Outside header to avoid CSS transform containing block trapping) */}
+    {mobileMenuOpen && (
+      <div className="fixed inset-0 z-[999999] flex">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+        <div className="relative w-80 max-w-[85vw] bg-white text-slate-900 h-full border-r border-slate-300 flex flex-col z-10 overflow-y-auto shadow-2xl">
+          {/* Header Bar */}
+          <div className="bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                <User className="w-4 h-4 text-white" />
               </div>
-              <button onClick={() => setMobileMenuOpen(false)}>
-                <X className="w-6 h-6 text-slate-500 hover:text-slate-900" />
-              </button>
+              <span className="font-bold text-sm text-white">
+                Hello, {profile?.full_name || "Sign in"}
+              </span>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1 hover:bg-slate-800 rounded transition-colors text-slate-400 hover:text-white cursor-pointer"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4 text-xs font-semibold text-slate-800">
+            <div>
+              <h4 className="text-slate-500 font-bold uppercase text-[11px] mb-2">
+                Shop By Department
+              </h4>
+              <div className="space-y-1">
+                <Link
+                  href="/products"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block p-2 hover:bg-slate-100 border-b border-slate-100 font-bold text-slate-900"
+                >
+                  Full Product Catalog
+                </Link>
+                {categories.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/products?category=${c.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block p-2 hover:bg-slate-100 border-b border-slate-100 text-slate-700"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </div>
             </div>
 
-            <div className="p-4 space-y-4 text-xs font-semibold text-slate-800">
-              <div>
-                <h4 className="text-slate-500 font-bold uppercase text-[11px] mb-2">
-                  Shop By Department
-                </h4>
-                <div className="space-y-2">
+            <div className="border-t border-slate-200 pt-4">
+              <h4 className="text-slate-500 font-bold uppercase text-[11px] mb-2">
+                Settings & Account
+              </h4>
+              <div className="space-y-1">
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block p-2 hover:bg-slate-100"
+                >
+                  Your Account
+                </Link>
+                <Link
+                  href="/order-tracking"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block p-2 hover:bg-slate-100"
+                >
+                  Order Tracking
+                </Link>
+                {profile?.role === "admin" && (
                   <Link
-                    href="/products"
+                    href="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block p-2 hover:bg-slate-100 border-b border-slate-200"
+                    className="block p-2 bg-slate-900 text-white font-bold my-1"
                   >
-                    Full Product Catalog
+                    Admin Dashboard
                   </Link>
-                  {categories.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/products?category=${c.id}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block p-2 hover:bg-slate-100 border-b border-slate-200"
-                    >
-                      {c.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-slate-300 pt-4">
-                <h4 className="text-slate-500 font-bold uppercase text-[11px] mb-2">
-                  Settings & Account
-                </h4>
-                <div className="space-y-2">
+                )}
+                {profile ? (
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left p-2 text-rose-600 font-bold hover:bg-rose-50 flex items-center space-x-1.5 border-t border-slate-200 mt-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                ) : (
                   <Link
-                    href="/profile"
+                    href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block p-2 hover:bg-slate-100"
+                    className="block p-2 text-slate-900 font-bold underline"
                   >
-                    Your Account
+                    Sign In / Register
                   </Link>
-                  <Link
-                    href="/order-tracking"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block p-2 hover:bg-slate-100"
-                  >
-                    Order Tracking
-                  </Link>
-                  {profile?.role === "admin" && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block p-2 bg-slate-900 text-white font-bold"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  {profile ? (
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left p-2 text-rose-600 font-bold hover:bg-rose-50 flex items-center space-x-1.5 border-t border-slate-200"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
-                  ) : (
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block p-2 text-slate-900 font-bold underline"
-                    >
-                      Sign In / Register
-                    </Link>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      )}
-    </header>
+      </div>
+    )}
+  </>
   );
 }
