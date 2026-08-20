@@ -30,15 +30,25 @@ export function OfferOverlayModal() {
 
   useEffect(() => {
     async function loadOverlayOffer() {
-      const offers = await getOffers(true);
+      let offers = await getOffers(true);
+      if (!offers || offers.length === 0) {
+        offers = await getOffers(false);
+      }
       if (offers && offers.length > 0) {
         const selected =
           offers.find((o) => o.show_in_overlay && o.is_active) || offers[0];
 
         setActiveOffer(selected);
 
-        // Offer is available; floating trigger pill will be visible.
-        // Modal opens on user interaction via floating pill to preserve fast page loading and clean UX.
+        // Auto-open entrance popup if not dismissed yet in this session
+        try {
+          const dismissed = sessionStorage.getItem(
+            `aura_offer_dismissed_${selected.id}`
+          );
+          if (!dismissed) {
+            setIsOpen(true);
+          }
+        } catch {}
       }
     }
 
@@ -190,15 +200,40 @@ export function OfferOverlayModal() {
                 </div>
 
                 {/* Countdown Timer */}
-                <div className="flex items-center space-x-1 font-bold text-[10px] sm:text-[11px] text-slate-300">
-                  <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                  <span className="hidden sm:inline">Ends in:</span>
-                  <span className="bg-slate-800 px-1.5 py-0.5 text-amber-400 font-black font-mono">
-                    {String(timeLeft.hours).padStart(2, "0")}:
-                    {String(timeLeft.minutes).padStart(2, "0")}:
-                    {String(timeLeft.seconds).padStart(2, "0")}
-                  </span>
-                </div>
+                {(() => {
+                  if (activeOffer.ends_at) {
+                    const diff = new Date(activeOffer.ends_at).getTime() - Date.now();
+                    if (diff > 0) {
+                      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                      const minutes = Math.floor((diff / 1000 / 60) % 60);
+                      const seconds = Math.floor((diff / 1000) % 60);
+                      return (
+                        <div className="flex items-center space-x-1 font-bold text-[10px] sm:text-[11px] text-slate-300">
+                          <Clock className="w-3 h-3 text-slate-400 flex-shrink-0 animate-pulse" />
+                          <span className="hidden sm:inline">Ends in:</span>
+                          <span className="bg-slate-800 px-1.5 py-0.5 text-amber-400 font-black font-mono">
+                            {days > 0 && `${days}d `}
+                            {String(hours).padStart(2, "0")}:
+                            {String(minutes).padStart(2, "0")}:
+                            {String(seconds).padStart(2, "0")}
+                          </span>
+                        </div>
+                      );
+                    }
+                  }
+                  return (
+                    <div className="flex items-center space-x-1 font-bold text-[10px] sm:text-[11px] text-slate-300">
+                      <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                      <span className="hidden sm:inline">Ends in:</span>
+                      <span className="bg-slate-800 px-1.5 py-0.5 text-amber-400 font-black font-mono">
+                        {String(timeLeft.hours).padStart(2, "0")}:
+                        {String(timeLeft.minutes).padStart(2, "0")}:
+                        {String(timeLeft.seconds).padStart(2, "0")}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Content Grid */}

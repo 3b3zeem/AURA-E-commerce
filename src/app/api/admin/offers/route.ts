@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, show_in_overlay, ends_at } = body;
+    const { title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, show_in_overlay, starts_at, ends_at } = body;
 
     if (!title || !offer_price) {
       return NextResponse.json({ error: 'Title and offer price are required' }, { status: 400 });
@@ -63,6 +63,7 @@ export async function POST(req: Request) {
           discount_percentage: discount,
           is_active: true,
           show_in_overlay: !!show_in_overlay,
+          starts_at: starts_at || null,
           ends_at: ends_at || null,
         },
       ])
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { id, title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, is_active, show_in_overlay, ends_at } = body;
+    const { id, title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, is_active, show_in_overlay, starts_at, ends_at } = body;
 
     if (!id) return NextResponse.json({ error: 'Missing offer ID' }, { status: 400 });
 
@@ -115,6 +116,7 @@ export async function PUT(req: Request) {
         discount_percentage: discount,
         is_active,
         show_in_overlay,
+        starts_at,
         ends_at,
         updated_at: new Date().toISOString(),
       })

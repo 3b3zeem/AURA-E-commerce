@@ -60,6 +60,10 @@ export function useProducts() {
   useEffect(() => {
     const handleDataChanged = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['offers'] });
+      queryClient.invalidateQueries({ queryKey: ['bento'] });
+      queryClient.invalidateQueries({ queryKey: ['stories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     };
     window.addEventListener('aura_data_changed', handleDataChanged);
 
@@ -69,6 +73,9 @@ export function useProducts() {
       .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['offers'] });
+        queryClient.invalidateQueries({ queryKey: ['bento'] });
+        queryClient.invalidateQueries({ queryKey: ['stories'] });
       })
       .subscribe();
 
@@ -89,6 +96,14 @@ export function useProducts() {
 
 export function useProductMutations() {
   const queryClient = useQueryClient();
+
+  const invalidateAllStoreData = () => {
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['offers'] });
+    queryClient.invalidateQueries({ queryKey: ['bento'] });
+    queryClient.invalidateQueries({ queryKey: ['stories'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+  };
 
   const addProductMutation = useMutation({
     mutationFn: (data: Partial<Product>) => createProductInDb(data),
@@ -122,7 +137,7 @@ export function useProductMutations() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      invalidateAllStoreData();
     },
   });
 
@@ -144,7 +159,7 @@ export function useProductMutations() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      invalidateAllStoreData();
     },
   });
 
@@ -165,7 +180,7 @@ export function useProductMutations() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      invalidateAllStoreData();
     },
   });
 

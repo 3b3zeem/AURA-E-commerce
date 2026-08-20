@@ -11,7 +11,13 @@ interface FlashDealsProps {
 }
 
 export function FlashDeals({ products }: FlashDealsProps) {
-  const flashProducts = products.filter((p) => p.is_flash_deal);
+  const now = new Date().toISOString();
+  const flashProducts = products.filter((p) => {
+    if (!p.is_flash_deal) return false;
+    if (p.flash_deal_starts_at && p.flash_deal_starts_at > now) return false;
+    if (p.flash_deal_ends_at && p.flash_deal_ends_at < now) return false;
+    return true;
+  });
 
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 59, seconds: 45 });
 

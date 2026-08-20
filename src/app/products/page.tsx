@@ -144,7 +144,13 @@ function ProductsContent() {
             new Date(b.created_at || "").getTime() -
             new Date(a.created_at || "").getTime()
           );
-        return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
+        // Default sort (Featured / Default): Featured items first, then Newest created at top!
+        const featuredDiff = (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
+        if (featuredDiff !== 0) return featuredDiff;
+        return (
+          new Date(b.created_at || "").getTime() -
+          new Date(a.created_at || "").getTime()
+        );
       });
   }, [
     products,

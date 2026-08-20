@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Zap, Sparkles, ShoppingBag, Clock, ShieldCheck, CheckCircle2, ArrowRight, Tag, Mail } from "lucide-react";
 import { Offer } from "@/types";
@@ -9,13 +9,67 @@ import { useOffers } from "@/hooks/useStoreData";
 import { useCartStore } from "@/store/useCartStore";
 import toast, { Toaster } from "react-hot-toast";
 
+function OfferCountdown({ endsAt }: { endsAt: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+
+  useEffect(() => {
+    const target = new Date(endsAt).getTime();
+
+    const calculate = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setTimeLeft(null);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [endsAt]);
+
+  if (!timeLeft) {
+    return (
+      <div className="inline-flex items-center space-x-1 bg-rose-50 border border-rose-200 text-rose-700 px-2.5 py-1 text-[11px] font-mono font-bold uppercase">
+        <Clock className="w-3.5 h-3.5 text-rose-600" />
+        <span>Offer Expired</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center space-x-1.5 bg-amber-50 border border-amber-300 text-amber-900 px-3 py-1 text-xs font-mono font-bold">
+      <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+      <span className="text-[10px] uppercase font-sans text-amber-800 font-extrabold mr-1">Ends in:</span>
+      <span>
+        {timeLeft.days > 0 && `${timeLeft.days}d `}
+        {String(timeLeft.hours).padStart(2, "0")}:{String(timeLeft.minutes).padStart(2, "0")}:{String(timeLeft.seconds).padStart(2, "0")}
+      </span>
+    </div>
+  );
+}
+
 export default function OffersPage() {
-  const { data: offersList = [], isLoading: loading } = useOffers();
+  const { data: rawOffersList = [], isLoading: loading } = useOffers();
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
 
   const { addItem, openCart } = useCartStore();
+
+  // Filter out expired or not-yet-started offers on client
+  const nowStr = new Date().toISOString();
+  const offersList = rawOffersList.filter((o) => {
+    if (!o.is_active) return false;
+    if (o.starts_at && o.starts_at > nowStr) return false;
+    if (o.ends_at && o.ends_at < nowStr) return false;
+    return true;
+  });
 
   const handleAddBundleToCart = (offer: Offer) => {
     setAddingId(offer.id);
@@ -163,9 +217,12 @@ export default function OffersPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
-                        <h3 className="text-2xl font-black text-slate-900 leading-tight">
-                          {offer.title}
-                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="text-2xl font-black text-slate-900 leading-tight">
+                            {offer.title}
+                          </h3>
+                          {offer.ends_at && <OfferCountdown endsAt={offer.ends_at} />}
+                        </div>
                         {offer.subtitle && (
                           <p className="text-xs text-slate-600 font-bold uppercase tracking-wider mt-0.5">
                             {offer.subtitle}

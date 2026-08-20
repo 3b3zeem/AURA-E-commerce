@@ -136,13 +136,28 @@ export function AdminOffersTab({
                   )}
                 </div>
 
-                <span
-                  className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 ${
-                    offer.is_active ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  {offer.is_active ? "Active" : "Inactive"}
-                </span>
+                {(() => {
+                  const now = new Date().toISOString();
+                  let statusLabel = "Active";
+                  let statusClass = "bg-emerald-100 text-emerald-800";
+
+                  if (!offer.is_active) {
+                    statusLabel = "Inactive";
+                    statusClass = "bg-slate-100 text-slate-600";
+                  } else if (offer.starts_at && offer.starts_at > now) {
+                    statusLabel = "Scheduled";
+                    statusClass = "bg-blue-100 text-blue-800";
+                  } else if (offer.ends_at && offer.ends_at < now) {
+                    statusLabel = "Expired";
+                    statusClass = "bg-rose-100 text-rose-800";
+                  }
+
+                  return (
+                    <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Offer Image & Info */}
@@ -174,6 +189,17 @@ export function AdminOffersTab({
                       ({offer.discount_percentage}% OFF)
                     </span>
                   </div>
+
+                  {(offer.starts_at || offer.ends_at) && (
+                    <div className="text-[11px] font-mono text-slate-500 pt-1 space-y-0.5 border-t border-slate-100 mt-1">
+                      {offer.starts_at && (
+                        <div>Starts: <span className="font-bold text-slate-800">{new Date(offer.starts_at).toLocaleString()}</span></div>
+                      )}
+                      {offer.ends_at && (
+                        <div>Ends: <span className="font-bold text-amber-700">{new Date(offer.ends_at).toLocaleString()}</span></div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

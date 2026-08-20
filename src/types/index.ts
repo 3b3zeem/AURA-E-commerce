@@ -50,7 +50,11 @@ export interface Product {
   stock: number;
   is_featured: boolean;
   is_flash_deal: boolean;
+  flash_deal_starts_at?: string | null;
   flash_deal_ends_at?: string | null;
+  discount_starts_at?: string | null;
+  discount_ends_at?: string | null;
+  discount_percent?: number | null;
   images: string[];
   variants: ProductVariant[];
   badge?: string;
@@ -248,6 +252,7 @@ export interface Offer {
   product_ids: string[];
   is_active: boolean;
   show_in_overlay: boolean;
+  starts_at?: string | null;
   ends_at?: string | null;
   created_at?: string;
   updated_at?: string;

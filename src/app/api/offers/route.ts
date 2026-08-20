@@ -32,8 +32,18 @@ export async function GET(req: Request) {
       };
     });
 
+    const now = new Date().toISOString();
+
+    // Filter out inactive or time-expired offers
+    formatted = formatted.filter((o) => {
+      if (!o.is_active) return false;
+      if (o.starts_at && o.starts_at > now) return false;
+      if (o.ends_at && o.ends_at < now) return false;
+      return true;
+    });
+
     if (overlayOnly) {
-      formatted = formatted.filter((o) => o.is_active && o.show_in_overlay);
+      formatted = formatted.filter((o) => o.show_in_overlay);
     }
 
     return NextResponse.json(formatted);

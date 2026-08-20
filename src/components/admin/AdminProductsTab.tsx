@@ -12,10 +12,12 @@ import {
   ArrowUpDown,
   Layers,
   Package,
+  Tag,
 } from "lucide-react";
 import { Product, Category } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
+import { ProductDiscountCountdown } from "@/components/product/ProductDiscountCountdown";
 
 interface AdminProductsTabProps {
   productsList: Product[];
@@ -39,6 +41,7 @@ export function AdminProductsTab({
   const [selectedGender, setSelectedGender] = useState("ALL");
   const [selectedBadge, setSelectedBadge] = useState("ALL");
   const [selectedStock, setSelectedStock] = useState("ALL");
+  const [selectedOfferFilter, setSelectedOfferFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState<"newest" | "price-asc" | "price-desc" | "stock-asc" | "name-asc">("newest");
 
   // Filter and Sort Logic
@@ -79,6 +82,18 @@ export function AdminProductsTab({
           if ((prod.stock ?? 0) > 10) return false;
         }
 
+        // Offers & Discounts Filter
+        const hasDiscount = Boolean(
+          (prod.original_price && prod.original_price > prod.price) ||
+          (prod.discount_percent && prod.discount_percent > 0)
+        );
+        const isFlash = Boolean(prod.is_flash_deal);
+        const hasAnyOffer = hasDiscount || isFlash || Boolean(prod.discount_ends_at);
+
+        if (selectedOfferFilter === "HAS_OFFER" && !hasAnyOffer) return false;
+        if (selectedOfferFilter === "FLASH_DEALS" && !isFlash) return false;
+        if (selectedOfferFilter === "DISCOUNTED" && !hasDiscount) return false;
+
         return true;
       })
       .sort((a, b) => {
@@ -89,14 +104,15 @@ export function AdminProductsTab({
         // Default newest
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       });
-  }, [productsList, searchTerm, selectedCategory, selectedGender, selectedBadge, selectedStock, sortBy]);
+  }, [productsList, searchTerm, selectedCategory, selectedGender, selectedBadge, selectedStock, selectedOfferFilter, sortBy]);
 
   const hasActiveFilters =
     searchTerm !== "" ||
     selectedCategory !== "ALL" ||
     selectedGender !== "ALL" ||
     selectedBadge !== "ALL" ||
-    selectedStock !== "ALL";
+    selectedStock !== "ALL" ||
+    selectedOfferFilter !== "ALL";
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -104,6 +120,7 @@ export function AdminProductsTab({
     setSelectedGender("ALL");
     setSelectedBadge("ALL");
     setSelectedStock("ALL");
+    setSelectedOfferFilter("ALL");
     setSortBy("newest");
   };
 
@@ -151,6 +168,13 @@ export function AdminProductsTab({
     { value: "IN_STOCK", label: "In Stock (> 0)" },
     { value: "LOW_STOCK", label: "Low Stock (<= 10)" },
     { value: "OUT_OF_STOCK", label: "Out of Stock (= 0)" },
+  ];
+
+  const offerOptions: SelectOption[] = [
+    { value: "ALL", label: "All Offers & Items" },
+    { value: "HAS_OFFER", label: "All Deals & Offers (كل العروض)" },
+    { value: "FLASH_DEALS", label: "Flash Deals Only (عروض سريعة)" },
+    { value: "DISCOUNTED", label: "Discounted Price Only (خصوم أسعار)" },
   ];
 
   return (
@@ -219,7 +243,22 @@ export function AdminProductsTab({
         </div>
 
         {/* Bottom Row: Quick CustomSelect Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-slate-100">
+          {/* Offers & Discounts Filter */}
+          <div>
+            <label className="block text-[10px] font-black uppercase text-amber-600 mb-1 flex items-center gap-1">
+              <Filter className="w-3 h-3 text-amber-600" />
+              Offers & Deals
+            </label>
+            <CustomSelect
+              options={offerOptions}
+              value={selectedOfferFilter}
+              onChange={(val) => setSelectedOfferFilter(val)}
+              className="w-full"
+              triggerClassName="w-full h-9 border-amber-300 bg-amber-50/50 font-bold"
+            />
+          </div>
+
           {/* Category Filter */}
           <div>
             <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">
@@ -328,21 +367,40 @@ export function AdminProductsTab({
                     alt={prod.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+                  <div className="absolute top-2 left-2 flex flex-col gap-1 items-start z-10">
                     <span className="px-2 py-0.5 bg-slate-900 text-white font-mono text-[9px] font-black uppercase border border-slate-800">
                       {prod.badge || "Standard"}
                     </span>
+                    {prod.is_flash_deal && (
+                      <span className="px-1.5 py-0.5 bg-amber-500 text-slate-900 font-mono text-[9px] font-black uppercase border border-amber-600 shadow-sm flex items-center gap-1">
+                        FLASH
+                      </span>
+                    )}
+                    {Boolean(prod.discount_percent && prod.discount_percent > 0) && (
+                      <span className="px-1.5 py-0.5 bg-rose-600 text-white font-mono text-[9px] font-black uppercase border border-rose-700 shadow-sm">
+                        -{prod.discount_percent}% OFF
+                      </span>
+                    )}
                     {prod.target_gender && prod.target_gender !== "unisex" && (
                       <span className="px-1.5 py-0.5 bg-indigo-600 text-white font-mono text-[8px] font-bold uppercase">
                         {prod.target_gender}
                       </span>
                     )}
                   </div>
-                  {prod.images && prod.images.length > 1 && (
-                    <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 text-white text-[9px] font-mono font-bold backdrop-blur-sm">
-                      +{prod.images.length - 1} photos
-                    </span>
-                  )}
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+                    {(prod.discount_ends_at || prod.flash_deal_ends_at || prod.is_flash_deal) && (
+                      <ProductDiscountCountdown
+                        compact
+                        targetDate={prod.discount_ends_at || prod.flash_deal_ends_at}
+                        discountPercent={prod.discount_percent}
+                      />
+                    )}
+                    {prod.images && prod.images.length > 1 && (
+                      <span className="px-1.5 py-0.5 bg-black/80 text-white text-[9px] font-mono font-bold backdrop-blur-sm ml-auto">
+                        +{prod.images.length - 1} photos
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info Block */}
@@ -353,9 +411,16 @@ export function AdminProductsTab({
                         prod.category_id ||
                         "General"}
                     </span>
-                    <span className="font-mono font-black text-sm text-slate-900">
-                      {formatPrice(prod.price)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      {Boolean(prod.original_price && prod.original_price > prod.price) && (
+                        <span className="text-[10px] font-mono text-slate-400 line-through font-bold">
+                          {formatPrice(prod.original_price!)}
+                        </span>
+                      )}
+                      <span className="font-mono font-black text-sm text-slate-900">
+                        {formatPrice(prod.price)}
+                      </span>
+                    </div>
                   </div>
 
                   <h3 className="font-black text-slate-900 text-sm uppercase line-clamp-1">
@@ -366,6 +431,22 @@ export function AdminProductsTab({
                     <span className="text-[10px] font-mono text-slate-400 block font-bold mt-0.5">
                       SKU: {prod.sku}
                     </span>
+                  )}
+
+                  {/* OFFER DETAILS BANNER */}
+                  {Boolean((prod.original_price && prod.original_price > prod.price) || prod.is_flash_deal || prod.discount_percent) && (
+                    <div className="mt-2 p-1.5 bg-amber-50 border border-amber-200 text-amber-900 font-mono text-[10px] font-bold flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <span className="truncate max-w-[120px]">
+                          {prod.is_flash_deal ? "FLASH DEAL" : "DISCOUNT OFFER"}
+                        </span>
+                      </span>
+                      {Boolean(prod.original_price && prod.original_price > prod.price) && (
+                        <span className="font-black text-emerald-700 shrink-0">
+                          SAVE {formatPrice(prod.original_price! - prod.price)}
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   <p className="text-[11px] text-slate-500 line-clamp-2 mt-1">

@@ -25,6 +25,7 @@ export function ProductCarouselSection({
 }: ProductCarouselSectionProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [visibleCount, setVisibleCount] = useState(5);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     const updateVisibleCount = () => {
@@ -47,12 +48,23 @@ export function ProductCarouselSection({
     return () => window.removeEventListener("resize", updateVisibleCount);
   }, []);
 
+  const totalPages = products && products.length > 0 ? Math.max(1, Math.ceil(products.length / visibleCount)) : 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages - 1);
+
+  // Autoplay effect (pauses on hover)
+  useEffect(() => {
+    if (!products || products.length === 0 || totalPages <= 1 || isHovered) return;
+
+    const timer = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [totalPages, isHovered, products]);
+
   if (!products || products.length === 0) {
     return null;
   }
-
-  const totalPages = Math.max(1, Math.ceil(products.length / visibleCount));
-  const safeCurrentPage = Math.min(currentPage, totalPages - 1);
 
   const currentProducts = products.slice(
     safeCurrentPage * visibleCount,
@@ -114,7 +126,11 @@ export function ProductCarouselSection({
       </div>
 
       {/* Carousel Grid Row with Left & Right Arrow Navigation Buttons */}
-      <div className="relative group/carousel">
+      <div
+        className="relative group/carousel"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Left Nav Button */}
         {totalPages > 1 && (
           <button

@@ -5,6 +5,27 @@ import { verifyAdmin } from '@/lib/auth/adminGuard';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+function formatProductResponse(data: any) {
+  if (!data) return data;
+  const attachDiscount = (item: any) => {
+    const origP = item.original_price ? parseFloat(item.original_price) : null;
+    const curP = item.price ? parseFloat(item.price) : 0;
+    let discPct = item.discount_percent ? parseFloat(item.discount_percent) : 0;
+    if (!discPct && origP && origP > curP) {
+      discPct = Math.round(((origP - curP) / origP) * 100);
+    }
+    return {
+      ...item,
+      discount_percent: discPct,
+    };
+  };
+
+  if (Array.isArray(data)) {
+    return data.map(attachDiscount);
+  }
+  return attachDiscount(data);
+}
+
 // READ
 export async function GET(request: Request) {
   const guard = await verifyAdmin(request);
@@ -18,7 +39,7 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false });
 
     if (error) return NextResponse.json([]);
-    return NextResponse.json(data || []);
+    return NextResponse.json(formatProductResponse(data || []));
   } catch {
     return NextResponse.json([], { status: 500 });
   }
@@ -34,17 +55,29 @@ export async function POST(request: Request) {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const slug = body.slug || (body.name ? body.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : `prod-${Date.now()}`);
 
+    const origP = body.original_price ? parseFloat(body.original_price) : null;
+    const discPct = body.discount_percent ? parseFloat(body.discount_percent) : null;
+    let finalPrice = body.price ? parseFloat(body.price) : 0;
+
+    if (origP && discPct && discPct > 0) {
+      finalPrice = parseFloat((origP * (1 - discPct / 100)).toFixed(2));
+    }
+
     const payload: any = {
       name: body.name,
       slug,
       description: body.description || '',
-      price: parseFloat(body.price) || 0,
-      original_price: body.original_price ? parseFloat(body.original_price) : null,
+      price: finalPrice,
+      original_price: origP,
       stock: parseInt(body.stock) || 10,
       category_id: body.category_id || null,
       images: Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []),
       is_featured: body.is_featured ?? false,
       is_flash_deal: body.is_flash_deal ?? false,
+      flash_deal_starts_at: body.flash_deal_starts_at || null,
+      flash_deal_ends_at: body.flash_deal_ends_at || null,
+      discount_starts_at: body.discount_starts_at || null,
+      discount_ends_at: body.discount_ends_at || null,
       badge: body.badge || null,
       highlights: body.highlights || [],
       usage_instructions: body.usage_instructions || null,
@@ -86,7 +119,7 @@ export async function POST(request: Request) {
     }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    return NextResponse.json(formatProductResponse(data));
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -106,7 +139,8 @@ export async function PUT(request: Request) {
     const sanitizeUpdates = (obj: any) => {
       const allowed = [
         'name', 'slug', 'description', 'price', 'original_price', 'stock',
-        'category_id', 'images', 'is_featured', 'is_flash_deal', 'flash_deal_ends_at',
+        'category_id', 'images', 'is_featured', 'is_flash_deal', 'flash_deal_starts_at', 'flash_deal_ends_at',
+        'discount_starts_at', 'discount_ends_at',
         'badge', 'specs', 'variants', 'rating_avg', 'reviews_count', 'updated_at',
         'highlights', 'usage_instructions', 'target_gender', 'return_policy',
         'delivery_info', 'min_order_qty', 'key_benefits', 'package_includes',
@@ -124,6 +158,9 @@ export async function PUT(request: Request) {
     };
 
     let cleanedUpdates = sanitizeUpdates(updates);
+    if (cleanedUpdates.original_price && updates.discount_percent && updates.discount_percent > 0) {
+      cleanedUpdates.price = parseFloat((parseFloat(cleanedUpdates.original_price) * (1 - parseFloat(updates.discount_percent) / 100)).toFixed(2));
+    }
     cleanedUpdates.updated_at = new Date().toISOString();
 
     let { data, error } = await supabase
@@ -146,7 +183,7 @@ export async function PUT(request: Request) {
     }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+    return NextResponse.json(formatProductResponse(data));
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

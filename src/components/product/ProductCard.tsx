@@ -13,10 +13,10 @@ import {
 import { Product } from "@/types";
 import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
 import { calculateExpressDelivery, getActiveGovernorate, setActiveGovernorate } from "@/lib/shipping";
-import { getUserAddresses } from "@/lib/services/db";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
 import { ExpressBuyModal } from "@/components/checkout/ExpressBuyModal";
+import { ProductDiscountCountdown } from "@/components/product/ProductDiscountCountdown";
 
 interface ProductCardProps {
   product: Product;
@@ -29,35 +29,16 @@ export function ProductCard({ product }: ProductCardProps) {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [activeGov, setActiveGov] = useState<string>(() => getActiveGovernorate());
 
-  const profileId = profile?.id;
-
   useEffect(() => {
-    async function syncAddressGov() {
-      if (profileId) {
-        const addrs = await getUserAddresses();
-        if (Array.isArray(addrs) && addrs.length > 0) {
-          const def = addrs.find((a) => a.is_default) || addrs[0];
-          const govName = def.state_region || def.city;
-          if (govName) {
-            setActiveGovernorate(govName);
-            setActiveGov(govName);
-          }
-        }
-      }
-    }
-    syncAddressGov();
-
     const handleGovChange = () => {
       setActiveGov(getActiveGovernorate());
     };
 
     window.addEventListener("aura_governorate_selected", handleGovChange);
-    window.addEventListener("aura_data_changed", syncAddressGov);
     return () => {
       window.removeEventListener("aura_governorate_selected", handleGovChange);
-      window.removeEventListener("aura_data_changed", syncAddressGov);
     };
-  }, [profileId]);
+  }, []);
 
   const images =
     product.images && product.images.length > 0
@@ -89,7 +70,16 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const isLiked = isInWishlist(product.id);
-  const discount = product.original_price
+
+  const nowStr = new Date().toISOString();
+  const isDiscountActive = Boolean(
+    product.original_price &&
+      product.original_price > product.price &&
+      (!product.discount_starts_at || product.discount_starts_at <= nowStr) &&
+      (!product.discount_ends_at || product.discount_ends_at >= nowStr)
+  );
+
+  const discount = isDiscountActive && product.original_price
     ? calculateDiscountPercentage(product.original_price, product.price)
     : 0;
 
@@ -164,6 +154,17 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
+
+          {/* Compact Offer Countdown */}
+          {(discount > 0 || product.discount_ends_at || product.is_flash_deal) && (
+            <div className="absolute bottom-2 left-2 z-20">
+              <ProductDiscountCountdown
+                compact
+                targetDate={product.discount_ends_at || product.flash_deal_ends_at}
+                discountPercent={discount}
+              />
+            </div>
+          )}
         </div>
 
         {/* Card Content */}
@@ -219,7 +220,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     {formatPrice(product.price)}
                   </span>
                 </div>
-                {product.original_price && (
+                {isDiscountActive && product.original_price && (
                   <span className="text-[11px] text-slate-600 font-medium line-through font-mono block">
                     List: {formatPrice(product.original_price)}
                   </span>

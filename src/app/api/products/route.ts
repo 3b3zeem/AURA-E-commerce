@@ -7,7 +7,8 @@ export async function GET() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*, category:categories(*)');
+      .select('*, category:categories(*)')
+      .order('created_at', { ascending: false });
 
     if (error || !data) {
       return NextResponse.json([]);

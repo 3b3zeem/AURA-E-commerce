@@ -12,6 +12,7 @@ import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductBundleWizard } from "@/components/product/ProductBundleWizard";
 import { ProductCarouselSection } from "@/components/product/ProductCarouselSection";
+import { ProductDiscountCountdown } from "@/components/product/ProductDiscountCountdown";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
 import { CustomSelect } from "@/components/ui/CustomSelect";
@@ -530,6 +531,14 @@ export default function ProductClientPage({
                 </span>
               )}
             </div>
+
+            {/* Live Discount Offer Countdown Timer */}
+            {(discount > 0 || product.discount_ends_at || product.is_flash_deal) && (
+              <ProductDiscountCountdown
+                targetDate={product.discount_ends_at || product.flash_deal_ends_at}
+                discountPercent={discount}
+              />
+            )}
 
             {/* Monthly Payment Plan / Installments */}
             <div className="text-xs text-slate-700 flex items-center gap-1.5 pt-1 border-t border-slate-100 font-medium">

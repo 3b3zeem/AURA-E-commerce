@@ -35,7 +35,16 @@ import {
   getBlogsFromDb,
   getBrands,
 } from "@/lib/services/db";
-import { Product, Category, Brand, Story, Profile, Offer, NewsletterSubscriber, BlogPost } from "@/types";
+import {
+  Product,
+  Category,
+  Brand,
+  Story,
+  Profile,
+  Offer,
+  NewsletterSubscriber,
+  BlogPost,
+} from "@/types";
 import { CheckCircle2 } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -90,7 +99,9 @@ export default function AdminDashboardPage() {
   const [addressesList, setAddressesList] = useState<any[]>([]);
   const [promosList, setPromosList] = useState<any[]>([]);
   const [offersList, setOffersList] = useState<Offer[]>([]);
-  const [subscribersList, setSubscribersList] = useState<NewsletterSubscriber[]>([]);
+  const [subscribersList, setSubscribersList] = useState<
+    NewsletterSubscriber[]
+  >([]);
   const [blogsList, setBlogsList] = useState<BlogPost[]>([]);
   const [brandsList, setBrandsList] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +139,11 @@ export default function AdminDashboardPage() {
   const [newProdUsage, setNewProdUsage] = useState("");
   const [newProdCare, setNewProdCare] = useState("");
   const [newProdPackageIncludes, setNewProdPackageIncludes] = useState("");
+  const newProdFlashDealState = newProdFlashDeal;
+  const [newProdDiscountStartsAt, setNewProdDiscountStartsAt] = useState("");
+  const [newProdDiscountEndsAt, setNewProdDiscountEndsAt] = useState("");
+  const [newProdFlashStartsAt, setNewProdFlashStartsAt] = useState("");
+  const [newProdFlashEndsAt, setNewProdFlashEndsAt] = useState("");
   const [newProdDeliveryInfo, setNewProdDeliveryInfo] = useState("");
   const [newProdReturnPolicy, setNewProdReturnPolicy] = useState("");
 
@@ -154,8 +170,12 @@ export default function AdminDashboardPage() {
   const [newOfferImage, setNewOfferImage] = useState("");
   const [newOfferOrigPrice, setNewOfferOrigPrice] = useState("");
   const [newOfferPrice, setNewOfferPrice] = useState("");
-  const [newOfferSelectedProductIds, setNewOfferSelectedProductIds] = useState<string[]>([]);
+  const [newOfferSelectedProductIds, setNewOfferSelectedProductIds] = useState<
+    string[]
+  >([]);
   const [newOfferOverlay, setNewOfferOverlay] = useState(false);
+  const [newOfferStartsAt, setNewOfferStartsAt] = useState("");
+  const [newOfferEndsAt, setNewOfferEndsAt] = useState("");
 
   // Editing Item States
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -169,11 +189,16 @@ export default function AdminDashboardPage() {
     try {
       switch (tab) {
         case "products": {
-          const [prods, cats, brnds] = await Promise.all([getProducts(), getCategories(), getBrands()]);
+          const [prods, cats, brnds] = await Promise.all([
+            getProducts(),
+            getCategories(),
+            getBrands(),
+          ]);
           setProductsList(prods);
           setCategoriesList(cats);
           setBrandsList(brnds);
-          if (cats.length > 0 && !newProdCategory) setNewProdCategory(cats[0].id);
+          if (cats.length > 0 && !newProdCategory)
+            setNewProdCategory(cats[0].id);
           break;
         }
         case "brands": {
@@ -279,15 +304,43 @@ export default function AdminDashboardPage() {
     callback: (base64Url: string) => void,
   ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          callback(compressedDataUrl);
+        } else if (typeof reader.result === "string") {
           callback(reader.result);
         }
       };
-      reader.readAsDataURL(file);
-    }
+      if (typeof event.target?.result === "string") {
+        img.src = event.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {
@@ -352,12 +405,27 @@ export default function AdminDashboardPage() {
           : undefined,
         stock: parseInt(newProdStock) || 10,
         category_id: newProdCategory || categoriesList[0]?.id || undefined,
-        images: newProdImages.filter(Boolean).length > 0 ? newProdImages.filter(Boolean) : [newProdImage],
+        images:
+          newProdImages.filter(Boolean).length > 0
+            ? newProdImages.filter(Boolean)
+            : [newProdImage],
         in_stock: true,
         rating_avg: 5.0,
         badge: newProdBadge || "NEW",
         is_featured: newProdFeatured,
         is_flash_deal: newProdFlashDeal,
+        flash_deal_starts_at: newProdFlashStartsAt
+          ? new Date(newProdFlashStartsAt).toISOString()
+          : null,
+        flash_deal_ends_at: newProdFlashEndsAt
+          ? new Date(newProdFlashEndsAt).toISOString()
+          : null,
+        discount_starts_at: newProdDiscountStartsAt
+          ? new Date(newProdDiscountStartsAt).toISOString()
+          : null,
+        discount_ends_at: newProdDiscountEndsAt
+          ? new Date(newProdDiscountEndsAt).toISOString()
+          : null,
         brand: newProdBrand || "AURA Official",
         bought_past_month: parseInt(newProdBoughtPastMonth) || 50,
         sku: newProdSku || undefined,
@@ -366,12 +434,18 @@ export default function AdminDashboardPage() {
         shelf_life: newProdShelfLife || undefined,
         key_benefits: newProdKeyBenefits || undefined,
         highlights: newProdHighlights
-          ? newProdHighlights.split(",").map((s) => s.trim()).filter(Boolean)
+          ? newProdHighlights
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [],
         usage_instructions: newProdUsage || undefined,
         care_instructions: newProdCare || undefined,
         package_includes: newProdPackageIncludes
-          ? newProdPackageIncludes.split(",").map((s) => s.trim()).filter(Boolean)
+          ? newProdPackageIncludes
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [],
         delivery_info: newProdDeliveryInfo || undefined,
         return_policy: newProdReturnPolicy || undefined,
@@ -419,9 +493,7 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateProductInDb(editingProduct.id, editingProduct);
       if (res) {
-        setProductsList((prev) =>
-          prev.map((p) => (p.id === res.id ? res : p))
-        );
+        setProductsList((prev) => prev.map((p) => (p.id === res.id ? res : p)));
         showNotification(`Product "${editingProduct.name}" updated!`);
         setEditingProduct(null);
       }
@@ -528,7 +600,7 @@ export default function AdminDashboardPage() {
       const res = await updateCategoryInDb(editingCategory.id, editingCategory);
       if (res) {
         setCategoriesList((prev) =>
-          prev.map((c) => (c.id === res.id ? res : c))
+          prev.map((c) => (c.id === res.id ? res : c)),
         );
         showNotification(`Category "${editingCategory.name}" updated!`);
         setEditingCategory(null);
@@ -545,7 +617,8 @@ export default function AdminDashboardPage() {
 
     const assignedProducts = productsList.filter((p) => {
       const pCatId = p.category_id || "";
-      const rawCat = typeof p.category === "string" ? p.category : p.category?.name || "";
+      const rawCat =
+        typeof p.category === "string" ? p.category : p.category?.name || "";
       const pCatName = rawCat.toLowerCase().trim();
       return (
         pCatId === id ||
@@ -565,7 +638,7 @@ export default function AdminDashboardPage() {
             border: "1px solid #fecdd3",
             fontWeight: "bold",
           },
-        }
+        },
       );
       return;
     }
@@ -614,9 +687,7 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateStoryInDb(editingStory.id, editingStory);
       if (res) {
-        setStoriesList((prev) =>
-          prev.map((s) => (s.id === res.id ? res : s))
-        );
+        setStoriesList((prev) => prev.map((s) => (s.id === res.id ? res : s)));
         showNotification(`Story "${editingStory.title}" updated!`);
         setEditingStory(null);
       }
@@ -644,7 +715,7 @@ export default function AdminDashboardPage() {
       setActionLoadingId(user.id);
       const newRole = user.role === "admin" ? "customer" : "admin";
       setUsersList((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u)),
       );
       showNotification(`Updated role for ${user.full_name} to ${newRole}`);
       await updateUserRoleInDb(user.id, newRole);
@@ -671,7 +742,7 @@ export default function AdminDashboardPage() {
     try {
       setActionLoadingId(orderId);
       setOrdersList((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
       );
       showNotification(
         `Order #${orderId.slice(0, 8)} status updated to ${status}`,
@@ -723,21 +794,31 @@ export default function AdminDashboardPage() {
         subtitle: newOfferSub || null,
         description: newOfferDesc || null,
         badge: newOfferBadge || "SPECIAL BUNDLE",
-        image_url: newOfferImage || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1000&q=80",
+        image_url:
+          newOfferImage ||
+          "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1000&q=80",
         original_price: parseFloat(newOfferOrigPrice || newOfferPrice),
         offer_price: parseFloat(newOfferPrice),
         product_ids: newOfferSelectedProductIds,
         show_in_overlay: newOfferOverlay,
+        starts_at: newOfferStartsAt
+          ? new Date(newOfferStartsAt).toISOString()
+          : null,
+        ends_at: newOfferEndsAt ? new Date(newOfferEndsAt).toISOString() : null,
         is_active: true,
       });
 
       if (res) {
         setOffersList((prev) => [res, ...prev]);
-        showNotification(`Offer bundle "${newOfferTitle}" created successfully!`);
+        showNotification(
+          `Offer bundle "${newOfferTitle}" created successfully!`,
+        );
         setIsAddOfferOpen(false);
         setNewOfferTitle("");
         setNewOfferSub("");
         setNewOfferDesc("");
+        setNewOfferStartsAt("");
+        setNewOfferEndsAt("");
         setNewOfferSelectedProductIds([]);
       }
     } finally {
@@ -753,9 +834,7 @@ export default function AdminDashboardPage() {
       setIsSubmitting(true);
       const res = await updateOfferInDb(editingOffer.id, editingOffer);
       if (res) {
-        setOffersList((prev) =>
-          prev.map((o) => (o.id === res.id ? res : o))
-        );
+        setOffersList((prev) => prev.map((o) => (o.id === res.id ? res : o)));
         showNotification(`Offer bundle "${editingOffer.title}" updated!`);
         setEditingOffer(null);
       }
@@ -785,7 +864,7 @@ export default function AdminDashboardPage() {
     try {
       setIsSubmitting(true);
       const newTrendItem = {
-        id: 'trend_' + Date.now(),
+        id: "trend_" + Date.now(),
         query: newTrendingQuery,
         search_count: 1,
         created_at: new Date().toISOString(),
@@ -910,7 +989,10 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === "newsletter" && (
-          <AdminNewsletterTab onNotify={showNotification} onRefresh={refreshData} />
+          <AdminNewsletterTab
+            onNotify={showNotification}
+            onRefresh={refreshData}
+          />
         )}
 
         {activeTab === "orders" && (
@@ -1056,6 +1138,14 @@ export default function AdminDashboardPage() {
         setNewProdDeliveryInfo={setNewProdDeliveryInfo}
         newProdReturnPolicy={newProdReturnPolicy}
         setNewProdReturnPolicy={setNewProdReturnPolicy}
+        newProdDiscountStartsAt={newProdDiscountStartsAt}
+        setNewProdDiscountStartsAt={setNewProdDiscountStartsAt}
+        newProdDiscountEndsAt={newProdDiscountEndsAt}
+        setNewProdDiscountEndsAt={setNewProdDiscountEndsAt}
+        newProdFlashStartsAt={newProdFlashStartsAt}
+        setNewProdFlashStartsAt={setNewProdFlashStartsAt}
+        newProdFlashEndsAt={newProdFlashEndsAt}
+        setNewProdFlashEndsAt={setNewProdFlashEndsAt}
         onAddProductSubmit={handleAddProduct}
         isAddCategoryOpen={isAddCategoryOpen}
         onCloseAddCategory={() => setIsAddCategoryOpen(false)}
@@ -1113,6 +1203,10 @@ export default function AdminDashboardPage() {
         setNewOfferSelectedProductIds={setNewOfferSelectedProductIds}
         newOfferOverlay={newOfferOverlay}
         setNewOfferOverlay={setNewOfferOverlay}
+        newOfferStartsAt={newOfferStartsAt}
+        setNewOfferStartsAt={setNewOfferStartsAt}
+        newOfferEndsAt={newOfferEndsAt}
+        setNewOfferEndsAt={setNewOfferEndsAt}
         onAddOfferSubmit={handleAddOffer}
         editingOffer={editingOffer}
         setEditingOffer={setEditingOffer}
