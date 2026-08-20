@@ -24,6 +24,7 @@ export type AdminTab =
   | "bento"
   | "blogs"
   | "products"
+  | "brands"
   | "orders"
   | "categories"
   | "users"
@@ -42,6 +43,7 @@ interface AdminTabsNavProps {
   storiesCount: number;
   trendingCount: number;
   addressesCount: number;
+  brandsCount?: number;
   promosCount?: number;
   bentoCount?: number;
   offersCount?: number;
@@ -59,6 +61,7 @@ export function AdminTabsNav({
   storiesCount,
   trendingCount,
   addressesCount,
+  brandsCount = 12,
   promosCount = 4,
   bentoCount = 4,
   offersCount = 2,
@@ -70,6 +73,7 @@ export function AdminTabsNav({
     { id: "support", label: "Customer Service", count: null, icon: Headset },
     { id: "users", label: "Users", count: usersCount, icon: Users },
     { id: "products", label: "Products", count: productsCount, icon: Package },
+    { id: "brands", label: "Brands", count: brandsCount, icon: Tag },
     { id: "blogs", label: "Blogs", count: blogsCount, icon: BookOpen },
     { id: "offers", label: "Offers/Bundles", count: offersCount, icon: Tag },
     { id: "trending", label: "Trending", count: trendingCount, icon: Flame },

@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Category } from '@/types';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { trackSearchQuery } from '@/lib/analytics/tracker';
 import {
   Search,
   SlidersHorizontal,
@@ -67,6 +68,13 @@ export function ProductsTopBar({
   setMinRating,
   onResetFilters,
 }: ProductsTopBarProps) {
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      trackSearchQuery(searchQuery.trim());
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   return (
     <div className="p-4 bg-white border border-slate-200 space-y-4 font-sans text-slate-900">
       

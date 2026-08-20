@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Product } from "@/types";
 import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
+import { calculateExpressDelivery, getActiveGovernorate, setActiveGovernorate } from "@/lib/shipping";
+import { getUserAddresses } from "@/lib/services/db";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
 import { ExpressBuyModal } from "@/components/checkout/ExpressBuyModal";
@@ -25,6 +27,37 @@ export function ProductCard({ product }: ProductCardProps) {
   const { profile, toggleWishlist, isInWishlist } = useUserStore();
   const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
+  const [activeGov, setActiveGov] = useState<string>(() => getActiveGovernorate());
+
+  const profileId = profile?.id;
+
+  useEffect(() => {
+    async function syncAddressGov() {
+      if (profileId) {
+        const addrs = await getUserAddresses();
+        if (Array.isArray(addrs) && addrs.length > 0) {
+          const def = addrs.find((a) => a.is_default) || addrs[0];
+          const govName = def.state_region || def.city;
+          if (govName) {
+            setActiveGovernorate(govName);
+            setActiveGov(govName);
+          }
+        }
+      }
+    }
+    syncAddressGov();
+
+    const handleGovChange = () => {
+      setActiveGov(getActiveGovernorate());
+    };
+
+    window.addEventListener("aura_governorate_selected", handleGovChange);
+    window.addEventListener("aura_data_changed", syncAddressGov);
+    return () => {
+      window.removeEventListener("aura_governorate_selected", handleGovChange);
+      window.removeEventListener("aura_data_changed", syncAddressGov);
+    };
+  }, [profileId]);
 
   const images =
     product.images && product.images.length > 0
@@ -110,17 +143,23 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Top Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
             {product.badge && (
-              <span className="px-2 py-0.5 bg-slate-900 text-white font-bold text-[10px] uppercase tracking-wider border border-slate-800">
+              <span className={`px-2 py-0.5 font-black text-[10px] uppercase tracking-wider border ${
+                product.badge.toLowerCase().includes("best seller")
+                  ? "bg-amber-500 text-slate-950 border-amber-600 shadow-sm"
+                  : product.badge.toLowerCase().includes("limited")
+                  ? "bg-rose-600 text-white border-rose-700 shadow-sm"
+                  : "bg-slate-900 text-white border-slate-800"
+              }`}>
                 {product.badge}
               </span>
             )}
             {product.is_flash_deal && (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold text-[10px] uppercase tracking-wider border border-amber-300">
-                Flash Deal
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold text-[10px] uppercase tracking-wider border border-amber-300">
+                Limited Time Deal
               </span>
             )}
             {discount > 0 && (
-              <span className="px-2 py-0.5 bg-rose-100 text-rose-700 font-bold text-[10px] border border-rose-300">
+              <span className="px-2 py-0.5 bg-rose-100 text-rose-800 font-black text-[10px] border border-rose-300">
                 -{discount}% OFF
               </span>
             )}
@@ -129,40 +168,60 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Card Content */}
         <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <span className="text-[10px] font-bold text-slate-900 uppercase tracking-wider block">
-              {product.category?.name || "Flagship"}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+              {product.brand ? `Brand: ${product.brand}` : (product.category?.name || "Product")}
             </span>
 
             <Link href={`/products/${product.id}`}>
-              <h3 className="text-xs font-bold text-slate-900 tracking-tight line-clamp-1 mt-0.5 hover:text-black">
+              <h3 className="text-xs font-bold text-slate-900 tracking-tight line-clamp-2 hover:text-amber-600 transition-colors leading-snug">
                 {product.name}
               </h3>
             </Link>
 
-            <div className="flex items-center space-x-1 mt-1">
-              <div className="flex items-center text-amber-500">
-                <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
-              </div>
-              <span className="text-xs font-bold text-slate-800">
-                {product.rating_avg}
-              </span>
-              <span className="text-[11px] font-bold text-slate-700">
-                ({product.reviews_count})
-              </span>
-            </div>
+            {/* Ratings & Bought Count */}
+            {(() => {
+              const reviewsCount = product.reviews_count || 0;
+              const ratingAvg = reviewsCount > 0 ? (product.rating_avg || 0) : 0;
+              return (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <div className="flex items-center text-amber-500">
+                    <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">
+                    {ratingAvg}
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-700">
+                    ({reviewsCount})
+                  </span>
+                  
+                  {/* Sales Volume / Bought Count - Real Supabase Column */}
+                  {Boolean(product.bought_past_month) && (
+                    <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 border border-slate-200">
+                      {product.bought_past_month}+ bought in past month
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Price & Action Buttons */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
-            <div className="flex items-center justify-between">
+            {/* Price section with List Price format */}
+            <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-sm font-black text-slate-900 font-mono block">
-                  {formatPrice(product.price)}
-                </span>
+                <div className="flex items-baseline gap-1.5">
+                  {discount > 0 && (
+                    <span className="text-[10px] font-bold bg-slate-900 text-white px-1 py-0.5">-{discount}%</span>
+                  )}
+                  <span className="text-sm font-black text-slate-900 font-mono">
+                    {formatPrice(product.price)}
+                  </span>
+                </div>
                 {product.original_price && (
-                  <span className="text-[11px] text-slate-600 font-semibold line-through font-mono">
-                    {formatPrice(product.original_price)}
+                  <span className="text-[11px] text-slate-600 font-medium line-through font-mono block">
+                    List: {formatPrice(product.original_price)}
                   </span>
                 )}
               </div>
@@ -174,6 +233,21 @@ export function ProductCard({ product }: ProductCardProps) {
               >
                 <ShoppingBag className="w-4 h-4 text-white" />
               </button>
+            </div>
+
+            {/* Delivery ETA & Fulfillment Info */}
+            <div className="text-[10px] space-y-0.5 pt-1 text-slate-600 border-t border-dashed border-slate-200">
+              <p className="font-semibold text-slate-700">
+                Get it as soon as <span className="font-bold text-slate-900">{calculateExpressDelivery(17, activeGov).deliveryText}</span>
+              </p>
+              <p className="text-slate-500">
+                Fulfilled by AURA • {product.price >= 2000 ? "FREE Shipping" : "Standard Shipping"}
+              </p>
+              {product.stock <= 3 && product.stock > 0 && (
+                <p className="text-slate-900 font-bold">
+                  Only {product.stock} left in stock - order soon.
+                </p>
+              )}
             </div>
 
             {/* Regular View Details & Order Buttons Grid */}

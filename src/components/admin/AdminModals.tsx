@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Loader2, Filter, Plus, Trash2, Image as ImageIcon, ArrowRight, Edit2 } from "lucide-react";
-import { Product, Category, Story, Offer } from "@/types";
+import { Product, Category, Brand, Story, Offer } from "@/types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 
 const PRODUCT_BADGE_OPTIONS = [
@@ -23,8 +23,25 @@ const TARGET_GENDER_OPTIONS = [
   { value: "women", label: "Women" },
 ];
 
+export const DEFAULT_PRODUCT_BRANDS = [
+  { value: "AURA Official", label: "AURA Official" },
+  { value: "Anker", label: "Anker" },
+  { value: "Sony", label: "Sony" },
+  { value: "Apple", label: "Apple" },
+  { value: "Samsung", label: "Samsung" },
+  { value: "Logitech", label: "Logitech" },
+  { value: "Razer", label: "Razer" },
+  { value: "Bose", label: "Bose" },
+  { value: "Asus", label: "Asus" },
+  { value: "Xiaomi", label: "Xiaomi" },
+  { value: "Baseus", label: "Baseus" },
+  { value: "JBL", label: "JBL" },
+  { value: "Other", label: "+ Custom / Other Brand" },
+];
+
 interface AdminModalsProps {
   categoriesList: Category[];
+  brandsList?: Brand[];
   isSubmitting: boolean;
   onFileUpload: (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -59,6 +76,8 @@ interface AdminModalsProps {
 
   newProdBrand?: string;
   setNewProdBrand?: (v: string) => void;
+  newProdBoughtPastMonth?: string;
+  setNewProdBoughtPastMonth?: (v: string) => void;
   newProdSku?: string;
   setNewProdSku?: (v: string) => void;
   newProdTargetGender?: string;
@@ -163,6 +182,7 @@ interface AdminModalsProps {
 
 export function AdminModals({
   categoriesList,
+  brandsList,
   isSubmitting,
   onFileUpload,
 
@@ -192,6 +212,8 @@ export function AdminModals({
   setNewProdFlashDeal,
   newProdBrand,
   setNewProdBrand,
+  newProdBoughtPastMonth,
+  setNewProdBoughtPastMonth,
   newProdSku,
   setNewProdSku,
   newProdTargetGender,
@@ -285,6 +307,11 @@ export function AdminModals({
   setEditingOffer,
   onUpdateOfferSubmit,
 }: AdminModalsProps) {
+  const brandSelectOptions = [
+    ...(brandsList || []).map((b) => ({ value: b.name, label: b.name })),
+    { value: "Other", label: "+ Custom / Other Brand" },
+  ];
+
   const [addOfferCategoryFilter, setAddOfferCategoryFilter] = useState<string>("ALL");
   const [editOfferCategoryFilter, setEditOfferCategoryFilter] = useState<string>("ALL");
   const [addTab, setAddTab] = useState<'basic' | 'gallery' | 'specs' | 'shipping'>('basic');
@@ -419,7 +446,7 @@ export function AdminModals({
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">Category</label>
                           <CustomSelect
@@ -432,6 +459,34 @@ export function AdminModals({
                             ]}
                             triggerClassName="w-full justify-between py-2.5"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
+                          <div className="space-y-1.5">
+                            {brandSelectOptions.length > 1 && (
+                              <CustomSelect
+                                value={
+                                  brandSelectOptions.some(b => b.value === newProdBrand)
+                                    ? newProdBrand || ''
+                                    : 'Other'
+                                }
+                                onChange={(val) => {
+                                  if (val !== 'Other') {
+                                    setNewProdBrand?.(val);
+                                  }
+                                }}
+                                options={brandSelectOptions}
+                                triggerClassName="w-full justify-between py-2 font-bold"
+                              />
+                            )}
+                            <input
+                              type="text"
+                              value={newProdBrand || ''}
+                              onChange={(e) => setNewProdBrand?.(e.target.value)}
+                              placeholder="Type brand name freely..."
+                              className="w-full bg-slate-50 border border-slate-300 p-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-900"
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="block text-slate-700 font-bold mb-1">Badge Tag</label>
@@ -675,17 +730,6 @@ export function AdminModals({
                     <div className="space-y-5 animate-fadeIn">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
-                          <input
-                            type="text"
-                            value={newProdBrand || ''}
-                            onChange={(e) => setNewProdBrand?.(e.target.value)}
-                            placeholder="e.g. AURA Official, Anker"
-                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                          />
-                        </div>
-
-                        <div>
                           <label className="block text-slate-700 font-bold mb-1">SKU Code</label>
                           <input
                             type="text"
@@ -726,6 +770,17 @@ export function AdminModals({
                             value={newProdShelfLife || ''}
                             onChange={(e) => setNewProdShelfLife?.(e.target.value)}
                             placeholder="e.g. 24 Months Warranty"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Bought Past Month (Sales)</label>
+                          <input
+                            type="number"
+                            value={newProdBoughtPastMonth || '50'}
+                            onChange={(e) => setNewProdBoughtPastMonth?.(e.target.value)}
+                            placeholder="e.g. 50"
                             className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
                           />
                         </div>
@@ -1298,6 +1353,40 @@ export function AdminModals({
                         </div>
 
                         <div>
+                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
+                          <div className="space-y-1.5">
+                            {brandSelectOptions.length > 1 && (
+                              <CustomSelect
+                                value={
+                                  brandSelectOptions.some(b => b.value === editingProduct.brand)
+                                    ? editingProduct.brand || ''
+                                    : 'Other'
+                                }
+                                onChange={(val) => {
+                                  if (val !== 'Other') {
+                                    setEditingProduct({ ...editingProduct, brand: val });
+                                  }
+                                }}
+                                options={brandSelectOptions}
+                                triggerClassName="w-full justify-between py-2 font-bold"
+                              />
+                            )}
+                            <input
+                              type="text"
+                              value={editingProduct.brand || ''}
+                              onChange={(e) =>
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  brand: e.target.value,
+                                })
+                              }
+                              placeholder="Type brand name freely..."
+                              className="w-full bg-slate-50 border border-slate-300 p-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-900"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
                           <label className="block text-slate-700 font-bold mb-1">Badge Tag</label>
                           <CustomSelect
                             value={editingProduct.badge || ""}
@@ -1557,22 +1646,6 @@ export function AdminModals({
                     <div className="space-y-5 animate-fadeIn">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-slate-700 font-bold mb-1">Brand</label>
-                          <input
-                            type="text"
-                            value={editingProduct.brand || ''}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                brand: e.target.value,
-                              })
-                            }
-                            placeholder="e.g. AURA Official, Anker"
-                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                          />
-                        </div>
-
-                        <div>
                           <label className="block text-slate-700 font-bold mb-1">SKU Code</label>
                           <input
                             type="text"
@@ -1633,6 +1706,22 @@ export function AdminModals({
                               })
                             }
                             placeholder="e.g. 24 Months Warranty"
+                            className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-1">Bought Past Month (Sales)</label>
+                          <input
+                            type="number"
+                            value={editingProduct.bought_past_month ?? 50}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                bought_past_month: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            placeholder="e.g. 50"
                             className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
                           />
                         </div>

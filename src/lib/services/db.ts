@@ -1,6 +1,7 @@
 import {
   Product,
   Category,
+  Brand,
   Story,
   Profile,
   BentoItem,
@@ -1289,5 +1290,66 @@ export async function deleteBlogInDb(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// ==========================================
+// BRANDS SERVICES (Public & Admin)
+// ==========================================
+
+export async function getBrands(): Promise<Brand[]> {
+  try {
+    const res = await fetch("/api/brands", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createBrandInDb(brandData: { name: string; logo_url?: string; description?: string }): Promise<Brand | null> {
+  try {
+    const res = await fetch("/api/brands", {
+      method: "POST",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify(brandData),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateBrandInDb(id: string, updates: Partial<Brand>): Promise<Brand | null> {
+  try {
+    const res = await fetch("/api/brands", {
+      method: "PUT",
+      headers: ADMIN_HEADERS,
+      body: JSON.stringify({ id, ...updates }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    notifyDataChanged();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteBrandInDb(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/brands?id=${id}`, {
+      method: "DELETE",
+      headers: ADMIN_HEADERS,
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 
 

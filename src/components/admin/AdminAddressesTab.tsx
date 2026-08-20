@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Plus, Search, MapPin, Edit, Trash2, Loader2, X, Check } from "lucide-react";
 import { UserAddress } from "@/types";
 import { createAdminAddress, updateAdminAddress, deleteAdminAddress } from "@/lib/services/db";
+import { getStoredGovernorates, saveStoredGovernorates, GovernorateShipping } from "@/lib/shipping";
+import { formatPrice } from "@/lib/utils";
 
 interface AdminAddressesTabProps {
   addressesList: UserAddress[];
@@ -16,6 +18,15 @@ export function AdminAddressesTab({
   onRefresh,
   onNotify,
 }: AdminAddressesTabProps) {
+  const [activeSubTab, setActiveSubTab] = useState<"addresses" | "governorates">("addresses");
+  const [govsList, setGovsList] = useState<GovernorateShipping[]>(() => getStoredGovernorates());
+  const [editingGov, setEditingGov] = useState<GovernorateShipping | null>(null);
+  const [isGovModalOpen, setIsGovModalOpen] = useState(false);
+  const [govName, setGovName] = useState("");
+  const [govNameAr, setGovNameAr] = useState("");
+  const [govFee, setGovFee] = useState("");
+  const [govEstDays, setGovEstDays] = useState("1-2 Business Days");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,28 +160,112 @@ export function AdminAddressesTab({
     setActionLoadingId(null);
   };
 
+  // Governorate Handlers
+  const openAddGovModal = () => {
+    setEditingGov(null);
+    setGovName("");
+    setGovNameAr("");
+    setGovFee("50");
+    setGovEstDays("1-2 Business Days");
+    setIsGovModalOpen(true);
+  };
+
+  const openEditGovModal = (g: GovernorateShipping) => {
+    setEditingGov(g);
+    setGovName(g.name);
+    setGovNameAr(g.nameAr);
+    setGovFee(g.fee.toString());
+    setGovEstDays(g.estDays);
+    setIsGovModalOpen(true);
+  };
+
+  const handleSaveGov = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!govName || !govNameAr || !govFee) return;
+
+    const feeNum = parseFloat(govFee) || 50;
+    let updated: GovernorateShipping[];
+    if (editingGov) {
+      updated = govsList.map((item) =>
+        item.id === editingGov.id
+          ? { ...item, name: govName, nameAr: govNameAr, fee: feeNum, estDays: govEstDays }
+          : item
+      );
+      onNotify?.(`Governorate "${govNameAr}" updated successfully.`);
+    } else {
+      const newGov: GovernorateShipping = {
+        id: govName.toLowerCase().replace(/\s+/g, "_"),
+        name: govName,
+        nameAr: govNameAr,
+        fee: feeNum,
+        estDays: govEstDays,
+      };
+      updated = [...govsList, newGov];
+      onNotify?.(`Governorate "${govNameAr}" added successfully.`);
+    }
+    setGovsList(updated);
+    saveStoredGovernorates(updated);
+    setIsGovModalOpen(false);
+  };
+
+  const handleDeleteGov = (id: string, nameAr: string) => {
+    const updated = govsList.filter((g) => g.id !== id);
+    setGovsList(updated);
+    saveStoredGovernorates(updated);
+    onNotify?.(`Governorate "${nameAr}" removed.`);
+  };
+
   return (
     <div className="space-y-6 font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-        <div>
-          <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-slate-900" />
-            Customer Shipping Addresses
-          </h2>
-          <p className="text-xs text-slate-600">
-            Manage customer delivery destinations and instructions ({filteredAddresses.length} records).
-          </p>
-        </div>
+      {/* Sub Tab Navigation */}
+      <div className="flex border-b border-slate-200 bg-slate-100 p-1 space-x-1">
+        <button
+          onClick={() => setActiveSubTab("addresses")}
+          className={`flex-1 py-2 text-xs font-bold uppercase transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+            activeSubTab === "addresses"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          <span>Customer Shipping Addresses ({addressesList.length})</span>
+        </button>
 
         <button
-          onClick={openAddModal}
-          className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase border border-slate-800 transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
+          onClick={() => setActiveSubTab("governorates")}
+          className={`flex-1 py-2 text-xs font-bold uppercase transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+            activeSubTab === "governorates"
+              ? "bg-slate-900 text-white shadow-sm"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+          }`}
         >
-          <Plus className="w-4 h-4 text-white" />
-          <span>Add New Address</span>
+          <Check className="w-4 h-4" />
+          <span>Governorate Shipping & Delivery Rates ({govsList.length})</span>
         </button>
       </div>
+
+      {activeSubTab === "addresses" ? (
+        <>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div>
+              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-slate-900" />
+                Customer Shipping Addresses
+              </h2>
+              <p className="text-xs text-slate-600">
+                Manage customer delivery destinations and instructions ({filteredAddresses.length} records).
+              </p>
+            </div>
+
+            <button
+              onClick={openAddModal}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase border border-slate-800 transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
+            >
+              <Plus className="w-4 h-4 text-white" />
+              <span>Add New Address</span>
+            </button>
+          </div>
 
       {/* Search Bar */}
       <div className="relative max-w-md">
@@ -245,7 +340,80 @@ export function AdminAddressesTab({
         })}
       </div>
 
-      {/* MODAL */}
+        </>
+      ) : (
+        /* GOVERNORATES TAB VIEW */
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div>
+              <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight flex items-center gap-2">
+                <Check className="w-5 h-5 text-slate-900" />
+                Egyptian Governorates & Shipping Rates
+              </h2>
+              <p className="text-xs text-slate-600">
+                Configure delivery fees (EGP) and estimated timelines per governorate ({govsList.length} governorates).
+              </p>
+            </div>
+
+            <button
+              onClick={openAddGovModal}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase border border-slate-800 transition-all flex items-center space-x-2 cursor-pointer self-start sm:self-auto"
+            >
+              <Plus className="w-4 h-4 text-white" />
+              <span>Add Governorate</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {govsList.map((g) => (
+              <div
+                key={g.id}
+                className="p-4 border border-slate-200 bg-white flex flex-col justify-between space-y-3 hover:border-slate-900 transition-all text-xs"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="font-black text-slate-900 text-sm">{g.nameAr}</span>
+                    <span className="font-mono text-slate-500 text-[11px]">{g.name}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs pt-1">
+                    <span className="text-slate-600 font-medium">Shipping Fee:</span>
+                    <span className="font-black text-slate-900 font-mono">
+                      {g.fee === 0 ? "FREE" : formatPrice(g.fee)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-600 font-medium">Est. Days:</span>
+                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
+                      {g.estDays}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  <button
+                    onClick={() => openEditGovModal(g)}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold uppercase text-[11px] border border-slate-300 flex items-center space-x-1 cursor-pointer transition-colors"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteGov(g.id, g.nameAr)}
+                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 font-bold uppercase text-[11px] border border-slate-200 flex items-center space-x-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER ADDRESS MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white border border-slate-200 w-full max-w-lg p-6 space-y-4 text-slate-900 max-h-[90vh] overflow-y-auto">
@@ -384,6 +552,96 @@ export function AdminAddressesTab({
                   className="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase border border-slate-800 hover:bg-black cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? "Saving..." : editingAddress ? "Save Changes" : "Create Address"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* GOVERNORATE MODAL */}
+      {isGovModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 w-full max-w-md p-6 space-y-4 text-slate-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-base font-black uppercase text-slate-900">
+                {editingGov ? `Edit Governorate: ${editingGov.nameAr}` : "Add New Governorate"}
+              </h3>
+              <button
+                onClick={() => setIsGovModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveGov} className="space-y-3 text-xs font-bold uppercase">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1">Arabic Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: أسيوط"
+                    value={govNameAr}
+                    onChange={(e) => setGovNameAr(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 mb-1">English Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Asyut"
+                    value={govName}
+                    onChange={(e) => setGovName(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1">Shipping Fee ($ / EGP) *</label>
+                  <input
+                    type="number"
+                    required
+                    step="1"
+                    placeholder="50"
+                    value={govFee}
+                    onChange={(e) => setGovFee(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 mb-1">Est. Delivery Timeline *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 2-3 Business Days"
+                    value={govEstDays}
+                    onChange={(e) => setGovEstDays(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGovModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold uppercase border border-slate-300 hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-slate-900 text-white text-xs font-bold uppercase border border-slate-800 hover:bg-black cursor-pointer"
+                >
+                  {editingGov ? "Save Changes" : "Create Governorate"}
                 </button>
               </div>
             </form>

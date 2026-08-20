@@ -26,6 +26,7 @@ import { getCategories, getUserAddresses } from "@/lib/services/db";
 import { Category, UserAddress } from "@/types";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { UserNotificationCenter } from "@/components/layout/UserNotificationCenter";
+import { trackSearchQuery } from "@/lib/analytics/tracker";
 
 export function Navbar() {
   const { getTotalItems, openCart } = useCartStore();
@@ -210,7 +211,15 @@ export function Navbar() {
 
   // Search States
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("aura_recent_searches");
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
+    return [];
+  });
   const [trendingSearches, setTrendingSearches] = useState<string[]>([]);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const hasFetchedTrendingRef = useRef(false);
@@ -265,6 +274,9 @@ export function Navbar() {
       ),
     ].slice(0, 5);
     setRecentSearches(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aura_recent_searches", JSON.stringify(updated));
+    }
 
     // Send to trending API in DB
     fetch("/api/trending-searches", {
@@ -278,16 +290,25 @@ export function Navbar() {
     e.stopPropagation();
     const updated = recentSearches.filter((s) => s !== item);
     setRecentSearches(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aura_recent_searches", JSON.stringify(updated));
+    }
   };
 
   const clearAllRecent = (e: React.MouseEvent) => {
     e.stopPropagation();
     setRecentSearches([]);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("aura_recent_searches");
+    }
   };
 
   const executeSearch = (queryToSearch: string) => {
     if (!queryToSearch.trim() && selectedCategory === "all") return;
     saveRecentSearch(queryToSearch);
+    if (queryToSearch.trim()) {
+      trackSearchQuery(queryToSearch.trim());
+    }
     setIsSearchFocused(false);
     const url = `/products?search=${encodeURIComponent(queryToSearch)}&category=${selectedCategory}`;
     window.location.href = url;

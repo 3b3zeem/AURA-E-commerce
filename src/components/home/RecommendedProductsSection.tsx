@@ -110,11 +110,17 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
 
         {/* Product Info */}
         <div className="space-y-1.5 flex-1">
-          <div className="flex items-center space-x-1 text-amber-400 text-[10px]">
-            <Star className="w-3 h-3 fill-amber-400" />
-            <span className="font-mono font-bold">{product.rating_avg || 4.8}</span>
-            <span className="text-slate-400 font-medium">({product.reviews_count || 12})</span>
-          </div>
+          {(() => {
+            const revCount = product.reviews_count || 0;
+            const ratingAvg = revCount > 0 ? (product.rating_avg || 0) : 0;
+            return (
+              <div className="flex items-center space-x-1 text-amber-400 text-[10px]">
+                <Star className="w-3 h-3 fill-amber-400" />
+                <span className="font-mono font-bold">{ratingAvg}</span>
+                <span className="text-slate-400 font-medium">({revCount})</span>
+              </div>
+            );
+          })()}
 
           <h3 className="text-xs sm:text-sm font-bold uppercase text-white truncate group-hover:text-amber-400 transition-colors">
             <Link href={`/products/${product.id}`}>{product.name}</Link>

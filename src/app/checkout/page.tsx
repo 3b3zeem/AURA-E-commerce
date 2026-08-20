@@ -9,6 +9,7 @@ import { getUserAddresses, createUserAddress, verifyPromoCode, createOrderInDb }
 import { UserAddress } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { trackPurchaseCompleted } from '@/lib/analytics/tracker';
+import { EGYPTIAN_GOVERNORATES, getShippingFee } from '@/lib/shipping';
 import {
   Truck,
   CreditCard,
@@ -155,7 +156,8 @@ export default function CheckoutPage() {
   };
 
   const subtotal = getSubtotal();
-  const shipping = subtotal >= 200 || subtotal === 0 ? 0 : 15;
+  const shippingInfo = getShippingFee(shippingData.state || shippingData.city || 'Cairo', subtotal);
+  const shipping = shippingInfo.fee;
   const pointsDiscount = usePoints ? Math.min(subtotal, loyaltyPoints / 10) : 0; // 10 points = $1
   const promoDiscount = appliedPromo ? (subtotal * appliedPromo.discountPercent) / 100 : 0;
   const finalTotal = Math.max(0, subtotal + shipping - pointsDiscount - promoDiscount);
@@ -530,23 +532,34 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">City</label>
-                    <input
-                      type="text"
-                      placeholder="Cairo"
-                      value={shippingData.city}
-                      onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
-                    />
+                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">Governorate (المحافظة)</label>
+                    <select
+                      value={shippingData.state}
+                      onChange={(e) => {
+                        const gov = EGYPTIAN_GOVERNORATES.find(g => g.name === e.target.value);
+                        setShippingData({ 
+                          ...shippingData, 
+                          state: e.target.value,
+                          city: gov ? gov.name.split(' ')[0] : shippingData.city 
+                        });
+                      }}
+                      className="w-full bg-slate-50 border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900 font-sans"
+                    >
+                      {EGYPTIAN_GOVERNORATES.map((gov) => (
+                        <option key={gov.id} value={gov.name}>
+                          {gov.name} ({gov.nameAr}) - {subtotal >= 2000 ? 'FREE' : formatPrice(gov.fee)}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">State / Region</label>
+                    <label className="text-xs font-bold text-slate-800 block mb-1 uppercase">City / District (المدينة / المنطقة)</label>
                     <input
                       type="text"
-                      placeholder="Cairo / Giza"
-                      value={shippingData.state}
-                      onChange={(e) => setShippingData({ ...shippingData, state: e.target.value })}
+                      placeholder="e.g. Nasr City, Maadi, Smouha"
+                      value={shippingData.city}
+                      onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-300 p-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
                     />
                   </div>

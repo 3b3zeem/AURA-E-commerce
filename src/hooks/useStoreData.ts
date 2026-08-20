@@ -640,6 +640,56 @@ export function useAddReviewMutation() {
   });
 }
 
+export function useUpdateReviewMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      review_id,
+      product_id,
+      rating,
+      comment,
+    }: {
+      review_id: string;
+      product_id: string;
+      rating: number;
+      comment: string;
+    }) => {
+      const res = await fetch('/api/reviews', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id, rating, comment }),
+      });
+      if (!res.ok) throw new Error('Failed to update review');
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', variables.product_id] });
+    },
+  });
+}
+
+export function useDeleteReviewMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      review_id,
+      product_id,
+    }: {
+      review_id: string;
+      product_id: string;
+    }) => {
+      const res = await fetch(`/api/reviews?reviewId=${review_id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete review');
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['reviews', variables.product_id] });
+    },
+  });
+}
+
 // ==========================================
 // 10. USER CART & WISHLIST QUERIES
 // ==========================================

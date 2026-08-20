@@ -59,6 +59,11 @@ export async function POST(request: Request) {
       origin_country: body.origin_country || null,
       care_instructions: body.care_instructions || null,
       brand: body.brand || 'AURA Official',
+      bought_past_month: body.bought_past_month ? parseInt(body.bought_past_month) : 50,
+      bank_promos: body.bank_promos || [],
+      protection_plans: body.protection_plans || [],
+      specs: body.specs || {},
+      variants: body.variants || [],
       sku: body.sku || null,
       faqs: body.faqs || [],
     };
@@ -106,7 +111,8 @@ export async function PUT(request: Request) {
         'highlights', 'usage_instructions', 'target_gender', 'return_policy',
         'delivery_info', 'min_order_qty', 'key_benefits', 'package_includes',
         'shelf_life', 'frequently_bought_together', 'origin_country',
-        'care_instructions', 'brand', 'sku', 'faqs'
+        'care_instructions', 'brand', 'bought_past_month', 'bank_promos',
+        'protection_plans', 'sku', 'faqs'
       ];
       const cleaned: any = {};
       for (const key of Object.keys(obj)) {

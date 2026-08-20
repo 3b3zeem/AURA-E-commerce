@@ -33,13 +33,15 @@ import {
   deleteOfferInDb,
   getNewsletterSubscribers,
   getBlogsFromDb,
+  getBrands,
 } from "@/lib/services/db";
-import { Product, Category, Story, Profile, Offer, NewsletterSubscriber, BlogPost } from "@/types";
+import { Product, Category, Brand, Story, Profile, Offer, NewsletterSubscriber, BlogPost } from "@/types";
 import { CheckCircle2 } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminTabsNav, AdminTab } from "@/components/admin/AdminTabsNav";
 import { AdminProductsTab } from "@/components/admin/AdminProductsTab";
+import { AdminBrandsTab } from "@/components/admin/AdminBrandsTab";
 import { AdminOffersTab } from "@/components/admin/AdminOffersTab";
 import { AdminNewsletterTab } from "@/components/admin/AdminNewsletterTab";
 import { AdminOrdersTab } from "@/components/admin/AdminOrdersTab";
@@ -90,6 +92,7 @@ export default function AdminDashboardPage() {
   const [offersList, setOffersList] = useState<Offer[]>([]);
   const [subscribersList, setSubscribersList] = useState<NewsletterSubscriber[]>([]);
   const [blogsList, setBlogsList] = useState<BlogPost[]>([]);
+  const [brandsList, setBrandsList] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -115,6 +118,7 @@ export default function AdminDashboardPage() {
   const [newProdFeatured, setNewProdFeatured] = useState(false);
   const [newProdFlashDeal, setNewProdFlashDeal] = useState(false);
   const [newProdBrand, setNewProdBrand] = useState("");
+  const [newProdBoughtPastMonth, setNewProdBoughtPastMonth] = useState("50");
   const [newProdSku, setNewProdSku] = useState("");
   const [newProdTargetGender, setNewProdTargetGender] = useState("unisex");
   const [newProdOriginCountry, setNewProdOriginCountry] = useState("");
@@ -165,10 +169,16 @@ export default function AdminDashboardPage() {
     try {
       switch (tab) {
         case "products": {
-          const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
+          const [prods, cats, brnds] = await Promise.all([getProducts(), getCategories(), getBrands()]);
           setProductsList(prods);
           setCategoriesList(cats);
+          setBrandsList(brnds);
           if (cats.length > 0 && !newProdCategory) setNewProdCategory(cats[0].id);
+          break;
+        }
+        case "brands": {
+          const brnds = await getBrands();
+          setBrandsList(brnds);
           break;
         }
         case "categories": {
@@ -349,6 +359,7 @@ export default function AdminDashboardPage() {
         is_featured: newProdFeatured,
         is_flash_deal: newProdFlashDeal,
         brand: newProdBrand || "AURA Official",
+        bought_past_month: parseInt(newProdBoughtPastMonth) || 50,
         sku: newProdSku || undefined,
         target_gender: newProdTargetGender || "unisex",
         origin_country: newProdOriginCountry || undefined,
@@ -843,6 +854,7 @@ export default function AdminDashboardPage() {
           storiesCount={storiesList.length}
           trendingCount={trendingList.length}
           addressesCount={addressesList.length}
+          brandsCount={brandsList.length}
           promosCount={promosList.length}
           offersCount={offersList.length}
           subscribersCount={subscribersList.length}
@@ -862,6 +874,14 @@ export default function AdminDashboardPage() {
             onOpenAddModal={() => setIsAddProductOpen(true)}
             onEditProduct={(p) => setEditingProduct(p)}
             onDeleteProduct={handleDeleteProduct}
+          />
+        )}
+
+        {activeTab === "brands" && (
+          <AdminBrandsTab
+            brandsList={brandsList}
+            onRefresh={refreshData}
+            onNotify={showNotification}
           />
         )}
 
@@ -982,6 +1002,7 @@ export default function AdminDashboardPage() {
       {/* ALL CREATE & EDIT MODALS */}
       <AdminModals
         categoriesList={categoriesList}
+        brandsList={brandsList}
         productsList={productsList}
         isSubmitting={isSubmitting}
         onFileUpload={handleFileUpload}
@@ -1011,6 +1032,8 @@ export default function AdminDashboardPage() {
         setNewProdFlashDeal={setNewProdFlashDeal}
         newProdBrand={newProdBrand}
         setNewProdBrand={setNewProdBrand}
+        newProdBoughtPastMonth={newProdBoughtPastMonth}
+        setNewProdBoughtPastMonth={setNewProdBoughtPastMonth}
         newProdSku={newProdSku}
         setNewProdSku={setNewProdSku}
         newProdTargetGender={newProdTargetGender}

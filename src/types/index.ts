@@ -23,6 +23,15 @@ export interface Category {
   created_at: string;
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  logo_url?: string | null;
+  description?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+}
+
 export interface ProductVariant {
   name: string;
   options: string[];
@@ -61,6 +70,9 @@ export interface Product {
   origin_country?: string | null;
   care_instructions?: string | null;
   brand?: string | null;
+  bought_past_month?: number | string;
+  bank_promos?: { code: string; title: string; discount: string }[];
+  protection_plans?: { id: string; name: string; price: number }[];
   sku?: string | null;
   faqs?: { question: string; answer: string }[];
   created_at: string;

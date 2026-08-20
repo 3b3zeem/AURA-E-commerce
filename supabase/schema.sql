@@ -67,6 +67,11 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS badge TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS brand TEXT;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS bought_past_month INT DEFAULT 0;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS highlights TEXT[] DEFAULT '{}'::text[];
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS bank_promos JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS protection_plans JSONB DEFAULT '[]'::jsonb;
 
 -- 6. HOMEPAGE STORIES TABLE (Immersive App-Style Carousel)
 CREATE TABLE IF NOT EXISTS public.stories (

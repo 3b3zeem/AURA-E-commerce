@@ -25,6 +25,8 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 
+import toast from "react-hot-toast";
+
 interface AdminOrdersTabProps {
   ordersList: any[];
   actionLoadingId: string | null;
@@ -39,6 +41,23 @@ export function AdminOrdersTab({
   onDeleteOrder,
 }: AdminOrdersTabProps) {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedOrders = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await fetch("/api/admin/seed-orders", { method: "POST" });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        toast.error("Failed to seed demo delivery orders.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const getStatusBadgeStyle = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -66,18 +85,37 @@ export function AdminOrdersTab({
             Real-time customer orders, shipping status, and line items stored in Supabase.
           </p>
         </div>
+
+        <button
+          onClick={handleSeedOrders}
+          disabled={isSeeding}
+          className="py-2 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase flex items-center gap-2 border border-amber-600 cursor-pointer transition-all disabled:opacity-50"
+        >
+          {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-slate-950" />}
+          <span>Generate Demo Delivery Orders</span>
+        </button>
       </div>
 
       {/* Orders Grid / Cards */}
       {ordersList.length === 0 ? (
-        <div className="p-12 border border-dashed border-slate-300 bg-white text-center space-y-3">
-          <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
-          <p className="text-sm font-bold text-slate-500 uppercase">
-            No orders registered in database yet.
-          </p>
-          <p className="text-xs text-slate-400">
-            Orders created via the checkout flow will automatically appear here live.
-          </p>
+        <div className="p-12 border border-dashed border-slate-300 bg-white text-center space-y-4">
+          <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
+          <div className="space-y-1">
+            <p className="text-sm font-black text-slate-700 uppercase">
+              No delivery orders registered in database yet
+            </p>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Orders created via customer checkout will automatically appear here live. Click below to generate realistic sample Egyptian delivery orders for testing.
+            </p>
+          </div>
+          <button
+            onClick={handleSeedOrders}
+            disabled={isSeeding}
+            className="py-2.5 px-5 bg-slate-900 hover:bg-black text-white font-bold text-xs uppercase inline-flex items-center gap-2 border border-slate-800 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-400" />}
+            <span>Create 5 Demo Delivery Orders</span>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
