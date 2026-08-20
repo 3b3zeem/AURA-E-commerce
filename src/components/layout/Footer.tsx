@@ -108,7 +108,7 @@ export function Footer() {
       </div>
 
       {/* Main Footer Links */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
         {/* Brand info */}
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
@@ -227,6 +227,31 @@ export function Footer() {
                 </li>
               </>
             )}
+          </ul>
+        </div>
+
+        {/* Links Column 3: Dedicated Legal & Policies List */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+            Legal & Policies
+          </h4>
+          <ul className="space-y-2 text-xs text-slate-700 font-bold uppercase">
+            <li>
+              <Link
+                href="/privacy"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/terms"
+                className="hover:text-slate-900 transition-colors underline"
+              >
+                Terms & Conditions
+              </Link>
+            </li>
           </ul>
         </div>
 
