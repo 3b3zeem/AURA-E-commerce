@@ -114,7 +114,6 @@ export function ProductsTopBar({
                   : 'bg-slate-50 text-slate-700 border-slate-300 hover:border-slate-900'
               }`}
             >
-              <Sparkles className={`w-3.5 h-3.5 ${recommendedOnly ? 'fill-slate-950 text-slate-950' : 'text-amber-500'}`} />
               <span>Recommended</span>
             </button>
           )}
@@ -128,7 +127,6 @@ export function ProductsTopBar({
                 : 'bg-slate-50 text-slate-700 border-slate-300 hover:border-slate-900'
             }`}
           >
-            <Zap className={`w-3.5 h-3.5 ${flashDealsOnly ? 'fill-slate-900' : 'text-slate-900'}`} />
             <span>Flash Deals</span>
           </button>
 

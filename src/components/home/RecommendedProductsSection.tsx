@@ -40,7 +40,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
 
     const interval = setInterval(() => {
       setCurrentImgIndex((prev) => (prev + 1) % images.length);
-    }, 3000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [hasMultipleImages, images.length]);
@@ -74,7 +74,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0.4 }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                className="w-full h-full object-cover"
               />
             </AnimatePresence>
           </Link>
@@ -84,7 +84,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
             <>
               <button
                 onClick={handlePrevImg}
-                className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-1 bg-slate-900/80 hover:bg-slate-900 text-white opacity-0 group-hover:opacity-100 transition-opacity border border-slate-700 cursor-pointer shadow-md"
+                className="absolute left-1 top-1/2 -translate-y-1/2 z-20 p-1 bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700 cursor-pointer shadow-md"
                 title="Previous image"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -92,7 +92,7 @@ function RecommendedProductCard({ product }: RecommendedCardProps) {
 
               <button
                 onClick={handleNextImg}
-                className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-1 bg-slate-900/80 hover:bg-slate-900 text-white opacity-0 group-hover:opacity-100 transition-opacity border border-slate-700 cursor-pointer shadow-md"
+                className="absolute right-1 top-1/2 -translate-y-1/2 z-20 p-1 bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700 cursor-pointer shadow-md"
                 title="Next image"
               >
                 <ChevronRight className="w-3.5 h-3.5" />

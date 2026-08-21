@@ -57,7 +57,7 @@ export function ProductCarouselSection({
 
     const timer = setInterval(() => {
       setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 4000);
+    }, 7000);
 
     return () => clearInterval(timer);
   }, [totalPages, isHovered, products]);

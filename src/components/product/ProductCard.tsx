@@ -52,7 +52,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
     const interval = setInterval(() => {
       setCurrentImgIndex((prev) => (prev + 1) % images.length);
-    }, 3000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [hasMultipleImages, images.length]);

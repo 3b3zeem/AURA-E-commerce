@@ -55,25 +55,6 @@ export function FlashDeals({ products }: FlashDealsProps) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Countdown Timer */}
-            <div className="flex items-center space-x-2 bg-slate-50 border border-slate-300 px-4 py-2">
-              <Clock className="w-4 h-4 text-slate-900" />
-              <span className="text-xs font-bold text-slate-700 uppercase mr-1">Ends in:</span>
-              <div className="flex items-center space-x-1 font-mono text-xs font-bold text-white">
-                <span className="px-2 py-0.5 bg-slate-900 text-white border border-slate-800">
-                  {String(timeLeft.hours).padStart(2, '0')}
-                </span>
-                <span className="text-slate-900">:</span>
-                <span className="px-2 py-0.5 bg-slate-900 text-white border border-slate-800">
-                  {String(timeLeft.minutes).padStart(2, '0')}
-                </span>
-                <span className="text-slate-900">:</span>
-                <span className="px-2 py-0.5 bg-slate-900 text-white border border-slate-800">
-                  {String(timeLeft.seconds).padStart(2, '0')}
-                </span>
-              </div>
-            </div>
-
             {/* View All Flash Deals Button */}
             <a
               href="/products?flash=true"

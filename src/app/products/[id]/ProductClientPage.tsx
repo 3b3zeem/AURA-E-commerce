@@ -439,12 +439,12 @@ export default function ProductClientPage({
         <div className="lg:col-span-4 flex flex-col-reverse sm:flex-row gap-3 items-start lg:sticky  top-24">
           {/* Vertical Thumbnails */}
           {product.images.length > 1 && (
-            <div className="flex sm:flex-col gap-2 max-h-[500px] w-full sm:w-auto shrink-0 overflow-y-auto py-1">
+            <div className="flex sm:flex-col gap-2 max-h-[500px] w-full sm:w-auto shrink-0 py-1">
               {product.images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImage(img)}
-                  className={`w-14 h-14 sm:w-16 sm:h-16 bg-white border transition-all cursor-pointer overflow-hidden ${
+                  className={`w-14 h-14 sm:w-16 sm:h-16 bg-white border transition-all cursor-pointer ${
                     selectedImage === img
                       ? "border-slate-900 border-2 shadow-sm scale-105"
                       : "border-slate-200 opacity-60 hover:opacity-100"
@@ -843,17 +843,17 @@ export default function ProductClientPage({
         products={boughtAlsoBought}
       />
 
-      {/* 7. Inspired by your browsing history (Search queries) */}
+      {/* 7. Inspired by your recent searches (Search queries) */}
       <ProductCarouselSection
-        title="Inspired by your browsing history"
-        subtitle="Recommendations based on your search queries and interests"
+        title="Inspired by Your Recent Searches"
+        subtitle="Recommendations based on items and terms you searched for"
         products={inspiredProducts}
       />
 
-      {/* 8. Your Browsing History */}
+      {/* 8. Your Recently Viewed Items */}
       <ProductCarouselSection
-        title="Your Browsing History"
-        subtitle="Products you recently viewed on AURA"
+        title="Your Recently Viewed Items"
+        subtitle="Products whose detail pages you directly visited"
         products={viewedHistoryProducts}
       />
 
