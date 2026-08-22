@@ -49,7 +49,7 @@ export default function LoginPage() {
 
         if (profData) {
           setProfile(profData);
-          router.push(profData.role === 'admin' ? '/admin' : '/profile');
+          router.push(profData.role === 'admin' ? '/admin' : '/');
         } else {
           const userRole = data.user.email?.includes('admin') ? 'admin' : 'customer';
           const newProfile = {

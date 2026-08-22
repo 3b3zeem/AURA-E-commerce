@@ -45,7 +45,8 @@ import {
   NewsletterSubscriber,
   BlogPost,
 } from "@/types";
-import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ShieldAlert, ArrowLeft, KeyRound, LogIn } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminTabsNav, AdminTab } from "@/components/admin/AdminTabsNav";
@@ -86,8 +87,13 @@ const ALL_ADMIN_TABS: AdminTab[] = [
 export default function AdminDashboardPage() {
   const { profile, setProfile } = useUserStore();
   const [activeTab, setActiveTab] = useState<AdminTab>("analytics");
+  const [mounted, setMounted] = useState(false);
 
   const isAdmin = profile?.role === "admin";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Data States loaded live from Supabase DB
   const [productsList, setProductsList] = useState<Product[]>([]);
@@ -358,16 +364,6 @@ export default function AdminDashboardPage() {
       document.body.style.overflow = "";
     };
   }, [isAddProductOpen, isAddCategoryOpen, isAddStoryOpen, isAddTrendingOpen]);
-
-  // Promote current logged in user to Admin
-  const handleMakeMeAdmin = () => {
-    if (profile) {
-      const updated = { ...profile, role: "admin" as const };
-      setProfile(updated);
-      updateUserRoleInDb(profile.id, "admin");
-      showNotification("Success: Your profile role was updated to Admin");
-    }
-  };
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -900,6 +896,56 @@ export default function AdminDashboardPage() {
     });
   };
 
+  if (mounted && !isAdmin) {
+    return (
+      <div className="w-full bg-[#f8fafc] text-slate-900 font-sans min-h-screen flex flex-col items-center justify-center p-4">
+        <Toaster position="top-center" />
+        <div className="max-w-lg w-full bg-white border border-slate-200 shadow-2xl p-8 space-y-6 text-center relative overflow-hidden">
+          {/* Warning Icon Badge */}
+          <div className="w-20 h-20 bg-rose-50 border-2 border-rose-200 rounded-full flex items-center justify-center mx-auto text-rose-600 shadow-sm">
+            <ShieldAlert className="w-10 h-10 text-rose-600" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="inline-block bg-rose-100 text-rose-800 text-[11px] font-mono font-black uppercase px-3 py-1 tracking-wider border border-rose-200">
+              403 Unauthorized Access
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tight">
+              Access Restricted
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-bold">
+              Sorry, your current account does not have admin privileges to access the system control panel.
+            </p>
+            <p className="text-xs text-slate-500 italic">
+              You do not have administrative privileges to access this dashboard.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3 pt-2">
+            <Link
+              href="/"
+              className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 border border-slate-900 cursor-pointer shadow-md"
+            >
+              <ArrowLeft className="w-4 h-4 text-white" />
+              <span>Return to Home</span>
+            </Link>
+
+            {!profile && (
+              <Link
+                href="/login"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center space-x-2 border border-indigo-700 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4 text-white" />
+                <span>Log In</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-[#f8fafc] text-slate-900 font-sans min-h-screen pb-16">
       <Toaster position="top-center" />
@@ -919,7 +965,7 @@ export default function AdminDashboardPage() {
       </AnimatePresence>
 
       {/* ADMIN HEADER */}
-      <AdminHeader isAdmin={isAdmin} onMakeMeAdmin={handleMakeMeAdmin} />
+      <AdminHeader isAdmin={isAdmin} />
 
       <div className="px-4 sm:px-6 pt-6">
         {/* TAB NAVIGATION GRID */}

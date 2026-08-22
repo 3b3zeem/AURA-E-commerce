@@ -156,26 +156,26 @@ export async function POST(req: NextRequest) {
 
         if (hasBudgetOverrun) {
           return {
-            reply: `عذراً، لا تتوفر خيارات تحت **${maxBudget} EGP** بالضبط في هذه الفئة، ولكن إليك أرخص المنتجات المتاحة القريبة من ميزانيتك:\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.`,
+            reply: `Sorry, there are no options available under **${maxBudget} EGP** in this category. However, here is the lowest priced item available close to your budget:\n\n**${bestProduct.name}** at **${bestProduct.price} EGP**.`,
             recommendedProducts: topProducts,
           };
         }
 
         if (maxBudget !== null) {
           return {
-            reply: `إليك أفضل الاقتراحات المناسبة لميزانيتك (تحت **${maxBudget} EGP**):\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.\n\nتفضل باستعراض القائمة وإضافتها لسلتك:`,
+            reply: `Here are the best recommendations matching your budget (under **${maxBudget} EGP**):\n\n**${bestProduct.name}** at **${bestProduct.price} EGP**.\n\nFeel free to explore the list below and add items to your cart:`,
             recommendedProducts: topProducts,
           };
         }
 
         return {
-          reply: `إليك أفضل اقتراحات AURA المناسبة لطلبك:\n\n**${bestProduct.name}** بسعر **${bestProduct.price} EGP**.\n\nتأمل المنتجات التالية وأضف ما يناسبك للسلة:`,
+          reply: `Here are the top AURA recommendations matching your request:\n\n**${bestProduct.name}** at **${bestProduct.price} EGP**.\n\nFeel free to check out the products below and add your favorites to your cart:`,
           recommendedProducts: topProducts,
         };
       }
 
       return {
-        reply: `مرحباً بك في AURA! يسعدني مساعدتك في اختيار أفضل المنتجات. يمكنك استعراض الكتالوج أو البحث باسم أي منتج!`,
+        reply: `Welcome to AURA! I'd be happy to assist you in selecting the best products. Feel free to browse our catalog or search for any item!`,
         recommendedProducts: catalog.slice(0, 3),
       };
     };
@@ -200,10 +200,10 @@ export async function POST(req: NextRequest) {
       const systemPrompt = `You are "AURA AI", a sleek, friendly, and expert sales consultant for AURA - a premium high-performance tech and lifestyle store.
 
 YOUR INSTRUCTIONS:
-1. Respond in Arabic if user writes in Arabic, or English if user writes in English.
+1. Respond STRICTLY IN ENGLISH ALWAYS regardless of the user language.
 2. Recommend products STRICTLY from the AURA catalog provided below.
 3. CRITICAL BUDGET RULE: If user asks for products under/below a certain price (e.g. "under 200" or "تحت 200"), ONLY recommend products with price <= budget! Do NOT recommend items that exceed the user budget!
-4. When recommending, mention the product name and price accurately.
+4. When recommending, mention the product name and price accurately in English.
 
 AURA CATALOG DATABASE:
 ${JSON.stringify(productsContext, null, 2)}`;
@@ -216,7 +216,7 @@ ${JSON.stringify(productsContext, null, 2)}`;
         ],
       });
 
-      const replyText = aiResponse.text || "أهلاً بك! كيف يمكنني مساعدتك اليوم؟";
+      const replyText = aiResponse.text || "Hello! How can I assist you today?";
       const recommended = catalog.filter((p: any) =>
         replyText.toLowerCase().includes(p.name.toLowerCase())
       );

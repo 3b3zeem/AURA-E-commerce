@@ -561,68 +561,79 @@ export function AdminAnalyticsTab({
       </div>
 
       {/* REALTIME LIVE ACTIVITY LOG STREAM */}
-      <div className="p-5 bg-white border border-slate-200 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center space-x-2">
-            <Activity className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-xs font-black uppercase text-slate-900 tracking-wider">
-              Real-Time User Activity Stream
-            </h3>
+      <div className="p-6 bg-white border border-slate-200 space-y-5 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black uppercase text-slate-900 tracking-wider">
+                Real-Time User Activity Stream
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">Live event feed across storefront, product pages, and checkout.</p>
+            </div>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 font-bold uppercase">Recent Events</span>
+          <span className="text-xs font-mono text-slate-500 font-bold uppercase bg-slate-50 px-3 py-1 border border-slate-200">
+            {report.recentActivity.length} Recent Events
+          </span>
         </div>
 
-        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-          {report.recentActivity.map((ev: any, idx: number) => {
-            const timeAgo = Math.max(1, Math.floor((Date.now() - new Date(ev.timestamp).getTime()) / 60000));
-            return (
-              <div
-                key={ev.id || idx}
-                className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 text-xs hover:bg-slate-100 transition-colors"
-              >
-                <div className="flex items-center space-x-3 truncate">
-                  <span
-                    className={`px-2 py-0.5 text-[9px] font-mono font-bold uppercase border ${
-                      ev.event_type === "purchase"
-                        ? "bg-emerald-600 text-white border-emerald-500"
-                        : ev.event_type === "add_to_cart"
-                        ? "bg-amber-500 text-white border-amber-400"
-                        : ev.event_type === "product_view"
-                        ? "bg-indigo-600 text-white border-indigo-500"
-                        : "bg-slate-900 text-white border-slate-800"
-                    }`}
-                  >
-                    {ev.event_type.replace("_", " ")}
-                  </span>
-                  <span className="font-bold text-slate-900 truncate flex items-center gap-1.5">
-                    <span className="font-mono text-indigo-700 font-black bg-indigo-50 px-1.5 py-0.5 border border-indigo-200">
-                      {ev.meta?.user_name || (ev.visitor_id ? `Guest #${ev.visitor_id.replace(/^v_/, '').slice(-4).toUpperCase()}` : "Guest User")}
+        <div className="space-y-3 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
+          {report.recentActivity && report.recentActivity.length > 0 ? (
+            report.recentActivity.map((ev: any, idx: number) => {
+              const timeAgo = Math.max(1, Math.floor((Date.now() - new Date(ev.timestamp).getTime()) / 60000));
+              return (
+                <div
+                  key={ev.id || idx}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 hover:border-slate-400 hover:bg-slate-100/80 transition-all gap-3"
+                >
+                  <div className="flex items-center space-x-3 truncate">
+                    <span
+                      className={`px-3 py-1 text-xs font-mono font-black uppercase tracking-wider border shadow-xs shrink-0 ${
+                        ev.event_type === "purchase"
+                          ? "bg-emerald-600 text-white border-emerald-500"
+                          : ev.event_type === "add_to_cart"
+                          ? "bg-amber-500 text-white border-amber-400"
+                          : ev.event_type === "product_view"
+                          ? "bg-indigo-600 text-white border-indigo-500"
+                          : "bg-slate-900 text-white border-slate-800"
+                      }`}
+                    >
+                      {ev.event_type.replace("_", " ")}
                     </span>
-                    <span className="text-slate-800">
-                      {ev.event_type === "product_view" && ev.meta?.product_name
-                        ? `viewed: ${ev.meta.product_name}`
-                        : ev.event_type === "add_to_cart" && ev.meta?.product_name
-                        ? `added ${ev.meta.product_name} to cart`
-                        : ev.event_type === "search_query" && ev.meta?.query
-                        ? `searched: "${ev.meta.query}"`
-                        : ev.event_type === "purchase" && ev.meta?.total_amount
-                        ? `completed order: ${formatPrice(ev.meta.total_amount)}`
-                        : `visited ${ev.path}`}
+                    <span className="text-sm font-bold text-slate-900 truncate flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <span className="font-mono text-indigo-700 font-black bg-indigo-50 px-2 py-0.5 border border-indigo-200 text-xs sm:text-sm">
+                        {ev.meta?.user_name || (ev.visitor_id ? `Guest #${ev.visitor_id.replace(/^v_/, '').slice(-4).toUpperCase()}` : "Guest User")}
+                      </span>
+                      <span className="text-slate-800 font-semibold text-xs sm:text-sm">
+                        {ev.event_type === "product_view" && ev.meta?.product_name
+                          ? `viewed: ${ev.meta.product_name}`
+                          : ev.event_type === "add_to_cart" && ev.meta?.product_name
+                          ? `added ${ev.meta.product_name} to cart`
+                          : ev.event_type === "search_query" && ev.meta?.query
+                          ? `searched: "${ev.meta.query}"`
+                          : ev.event_type === "purchase" && ev.meta?.total_amount
+                          ? `completed order: ${formatPrice(ev.meta.total_amount)}`
+                          : `visited ${ev.path}`}
+                      </span>
                     </span>
-                  </span>
-                </div>
+                  </div>
 
-                <div className="flex items-center space-x-3 text-[10px] font-mono text-slate-500 shrink-0">
-                  <span className="hidden sm:inline bg-white px-2 py-0.5 border border-slate-200 text-slate-700">
-                    {ev.device_type} • {ev.browser}
-                  </span>
-                  <span className="flex items-center gap-1 font-bold text-slate-900">
-                    <Clock className="w-3 h-3 text-slate-400" /> {timeAgo}m ago
-                  </span>
+                  <div className="flex items-center space-x-3 text-xs font-mono text-slate-600 shrink-0 self-end sm:self-auto">
+                    <span className="bg-white px-2.5 py-1 border border-slate-200 text-slate-700 font-medium">
+                      {ev.device_type} • {ev.browser}
+                    </span>
+                    <span className="flex items-center gap-1.5 font-bold text-slate-900 bg-slate-200/60 px-2.5 py-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-600" /> {timeAgo}m ago
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <p className="text-sm text-slate-500 italic p-6 text-center">No real-time user events recorded yet.</p>
+          )}
         </div>
       </div>
 

@@ -1,16 +1,13 @@
 "use client";
 
-import { KeyRound } from "lucide-react";
 import { AdminNotificationCenter } from "./AdminNotificationCenter";
 
 interface AdminHeaderProps {
   isAdmin: boolean;
-  onMakeMeAdmin: () => void;
 }
 
 export function AdminHeader({
   isAdmin,
-  onMakeMeAdmin,
 }: AdminHeaderProps) {
   return (
     <div className="bg-white text-slate-900 px-6 py-6 border-b border-slate-200">
@@ -31,16 +28,6 @@ export function AdminHeader({
 
         <div className="flex items-center space-x-3">
           <AdminNotificationCenter />
-
-          {!isAdmin && (
-            <button
-              onClick={onMakeMeAdmin}
-              className="px-4 py-2 bg-slate-900 text-white font-black text-xs uppercase hover:bg-black border border-slate-800 transition-all flex items-center space-x-1 cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4 text-white" />
-              <span>Grant Admin Privilege</span>
-            </button>
-          )}
         </div>
       </div>
     </div>
