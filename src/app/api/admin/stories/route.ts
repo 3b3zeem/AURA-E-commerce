@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { title, subtitle, image_url, bg_gradient, linked_category_id, is_active, display_order } = body;
+    const { title, subtitle, image_url, bg_gradient, linked_category_id, is_active, display_order, product_ids } = body;
     if (!title || !image_url) {
       return NextResponse.json({ error: 'Title and image are required' }, { status: 400 });
     }
@@ -52,6 +52,22 @@ export async function POST(request: Request) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (Array.isArray(product_ids) && data?.id) {
+      try {
+        await supabase.from('story_products').delete().eq('story_id', data.id);
+        if (product_ids.length > 0) {
+          const rows = product_ids.map((pid: string) => ({
+            story_id: data.id,
+            product_id: pid,
+          }));
+          await supabase.from('story_products').insert(rows);
+        }
+      } catch {
+        // Table story_products might not be initialized yet
+      }
+    }
+
     return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -64,7 +80,8 @@ export async function PUT(request: Request) {
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
-    const { id, ...updates } = await request.json();
+    const body = await request.json();
+    const { id, product_ids, story_products, products, created_at, updated_at, ...updates } = body;
     if (!id) return NextResponse.json({ error: 'Story ID required' }, { status: 400 });
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -76,6 +93,22 @@ export async function PUT(request: Request) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (Array.isArray(product_ids) && id) {
+      try {
+        await supabase.from('story_products').delete().eq('story_id', id);
+        if (product_ids.length > 0) {
+          const rows = product_ids.map((pid: string) => ({
+            story_id: id,
+            product_id: pid,
+          }));
+          await supabase.from('story_products').insert(rows);
+        }
+      } catch {
+        // Table story_products might not be initialized yet
+      }
+    }
+
     return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -109,6 +109,12 @@ interface AdminModalsProps {
   setNewStorySub: (v: string) => void;
   newStoryImg: string;
   setNewStoryImg: (v: string) => void;
+  newStoryBgGradient?: string;
+  setNewStoryBgGradient?: (v: string) => void;
+  newStoryIsActive?: boolean;
+  setNewStoryIsActive?: (v: boolean) => void;
+  newStorySelectedProductIds?: string[];
+  setNewStorySelectedProductIds?: (ids: string[]) => void;
   onAddStorySubmit: (e: React.FormEvent) => void;
 
   // Add Trending Modal
@@ -131,6 +137,8 @@ interface AdminModalsProps {
   // Edit Story Modal
   editingStory: Story | null;
   setEditingStory: (s: Story | null) => void;
+  editStorySelectedProductIds?: string[];
+  setEditStorySelectedProductIds?: (ids: string[]) => void;
   onUpdateStorySubmit: (e: React.FormEvent) => void;
 
   // Add / Edit Offer Modal Props
@@ -254,6 +262,12 @@ export function AdminModals({
   setNewStorySub,
   newStoryImg,
   setNewStoryImg,
+  newStoryBgGradient,
+  setNewStoryBgGradient,
+  newStoryIsActive = true,
+  setNewStoryIsActive,
+  newStorySelectedProductIds = [],
+  setNewStorySelectedProductIds,
   onAddStorySubmit,
 
   isAddTrendingOpen,
@@ -272,6 +286,8 @@ export function AdminModals({
 
   editingStory,
   setEditingStory,
+  editStorySelectedProductIds = [],
+  setEditStorySelectedProductIds,
   onUpdateStorySubmit,
 
   productsList = [],
@@ -428,6 +444,14 @@ export function AdminModals({
         setNewStorySub={setNewStorySub}
         newStoryImg={newStoryImg}
         setNewStoryImg={setNewStoryImg}
+        newStoryBgGradient={newStoryBgGradient}
+        setNewStoryBgGradient={setNewStoryBgGradient}
+        newStoryIsActive={newStoryIsActive}
+        setNewStoryIsActive={setNewStoryIsActive}
+        productsList={productsList}
+        categoriesList={categoriesList}
+        selectedProductIds={newStorySelectedProductIds}
+        setSelectedProductIds={setNewStorySelectedProductIds}
         onSubmit={onAddStorySubmit}
       />
 
@@ -467,6 +491,10 @@ export function AdminModals({
         setEditingStory={setEditingStory}
         isSubmitting={isSubmitting}
         onFileUpload={onFileUpload}
+        productsList={productsList}
+        categoriesList={categoriesList}
+        selectedProductIds={editStorySelectedProductIds}
+        setSelectedProductIds={setEditStorySelectedProductIds}
         onSubmit={onUpdateStorySubmit}
       />
 

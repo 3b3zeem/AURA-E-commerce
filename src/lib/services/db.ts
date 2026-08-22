@@ -182,12 +182,22 @@ export async function createStoryInDb(
   title: string,
   subtitle: string,
   imageUrl: string,
+  productIds?: string[],
+  bgGradient?: string,
+  isActive: boolean = true,
 ): Promise<Story | null> {
   try {
     const res = await fetch("/api/admin/stories", {
       method: "POST",
       headers: ADMIN_HEADERS,
-      body: JSON.stringify({ title, subtitle, image_url: imageUrl }),
+      body: JSON.stringify({
+        title,
+        subtitle,
+        image_url: imageUrl,
+        bg_gradient: bgGradient || 'from-yellow-950 via-stone-900 to-black',
+        is_active: isActive,
+        product_ids: productIds || [],
+      }),
     });
     if (!res.ok) return null;
     const result = await res.json();
@@ -200,7 +210,7 @@ export async function createStoryInDb(
 
 export async function updateStoryInDb(
   id: string,
-  updates: Partial<Story>,
+  updates: Partial<Story> & { product_ids?: string[] },
 ): Promise<Story | null> {
   try {
     const res = await fetch("/api/admin/stories", {

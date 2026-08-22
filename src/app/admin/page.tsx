@@ -164,6 +164,9 @@ export default function AdminDashboardPage() {
   const [newStoryTitle, setNewStoryTitle] = useState("");
   const [newStorySub, setNewStorySub] = useState("");
   const [newStoryImg, setNewStoryImg] = useState("");
+  const [newStoryBgGradient, setNewStoryBgGradient] = useState("from-yellow-950 via-stone-900 to-black");
+  const [newStoryIsActive, setNewStoryIsActive] = useState(true);
+  const [newStorySelectedProductIds, setNewStorySelectedProductIds] = useState<string[]>([]);
 
   // New Trending Keyword State
   const [newTrendingQuery, setNewTrendingQuery] = useState("");
@@ -187,6 +190,7 @@ export default function AdminDashboardPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingStory, setEditingStory] = useState<Story | null>(null);
+  const [editStorySelectedProductIds, setEditStorySelectedProductIds] = useState<string[]>([]);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
 
   // Lazy load data for the active tab only
@@ -218,8 +222,9 @@ export default function AdminDashboardPage() {
           break;
         }
         case "stories": {
-          const stors = await getStories();
+          const [stors, prods] = await Promise.all([getStories(), getProducts()]);
           setStoriesList(stors);
+          if (prods.length > 0) setProductsList(prods);
           break;
         }
         case "users": {
@@ -662,6 +667,9 @@ export default function AdminDashboardPage() {
         newStoryTitle,
         newStorySub,
         newStoryImg,
+        newStorySelectedProductIds,
+        newStoryBgGradient,
+        newStoryIsActive,
       );
       if (newStor) {
         setStoriesList((prev) => [newStor, ...prev]);
@@ -670,6 +678,9 @@ export default function AdminDashboardPage() {
 
       setNewStoryTitle("");
       setNewStorySub("");
+      setNewStoryImg("");
+      setNewStoryIsActive(true);
+      setNewStorySelectedProductIds([]);
       setIsAddStoryOpen(false);
     } finally {
       setIsSubmitting(false);
@@ -681,7 +692,10 @@ export default function AdminDashboardPage() {
     if (!editingStory || isSubmitting) return;
     try {
       setIsSubmitting(true);
-      const res = await updateStoryInDb(editingStory.id, editingStory);
+      const res = await updateStoryInDb(editingStory.id, {
+        ...editingStory,
+        product_ids: editStorySelectedProductIds,
+      });
       if (res) {
         setStoriesList((prev) => prev.map((s) => (s.id === res.id ? res : s)));
         showNotification(`Story "${editingStory.title}" updated!`);
@@ -1075,8 +1089,23 @@ export default function AdminDashboardPage() {
           <AdminStoriesTab
             storiesList={storiesList}
             actionLoadingId={actionLoadingId}
-            onOpenAddModal={() => setIsAddStoryOpen(true)}
-            onEditStory={(s) => setEditingStory(s)}
+            onOpenAddModal={async () => {
+              if (productsList.length === 0) {
+                const prods = await getProducts();
+                if (prods.length > 0) setProductsList(prods);
+              }
+              setNewStorySelectedProductIds([]);
+              setIsAddStoryOpen(true);
+            }}
+            onEditStory={async (s) => {
+              if (productsList.length === 0) {
+                const prods = await getProducts();
+                if (prods.length > 0) setProductsList(prods);
+              }
+              setEditingStory(s);
+              const pIds = s.products?.map((p) => p.id) || [];
+              setEditStorySelectedProductIds(pIds);
+            }}
             onDeleteStory={handleDeleteStory}
           />
         )}
@@ -1214,6 +1243,12 @@ export default function AdminDashboardPage() {
         setNewStorySub={setNewStorySub}
         newStoryImg={newStoryImg}
         setNewStoryImg={setNewStoryImg}
+        newStoryBgGradient={newStoryBgGradient}
+        setNewStoryBgGradient={setNewStoryBgGradient}
+        newStoryIsActive={newStoryIsActive}
+        setNewStoryIsActive={setNewStoryIsActive}
+        newStorySelectedProductIds={newStorySelectedProductIds}
+        setNewStorySelectedProductIds={setNewStorySelectedProductIds}
         onAddStorySubmit={handleAddStory}
         isAddTrendingOpen={isAddTrendingOpen}
         onCloseAddTrending={() => setIsAddTrendingOpen(false)}
@@ -1228,6 +1263,8 @@ export default function AdminDashboardPage() {
         onUpdateCategorySubmit={handleUpdateCategory}
         editingStory={editingStory}
         setEditingStory={setEditingStory}
+        editStorySelectedProductIds={editStorySelectedProductIds}
+        setEditStorySelectedProductIds={setEditStorySelectedProductIds}
         onUpdateStorySubmit={handleUpdateStory}
         isAddOfferOpen={isAddOfferOpen}
         onCloseAddOffer={() => setIsAddOfferOpen(false)}

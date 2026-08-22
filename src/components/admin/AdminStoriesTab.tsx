@@ -49,13 +49,18 @@ export function AdminStoriesTab({
               <img
                 src={st.image_url}
                 alt={st.title}
-                className="w-24 h-24 object-cover border border-slate-200"
+                className="w-20 h-20 rounded-full aspect-square flex-shrink-0 object-cover border-2 border-slate-900 shadow-xs"
               />
               <div className="space-y-1">
                 <h3 className="font-black text-base uppercase text-slate-900">
                   {st.title}
                 </h3>
                 <p className="text-xs text-slate-600">{st.subtitle}</p>
+                <div className="pt-1">
+                  <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 uppercase tracking-wider">
+                    {st.products?.length || 0} Attached Product(s)
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-1">

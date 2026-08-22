@@ -1,15 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Loader2 } from "lucide-react";
-import { Story } from "@/types";
+import { X, Upload, Loader2, Package, Search, Filter, Palette } from "lucide-react";
+import { Story, Product, Category } from "@/types";
+import { GRADIENT_PRESETS } from "./AddStoryModal";
 
 interface EditStoryModalProps {
   editingStory: Story | null;
   setEditingStory: (story: Story | null) => void;
   isSubmitting: boolean;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>, onSuccess: (url: string) => void) => void;
+  productsList?: Product[];
+  categoriesList?: Category[];
+  selectedProductIds?: string[];
+  setSelectedProductIds?: (ids: string[]) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -18,8 +23,43 @@ export function EditStoryModal({
   setEditingStory,
   isSubmitting,
   onFileUpload,
+  productsList = [],
+  categoriesList = [],
+  selectedProductIds = [],
+  setSelectedProductIds,
   onSubmit,
 }: EditStoryModalProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCatFilter, setSelectedCatFilter] = useState("");
+
+  const toggleProduct = (productId: string) => {
+    if (!setSelectedProductIds) return;
+    if (selectedProductIds.includes(productId)) {
+      setSelectedProductIds(selectedProductIds.filter((id) => id !== productId));
+    } else {
+      setSelectedProductIds([...selectedProductIds, productId]);
+    }
+  };
+
+  const filteredProducts = productsList.filter((p) => {
+    const matchesSearch =
+      !searchQuery.trim() ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesCategory =
+      !selectedCatFilter ||
+      p.category_id === selectedCatFilter ||
+      p.category?.id === selectedCatFilter ||
+      p.category?.slug === selectedCatFilter ||
+      p.category?.name === selectedCatFilter ||
+      (typeof p.category === "string" && p.category === selectedCatFilter);
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const currentGradient = editingStory?.bg_gradient || "from-yellow-950 via-stone-900 to-black";
+
   return (
     <AnimatePresence>
       {editingStory && (
@@ -28,10 +68,10 @@ export function EditStoryModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white border border-slate-200 w-full max-w-md p-6 space-y-6 text-slate-900"
+            className="bg-white border border-slate-200 w-full max-w-lg p-6 space-y-6 text-slate-900 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <h3 className="text-lg font-black uppercase text-slate-900">Edit Story</h3>
+              <h3 className="text-lg font-black uppercase text-slate-900">Edit Story Drop</h3>
               <button
                 onClick={() => setEditingStory(null)}
                 className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
@@ -77,6 +117,77 @@ export function EditStoryModal({
                   className="w-full bg-slate-50 border border-slate-300 p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
                 />
               </div>
+
+              {/* BACKGROUND GRADIENT PICKER */}
+              <div>
+                <label className="block text-slate-600 mb-1 flex items-center space-x-1">
+                  <Palette className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Story Background Theme (Gradient)</span>
+                </label>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={currentGradient}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          bg_gradient: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-50 border border-slate-300 p-2 text-slate-900 text-xs focus:outline-none focus:border-slate-900"
+                    >
+                      {GRADIENT_PRESETS.map((preset) => (
+                        <option key={preset.value} value={preset.value}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={currentGradient}
+                      onChange={(e) =>
+                        setEditingStory({
+                          ...editingStory,
+                          bg_gradient: e.target.value,
+                        })
+                      }
+                      placeholder="Custom tailwind gradient classes..."
+                      className="w-full bg-slate-50 border border-slate-300 p-2 text-slate-900 text-[11px] font-mono focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                  {/* Live Gradient Preview Bar */}
+                  <div
+                    className={`h-6 rounded border border-slate-300 bg-gradient-to-r ${currentGradient} flex items-center justify-center text-[10px] text-white font-bold tracking-wider shadow-inner`}
+                  >
+                    BACKGROUND GRADIENT PREVIEW
+                  </div>
+                </div>
+              </div>
+
+              {/* STORY ACTIVE STATUS TOGGLE */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200">
+                <div>
+                  <span className="block text-slate-900 font-bold text-xs">Publish Status (Is Active)</span>
+                  <span className="block text-[11px] text-slate-500 font-normal">
+                    {editingStory.is_active ? "Active & visible on homepage stories bar" : "Hidden / Inactive draft story"}
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingStory.is_active ?? true}
+                    onChange={(e) =>
+                      setEditingStory({
+                        ...editingStory,
+                        is_active: e.target.checked,
+                      })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+
               <div>
                 <label className="block text-slate-600 mb-1">
                   Image (Upload from Folder or URL)
@@ -124,6 +235,92 @@ export function EditStoryModal({
                   )}
                 </div>
               </div>
+
+              {/* PRODUCT SELECTOR WITH SEARCH & CATEGORY FILTER */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-700 font-bold flex items-center space-x-1">
+                    <Package className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Attached Products ({selectedProductIds.length} Selected)</span>
+                  </label>
+                  {selectedProductIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProductIds && setSelectedProductIds([])}
+                      className="text-[10px] text-rose-600 hover:underline font-bold"
+                    >
+                      Clear Selection
+                    </button>
+                  )}
+                </div>
+
+                {/* Search & Category Filter Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search product..."
+                      className="w-full pl-8 pr-2 py-1.5 bg-slate-50 border border-slate-300 text-slate-900 text-[11px] focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Filter className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <select
+                      value={selectedCatFilter}
+                      onChange={(e) => setSelectedCatFilter(e.target.value)}
+                      className="w-full pl-8 pr-2 py-1.5 bg-slate-50 border border-slate-300 text-slate-900 text-[11px] focus:outline-none focus:border-purple-600"
+                    >
+                      <option value="">All Categories</option>
+                      {categoriesList.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto border border-slate-200 p-2 space-y-1 bg-slate-50 divide-y divide-slate-100">
+                  {productsList.length === 0 ? (
+                    <p className="text-slate-500 text-[11px] p-2 text-center">
+                      Loading products list...
+                    </p>
+                  ) : filteredProducts.length === 0 ? (
+                    <p className="text-slate-500 text-[11px] p-2 text-center">
+                      No products match your search/filter.
+                    </p>
+                  ) : (
+                    filteredProducts.map((p) => {
+                      const isSelected = selectedProductIds.includes(p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-center justify-between p-1.5 cursor-pointer rounded transition-colors ${
+                            isSelected ? "bg-purple-100/70 border border-purple-300" : "hover:bg-slate-100"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2 truncate pr-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleProduct(p.id)}
+                              className="rounded border-slate-300 text-purple-600 focus:ring-0 cursor-pointer"
+                            />
+                            <span className="text-xs font-bold text-slate-900 truncate">{p.name}</span>
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-500 font-bold">
+                            ${p.price}
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}

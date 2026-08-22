@@ -2,7 +2,7 @@
 
 @layer base {
   * {
-    border-radius: 0px !important;
+    border-radius: 0px;
     box-shadow: none !important;
   }
   body {

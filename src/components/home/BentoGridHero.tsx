@@ -88,7 +88,7 @@ export function BentoGridHero() {
     bentoItems.find((i) => i.box_type === "categories") || fallbackCategories;
 
   return (
-    <section className="w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-12 font-sans">
+    <section className="w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-6 lg:pb-12 font-sans">
       {/* Section Label */}
       <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center space-x-2">

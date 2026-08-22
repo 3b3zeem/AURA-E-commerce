@@ -20,12 +20,12 @@ export default function HomePage() {
   const featuredProducts = products.filter((p) => p.is_featured);
 
   return (
-    <div className="space-y-12 bg-[#f8fafc] text-slate-900 pb-16 font-sans">
-      {/* 1. Apple-Style Bento Grid Hero */}
-      <BentoGridHero />
-
-      {/* 2. App-Style Interactive Story Hero Carousel */}
+    <div className="space-y-8 bg-[#f8fafc] text-slate-900 pb-16 font-sans">
+      {/* 1. Instagram-Style Stories Bar (Very First Item on Home Page) */}
       <StoryHero stories={stories} />
+
+      {/* 2. Apple-Style Bento Grid Hero */}
+      <BentoGridHero />
       
       {/* 3. Flash Deals Section with Live Countdown */}
       <FlashDeals products={flashDealProducts.length > 0 ? flashDealProducts : products.slice(0, 3)} />

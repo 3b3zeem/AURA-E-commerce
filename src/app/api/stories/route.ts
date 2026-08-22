@@ -5,79 +5,110 @@ import { createClient } from '@/lib/supabase/client';
 export async function GET() {
   try {
     const supabase = createClient();
-    const { data: storiesData, error: storiesError } = await supabase
+    let storiesData: any[] = [];
+    const { data: resData, error: storiesError } = await supabase
       .from('stories')
       .select('*, story_products(product:products(*))');
 
-    if (storiesError || !storiesData) {
-      return NextResponse.json([]);
+    if (storiesError) {
+      // Fallback if story_products table has not been created yet in Supabase
+      const { data: simpleStories } = await supabase.from('stories').select('*');
+      storiesData = simpleStories || [];
+    } else {
+      storiesData = resData || [];
     }
 
     // Fetch all products to use for smart fallback matching
     const { data: allProducts } = await supabase.from('products').select('*');
     const catalog = allProducts || [];
 
-    const formatted = storiesData.map((s: any) => {
-      const explicitProducts = (s.story_products?.map((sp: any) => sp.product) || []).filter(Boolean);
-
-      let finalProducts = explicitProducts;
-
-      // If no explicit products attached, use smart category/keyword fallback matching
-      if (finalProducts.length === 0) {
+    const formatted = storiesData
+      .filter((s: any) => {
+        if (!s.created_at) return true;
+        const createdAt = new Date(s.created_at).getTime();
+        const now = Date.now();
+        // 24 hours = 86,400,000 ms
+        return (now - createdAt) <= 24 * 60 * 60 * 1000;
+      })
+      .map((s: any) => {
+        const explicitProducts = (s.story_products?.map((sp: any) => sp.product) || []).filter(Boolean);
         const text = `${s.title} ${s.subtitle}`.toLowerCase();
 
-        if (s.linked_category_id) {
-          finalProducts = catalog.filter((p: any) => p.category_id === s.linked_category_id);
-        }
-        
-        // 1. Audio & Headphones Drops
-        if (finalProducts.length === 0 && (text.includes('audio') || text.includes('sound') || text.includes('wireless') || text.includes('cyber') || text.includes('headphone') || text.includes('سماعة'))) {
-          finalProducts = catalog.filter((p: any) => {
-            const pText = `${p.name} ${p.description}`.toLowerCase();
-            return pText.includes('headphone') || pText.includes('audio') || pText.includes('earbuds') || pText.includes('sound') || pText.includes('wireless');
-          });
-        }
+        let finalProducts: any[] = explicitProducts;
 
-        // 2. Skincare & Beauty Drops
-        if (finalProducts.length === 0 && (text.includes('skincare') || text.includes('glow') || text.includes('serum') || text.includes('beauty') || text.includes('skin') || text.includes('بشرة') || text.includes('عناية'))) {
-          finalProducts = catalog.filter((p: any) => {
-            const pText = `${p.name} ${p.description}`.toLowerCase();
-            return pText.includes('serum') || pText.includes('skin') || pText.includes('glow') || pText.includes('cleanser') || pText.includes('cream') || pText.includes('splash') || pText.includes('mist');
-          });
-        }
+        // Smart thematic product matching
+        const findMatchingProducts = () => {
+          // 1. Audio & Headphones
+          if (text.includes('audio') || text.includes('sound') || text.includes('wireless') || text.includes('cyber') || text.includes('headphone') || text.includes('silent') || text.includes('سماعة')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.brand} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('headphone') || pText.includes('audio') || pText.includes('earbuds') || pText.includes('sound') || pText.includes('bose') || pText.includes('sony') || pText.includes('sennheiser');
+            });
+          }
 
-        // 3. Men Grooming & Barber Drops
-        if (finalProducts.length === 0 && (text.includes('grooming') || text.includes('beard') || text.includes('barber') || text.includes('trimmer') || text.includes('men') || text.includes('حلاقة'))) {
-          finalProducts = catalog.filter((p: any) => {
-            const pText = `${p.name} ${p.description}`.toLowerCase();
-            return pText.includes('grooming') || pText.includes('beard') || pText.includes('trimmer') || pText.includes('shaver') || pText.includes('splash') || pText.includes('fragrance');
-          });
-        }
+          // 2. Skincare & Beauty
+          if (text.includes('skincare') || text.includes('glow') || text.includes('serum') || text.includes('beauty') || text.includes('botanical') || text.includes('skin') || text.includes('بشرة')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('serum') || pText.includes('skin') || pText.includes('glow') || pText.includes('cleanser') || pText.includes('cream') || pText.includes('hydration') || pText.includes('moisturizer');
+            });
+          }
 
-        // 4. Gaming & Displays Drops
-        if (finalProducts.length === 0 && (text.includes('gaming') || text.includes('monitor') || text.includes('display') || text.includes('165hz') || text.includes('keyboard') || text.includes('شاشة') || text.includes('قيمنق'))) {
-          finalProducts = catalog.filter((p: any) => {
-            const pText = `${p.name} ${p.description}`.toLowerCase();
-            return pText.includes('gaming') || pText.includes('monitor') || pText.includes('keyboard') || pText.includes('165hz') || pText.includes('mouse');
-          });
-        }
+          // 3. Men & Gentlemen Care / Apparel
+          if (text.includes('gentlemen') || text.includes('grooming') || text.includes('suit') || text.includes('leather') || text.includes('man') || text.includes('men') || text.includes('رجالي')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.brand} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('leather') || pText.includes('suit') || pText.includes('travel') || pText.includes('grooming') || pText.includes('watch') || pText.includes('trimmer') || pText.includes('jacket') || pText.includes('wallet');
+            });
+          }
 
-        // 5. Tech Accessories & Travel Pouches
-        if (finalProducts.length === 0 && (text.includes('bag') || text.includes('pouch') || text.includes('travel') || text.includes('organizer') || text.includes('leather') || text.includes('accessory'))) {
-          finalProducts = catalog.filter((p: any) => {
-            const pText = `${p.name} ${p.description}`.toLowerCase();
-            return pText.includes('pouch') || pText.includes('organizer') || pText.includes('case') || pText.includes('bag') || pText.includes('charger') || pText.includes('leather');
-          });
-        }
+          // 4. Gaming & Displays
+          if (text.includes('gaming') || text.includes('desk') || text.includes('monitor') || text.includes('display') || text.includes('oled') || text.includes('keyboard') || text.includes('شاشة')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('gaming') || pText.includes('monitor') || pText.includes('keyboard') || pText.includes('mouse') || pText.includes('oled') || pText.includes('display');
+            });
+          }
 
-        // 6. Final Fallback: Featured Products or top 6 items
+          // 5. Drones & Cameras
+          if (text.includes('drone') || text.includes('aerial') || text.includes('camera') || text.includes('fpv') || text.includes('gimbal') || text.includes('تصوير')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('drone') || pText.includes('camera') || pText.includes('gimbal') || pText.includes('lens') || pText.includes('dji') || pText.includes('gopro');
+            });
+          }
+
+          // 6. Fragrance & Perfumes
+          if (text.includes('fragrance') || text.includes('perfume') || text.includes('oud') || text.includes('royal') || text.includes('عطر')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('perfume') || pText.includes('fragrance') || pText.includes('oud') || pText.includes('cologne') || pText.includes('scent');
+            });
+          }
+
+          // 7. Smartwatches & Wearables
+          if (text.includes('watch') || text.includes('smart') || text.includes('wearable') || text.includes('fitness') || text.includes('ساعة')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('watch') || pText.includes('apple watch') || pText.includes('garmin') || pText.includes('fitness') || pText.includes('band') || pText.includes('tracker');
+            });
+          }
+
+          // 8. Coffee & Kitchen
+          if (text.includes('coffee') || text.includes('espresso') || text.includes('kitchen') || text.includes('barista') || text.includes('قهوة')) {
+            return catalog.filter((p: any) => {
+              const pText = `${p.name} ${p.description} ${p.category?.name || ''}`.toLowerCase();
+              return pText.includes('coffee') || pText.includes('espresso') || pText.includes('kitchen') || pText.includes('maker') || pText.includes('grinder') || pText.includes('kettle');
+            });
+          }
+
+          // Default fallback
+          return catalog.filter((p: any) => p.is_featured);
+        };
+
         if (finalProducts.length === 0) {
-          finalProducts = catalog.filter((p: any) => p.is_featured).slice(0, 6);
+          finalProducts = findMatchingProducts();
         }
-        if (finalProducts.length === 0) {
-          finalProducts = catalog.slice(0, 6);
-        }
-      }
 
       return {
         ...s,
