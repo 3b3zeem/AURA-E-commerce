@@ -174,22 +174,22 @@ export function StoryHero({ stories }: StoryHeroProps) {
               {/* Circular Avatar with Dynamic Gradient Ring */}
               <div
                 style={{ borderRadius: "9999px" }}
-                className={`relative p-[3px] rounded-full aspect-square bg-gradient-to-tr ${story.bg_gradient || "from-amber-500 via-rose-500 to-fuchsia-600"} flex-shrink-0`}
+                className={`story-avatar relative p-[3px] rounded-full aspect-square bg-gradient-to-tr ${story.bg_gradient || "from-amber-500 via-rose-500 to-fuchsia-600"} flex-shrink-0`}
               >
                 <div
                   style={{ borderRadius: "9999px" }}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full aspect-square overflow-hidden border-2 border-white bg-slate-900 relative"
+                  className="story-avatar w-16 h-16 sm:w-20 sm:h-20 rounded-full aspect-square overflow-hidden border-2 border-white bg-slate-900 relative"
                 >
                   <img
                     src={story.image_url}
                     alt={story.title}
                     style={{ borderRadius: "9999px" }}
-                    className="w-full h-full object-cover rounded-full aspect-square"
+                    className="story-avatar w-full h-full object-cover rounded-full aspect-square"
                   />
                 </div>
                 {/* Sleek Floating Count Badge */}
                 {story.products && story.products.length > 0 && (
-                  <span className="absolute -bottom-1 -right-1 bg-slate-950 border-2 border-white text-[9px] font-black text-white px-1.5 py-0.5 rounded-full shadow-sm">
+                  <span className="story-avatar absolute -bottom-1 -right-1 bg-slate-950 border-2 border-white text-[9px] font-black text-white px-1.5 py-0.5 rounded-full shadow-sm">
                     {story.products.length}
                   </span>
                 )}

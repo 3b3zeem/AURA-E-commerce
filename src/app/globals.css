@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
 @layer base {
-  * {
-    border-radius: 0px;
-    box-shadow: none !important;
+  *:not(.story-avatar):not(.story-avatar *) {
+    border-radius: 0px !important;
   }
   body {
     background-color: #f8fafc !important;
