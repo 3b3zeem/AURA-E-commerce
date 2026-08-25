@@ -50,7 +50,7 @@ export function AIReviewSummaryCard({ productId }: AIReviewSummaryCardProps) {
       {/* Header Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 bg-slate-900 text-amber-400 rounded-xs">
+          <div className="p-1.5 bg-slate-100 text-amber-400 rounded-xs">
             <Sparkles className="w-4 h-4 text-amber-400" />
           </div>
           <div>
