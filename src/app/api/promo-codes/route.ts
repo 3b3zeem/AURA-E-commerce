@@ -44,8 +44,16 @@ export async function GET(request: Request) {
 
       if (found.is_active === false) {
         return NextResponse.json(
-          { success: false, message: "Coupon is currently inactive" },
+          { success: false, message: "Coupon is currently inactive or already redeemed" },
           { status: 400 }
+        );
+      }
+
+      // Check User Specific Restriction
+      if (found.user_id && userId && String(found.user_id) !== String(userId)) {
+        return NextResponse.json(
+          { success: false, message: "This single-use VIP coupon belongs to another user account" },
+          { status: 403 }
         );
       }
 
@@ -88,12 +96,12 @@ export async function GET(request: Request) {
         (found.current_uses || 0) >= Number(found.max_uses)
       ) {
         return NextResponse.json(
-          { success: false, message: "Coupon usage limit has been reached" },
+          { success: false, message: "This single-use coupon has already been used" },
           { status: 400 }
         );
       }
 
-      // Check Per-User Limit
+      // Check Per-User Limit in orders table
       if (
         userId &&
         found.max_uses_per_user !== null &&
@@ -128,5 +136,40 @@ export async function GET(request: Request) {
     return NextResponse.json(promosList);
   } catch (err: any) {
     return NextResponse.json([]);
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { code, discount_percent, max_uses, max_uses_per_user, user_id } = await request.json();
+    if (!code || typeof discount_percent !== "number") {
+      return NextResponse.json({ success: false, message: "Invalid payload" }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const insertData: Record<string, any> = {
+      code: code.trim().toUpperCase(),
+      discount_percent,
+      max_uses: max_uses || 1,
+      max_uses_per_user: max_uses_per_user || 1,
+      current_uses: 0,
+      is_active: true,
+    };
+    if (user_id) insertData.user_id = user_id;
+
+    const { data, error } = await supabase
+      .from("promo_codes")
+      .insert([insertData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase redemption coupon creation error:", error);
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, promo: data });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }

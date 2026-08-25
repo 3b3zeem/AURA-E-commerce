@@ -130,6 +130,26 @@ export function ProductsTopBar({
             <span>Flash Deals</span>
           </button>
 
+          {/* Quick Rating Filter Pills */}
+          <div className="flex items-center space-x-1 border border-slate-300 bg-slate-50 p-1">
+            <span className="px-2 text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1">
+              <span className="hidden sm:inline">Rating:</span>
+            </span>
+            {[0, 4.5, 4.0, 3.5].map((r) => (
+              <button
+                key={r}
+                onClick={() => setMinRating(r)}
+                className={`px-2 py-1 text-xs font-bold uppercase transition-colors cursor-pointer ${
+                  minRating === r
+                    ? 'bg-slate-900 text-white border border-slate-900'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {r === 0 ? 'All' : `${r}★+`}
+              </button>
+            ))}
+          </div>
+
           {/* Advanced Filters Drawer Button */}
           <button
             onClick={() => setIsFilterDrawerOpen(true)}

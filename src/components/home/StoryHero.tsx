@@ -22,10 +22,11 @@ import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/useCartStore";
 
 interface StoryHeroProps {
-  stories: Story[];
+  stories?: Story[];
+  isLoading?: boolean;
 }
 
-export function StoryHero({ stories }: StoryHeroProps) {
+export function StoryHero({ stories = [], isLoading = false }: StoryHeroProps) {
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [activeProductIndex, setActiveProductIndex] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
@@ -121,7 +122,7 @@ export function StoryHero({ stories }: StoryHeroProps) {
       const prevStoryProducts = stories[prevStoryIndex]?.products || [];
       setActiveStoryIndex(prevStoryIndex);
       setActiveProductIndex(
-        prevStoryProducts.length > 0 ? prevStoryProducts.length - 1 : 0,
+        prevStoryProducts.length > 0 ? prevStoryProducts.length - 1 : 0
       );
     } else {
       setProgress(0);
@@ -130,7 +131,7 @@ export function StoryHero({ stories }: StoryHeroProps) {
 
   const handleScroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === "left" ? -300 : 300;
+      const scrollAmount = direction === "left" ? -320 : 320;
       scrollContainerRef.current.scrollBy({
         left: scrollAmount,
         behavior: "smooth",
@@ -145,10 +146,10 @@ export function StoryHero({ stories }: StoryHeroProps) {
     setTimeout(() => setAddedProductId(null), 2000);
   };
 
-  return (
-    <section className="py-6 px-4 sm:px-6 lg:px-8 w-full font-sans text-slate-900 bg-[#f8fafc]">
-      {/* Instagram Circular Avatars Bar */}
-      {stories.length === 0 ? (
+  // 1. Loading Skeleton State
+  if (isLoading) {
+    return (
+      <section className="py-6 px-4 sm:px-6 lg:px-8 w-full font-sans text-slate-900 bg-[#f8fafc]">
         <div className="flex space-x-4 overflow-x-auto py-2 scrollbar-none">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
@@ -160,16 +161,38 @@ export function StoryHero({ stories }: StoryHeroProps) {
             </div>
           ))}
         </div>
-      ) : (
+      </section>
+    );
+  }
+
+  // 2. Hide completely if not loading and stories array is empty
+  if (!isLoading && (!stories || stories.length === 0)) {
+    return null;
+  }
+
+  return (
+    <section className="py-6 px-4 sm:px-6 lg:px-8 w-full font-sans text-slate-900 bg-[#f8fafc] relative group">
+      {/* Instagram Circular Avatars Bar with Smooth Scroll Controls */}
+      <div className="relative flex items-center">
+        {/* Scroll Left Button */}
+        <button
+          onClick={() => handleScroll("left")}
+          className="hidden sm:flex absolute -left-2 z-10 p-2 bg-white/95 border border-slate-300 rounded-full shadow-md text-slate-800 hover:bg-slate-900 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+          aria-label="Scroll Left"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Stories Avatars List */}
         <div
           ref={scrollContainerRef}
-          className="flex space-x-5 py-2 scroll-smooth"
+          className="flex space-x-5 py-2 overflow-x-auto scroll-smooth scrollbar-none w-full"
         >
           {stories.map((story, idx) => (
             <div
               key={story.id}
               onClick={() => handleOpenStory(idx)}
-              className="flex flex-col items-center space-y-2 flex-shrink-0 group cursor-pointer"
+              className="flex flex-col items-center space-y-2 flex-shrink-0 group/avatar cursor-pointer"
             >
               {/* Circular Avatar with Dynamic Gradient Ring */}
               <div
@@ -196,13 +219,22 @@ export function StoryHero({ stories }: StoryHeroProps) {
               </div>
 
               {/* Title */}
-              <span className="text-xs font-semibold text-slate-800 line-clamp-1 max-w-[88px] text-center tracking-tight group-hover:text-slate-950">
+              <span className="text-xs font-semibold text-slate-800 line-clamp-1 max-w-[88px] text-center tracking-tight group-hover/avatar:text-slate-950">
                 {story.title}
               </span>
             </div>
           ))}
         </div>
-      )}
+
+        {/* Scroll Right Button */}
+        <button
+          onClick={() => handleScroll("right")}
+          className="hidden sm:flex absolute -right-2 z-10 p-2 bg-white/95 border border-slate-300 rounded-full shadow-md text-slate-800 hover:bg-slate-900 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+          aria-label="Scroll Right"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Full-Screen Instagram Story Viewer Overlay */}
       <AnimatePresence>
@@ -247,7 +279,7 @@ export function StoryHero({ stories }: StoryHeroProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`relative w-full max-w-[410px] h-[85vh] max-h-[740px] flex flex-col justify-between`}
+              className={`relative w-full max-w-[410px] h-[85vh] max-h-[740px] flex flex-col justify-between overflow-hidden shadow-2xl rounded-2xl border border-white/10 bg-slate-950`}
             >
               {/* Product Background Image */}
               {currentProduct ? (
@@ -264,29 +296,28 @@ export function StoryHero({ stories }: StoryHeroProps) {
                 />
               )}
 
-              {/* Gradient Dark Overlays for Text Readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent via-50% to-black/90 pointer-events-none" />
+              {/* Dark Overlays for Readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/90 pointer-events-none" />
 
-              {/* TOP HEADER OVERLAY */}
-              <div className="relative z-30 p-3 space-y-2">
-                {/* Segmented Multi-Progress Bar */}
-                <div className="flex gap-1.5 w-full">
+              {/* Top Progress Bars & Header */}
+              <div className="relative z-10 p-4 space-y-3">
+                {/* Segmented Progress Bar */}
+                <div className="flex space-x-1 w-full">
                   {products.length > 0 ? (
-                    products.map((_, idx) => {
-                      let fillPercent = 0;
-                      if (idx < activeProductIndex) fillPercent = 100;
-                      else if (idx === activeProductIndex)
-                        fillPercent = progress;
-                      else fillPercent = 0;
+                    products.map((_, pIdx) => {
+                      let barWidth = "0%";
+                      if (pIdx < activeProductIndex) barWidth = "100%";
+                      else if (pIdx === activeProductIndex)
+                        barWidth = `${progress}%`;
 
                       return (
                         <div
-                          key={idx}
+                          key={pIdx}
                           className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden"
                         >
                           <div
                             className="h-full bg-white transition-all duration-75 ease-linear"
-                            style={{ width: `${fillPercent}%` }}
+                            style={{ width: barWidth }}
                           />
                         </div>
                       );
@@ -301,124 +332,124 @@ export function StoryHero({ stories }: StoryHeroProps) {
                   )}
                 </div>
 
-                {/* Story Header (Avatar + Title + Controls) */}
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center space-x-2.5">
-                    <div className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-tr from-amber-500 to-fuchsia-600">
-                      <img
-                        src={activeStory.image_url}
-                        alt={activeStory.title}
-                        className="w-full h-full rounded-full object-cover border border-slate-900"
-                      />
-                    </div>
-                    <div className="text-white">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs font-bold text-white tracking-tight">
-                          {activeStory.title}
-                        </span>
-                        <span className="text-[10px] text-white/70 font-semibold bg-white/10 px-1.5 py-0.5 rounded">
-                          {activeProductIndex + 1}/{products.length || 1}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-white/70 line-clamp-1">
-                        {activeStory.subtitle || "Exclusive Collection"}
-                      </p>
+                {/* Story Author / Header Info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={activeStory.image_url}
+                      alt={activeStory.title}
+                      className="w-9 h-9 rounded-full object-cover border-2 border-white"
+                    />
+                    <div>
+                      <h4 className="text-sm font-bold text-white leading-tight">
+                        {activeStory.title}
+                      </h4>
+                      {activeStory.subtitle && (
+                        <p className="text-[11px] text-white/80 font-medium">
+                          {activeStory.subtitle}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Top Control Action Icons (Pause/Play, Mute) */}
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setIsPaused(!isPaused)}
-                      className="p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors cursor-pointer"
-                      title={isPaused ? "Resume" : "Pause"}
-                    >
-                      {isPaused ? (
-                        <Play className="w-4 h-4" />
-                      ) : (
-                        <Pause className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
+                  {/* Play/Pause Control */}
+                  <button
+                    onClick={() => setIsPaused(!isPaused)}
+                    className="p-1.5 text-white/80 hover:text-white rounded-full bg-black/40 backdrop-blur-sm transition-colors cursor-pointer"
+                  >
+                    {isPaused ? (
+                      <Play className="w-4 h-4" />
+                    ) : (
+                      <Pause className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* TAP NAVIGATION TOUCH ZONES (Left 35% prev, Right 35% next) */}
-              <div className="absolute inset-0 z-20 flex">
+              {/* Clickable Navigation Areas (Left 30% = Prev, Right 70% = Next) */}
+              <div className="absolute inset-0 z-0 flex">
                 <div
                   onClick={handlePrev}
                   className="w-1/3 h-full cursor-pointer"
-                  title="Previous Item"
-                />
-                <div
-                  onMouseDown={() => setIsPaused(true)}
-                  onMouseUp={() => setIsPaused(false)}
-                  onTouchStart={() => setIsPaused(true)}
-                  onTouchEnd={() => setIsPaused(false)}
-                  className="w-1/3 h-full cursor-pointer"
+                  title="Previous"
                 />
                 <div
                   onClick={handleNext}
-                  className="w-1/3 h-full cursor-pointer"
-                  title="Next Item"
+                  className="w-2/3 h-full cursor-pointer"
+                  title="Next"
                 />
               </div>
 
-              {/* BOTTOM PRODUCT DETAILS CARD DRAWER */}
+              {/* Bottom Interactive Product Card (Shoppable Pin) */}
               {currentProduct && (
-                <div className="relative z-30 m-3 bg-black/75 backdrop-blur-xl p-4 rounded-xl border border-white/15 text-white space-y-2.5 shadow-2xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                      {currentProduct.badge ||
-                        currentProduct.brand ||
-                        "Featured Drop"}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-white">
-                      {formatPrice(currentProduct.price)}
-                    </span>
-                  </div>
+                <div className="relative z-10 p-4">
+                  <motion.div
+                    key={currentProduct.id}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="bg-slate-900/90 backdrop-blur-md border border-white/20 p-3.5 rounded-xl shadow-2xl flex items-center space-x-3"
+                  >
+                    <img
+                      src={currentProduct.images[0]}
+                      alt={currentProduct.name}
+                      className="w-14 h-14 object-cover rounded-lg flex-shrink-0 border border-white/10"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="px-1.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[9px] uppercase rounded">
+                          FEATURED
+                        </span>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono">
+                          {currentProduct.brand || "AURA"}
+                        </span>
+                      </div>
+                      <h5 className="text-xs font-bold text-white truncate mt-0.5">
+                        {currentProduct.name}
+                      </h5>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-xs font-mono font-bold text-emerald-400">
+                          {formatPrice(currentProduct.price)}
+                        </span>
+                        {currentProduct.original_price && (
+                          <span className="text-[10px] text-slate-400 line-through font-mono">
+                            {formatPrice(currentProduct.original_price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-bold text-white line-clamp-1 tracking-tight">
-                      {currentProduct.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-300 line-clamp-2 mt-0.5 leading-snug">
-                      {currentProduct.description}
-                    </p>
-                  </div>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col space-y-1.5 flex-shrink-0">
+                      <button
+                        onClick={(e) => handleAddToCart(e, currentProduct)}
+                        className={`px-3 py-1.5 text-xs font-mono font-bold uppercase rounded flex items-center space-x-1 transition-all cursor-pointer ${
+                          addedProductId === currentProduct.id
+                            ? "bg-emerald-500 text-white"
+                            : "bg-amber-400 hover:bg-amber-300 text-slate-950"
+                        }`}
+                      >
+                        {addedProductId === currentProduct.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>ADDED</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>BUY NOW</span>
+                          </>
+                        )}
+                      </button>
 
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      onClick={(e) => handleAddToCart(e, currentProduct)}
-                      className={`py-2 px-3 font-bold text-xs uppercase tracking-wider rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
-                        addedProductId === currentProduct.id
-                          ? "bg-emerald-600 text-white border border-emerald-500"
-                          : "bg-white text-slate-950 hover:bg-slate-200"
-                      }`}
-                    >
-                      {addedProductId === currentProduct.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Added</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag className="w-3.5 h-3.5 text-slate-950" />
-                          <span>Add to Cart</span>
-                        </>
-                      )}
-                    </button>
-
-                    <Link
-                      href={`/products/${currentProduct.id}`}
-                      onClick={handleClose}
-                      className="py-2 px-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center space-x-1.5 border border-white/20 text-center"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-white" />
-                      <span>View Details</span>
-                    </Link>
-                  </div>
+                      <Link
+                        href={`/products/${currentProduct.id}`}
+                        onClick={handleClose}
+                        className="px-3 py-1 text-[10px] font-mono font-bold uppercase text-white/80 hover:text-white text-center underline"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </motion.div>
                 </div>
               )}
             </motion.div>

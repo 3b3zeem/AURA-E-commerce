@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useUserStore } from '@/store/useUserStore';
+import { createUserInDb } from '@/lib/services/userService';
 import { Mail, Lock, User, UserPlus, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -42,20 +43,15 @@ export default function RegisterPage() {
       }
 
       // Post profile to DB
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          role: email.includes('admin') ? 'admin' : 'customer',
-        }),
+      const ok = await createUserInDb({
+        id: data.user.id,
+        email,
+        full_name: fullName,
+        role: email.includes('admin') ? 'admin' : 'customer',
       });
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        setErrorMessage(errJson.error || 'Failed to initialize user profile.');
+      if (!ok) {
+        setErrorMessage('Failed to initialize user profile.');
         return;
       }
 

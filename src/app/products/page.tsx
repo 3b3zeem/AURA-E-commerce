@@ -9,6 +9,7 @@ import { ProductsTopBar } from "@/components/products/ProductsTopBar";
 import { ProductsGrid } from "@/components/products/ProductsGrid";
 import { ProductsLoadMore } from "@/components/products/ProductsLoadMore";
 import { ProductsFilterDrawer } from "@/components/products/ProductsFilterDrawer";
+import { getProductRating } from "@/lib/utils";
 
 const BATCH_SIZE = 24;
 const STORAGE_KEY = "aura_catalog_visible_count";
@@ -118,7 +119,7 @@ function ProductsContent() {
         if (product.price > maxPrice) {
           return false;
         }
-        if (minRating > 0 && product.rating_avg < minRating) {
+        if (minRating > 0 && getProductRating(product) < minRating) {
           return false;
         }
         if (inStockOnly && product.stock <= 0) {
@@ -138,7 +139,7 @@ function ProductsContent() {
       .sort((a, b) => {
         if (sortBy === "price-asc") return a.price - b.price;
         if (sortBy === "price-desc") return b.price - a.price;
-        if (sortBy === "rating") return b.rating_avg - a.rating_avg;
+        if (sortBy === "rating") return getProductRating(b) - getProductRating(a);
         if (sortBy === "newest")
           return (
             new Date(b.created_at || "").getTime() -

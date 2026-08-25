@@ -26,6 +26,7 @@ import { formatPrice } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 
 import toast from "react-hot-toast";
+import { seedDemoOrdersInDb } from "@/lib/services/ordersService";
 
 interface AdminOrdersTabProps {
   ordersList: any[];
@@ -46,8 +47,8 @@ export function AdminOrdersTab({
   const handleSeedOrders = async () => {
     setIsSeeding(true);
     try {
-      const res = await fetch("/api/admin/seed-orders", { method: "POST" });
-      if (res.ok) {
+      const ok = await seedDemoOrdersInDb();
+      if (ok) {
         window.location.reload();
       } else {
         toast.error("Failed to seed demo delivery orders.");

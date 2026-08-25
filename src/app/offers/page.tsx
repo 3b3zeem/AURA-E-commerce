@@ -1,58 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Zap, Sparkles, ShoppingBag, Clock, ShieldCheck, CheckCircle2, ArrowRight, Tag, Mail } from "lucide-react";
+import React, { useState } from "react";
+import { Zap, Sparkles, CheckCircle2, ArrowRight, Tag, Mail } from "lucide-react";
 import { Offer } from "@/types";
 import { subscribeNewsletter } from "@/lib/services/db";
 import { useOffers } from "@/hooks/useStoreData";
 import { useCartStore } from "@/store/useCartStore";
 import toast, { Toaster } from "react-hot-toast";
-
-function OfferCountdown({ endsAt }: { endsAt: string }) {
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
-
-  useEffect(() => {
-    const target = new Date(endsAt).getTime();
-
-    const calculate = () => {
-      const diff = target - Date.now();
-      if (diff <= 0) {
-        setTimeLeft(null);
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / 1000 / 60) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft({ days, hours, minutes, seconds });
-    };
-
-    calculate();
-    const interval = setInterval(calculate, 1000);
-    return () => clearInterval(interval);
-  }, [endsAt]);
-
-  if (!timeLeft) {
-    return (
-      <div className="inline-flex items-center space-x-1 bg-rose-50 border border-rose-200 text-rose-700 px-2.5 py-1 text-[11px] font-mono font-bold uppercase">
-        <Clock className="w-3.5 h-3.5 text-rose-600" />
-        <span>Offer Expired</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="inline-flex items-center space-x-1.5 bg-amber-50 border border-amber-300 text-amber-900 px-3 py-1 text-xs font-mono font-bold">
-      <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
-      <span className="text-[10px] uppercase font-sans text-amber-800 font-extrabold mr-1">Ends in:</span>
-      <span>
-        {timeLeft.days > 0 && `${timeLeft.days}d `}
-        {String(timeLeft.hours).padStart(2, "0")}:{String(timeLeft.minutes).padStart(2, "0")}:{String(timeLeft.seconds).padStart(2, "0")}
-      </span>
-    </div>
-  );
-}
+import { OfferCard } from "@/components/offers/OfferCard";
 
 export default function OffersPage() {
   const { data: rawOffersList = [], isLoading: loading } = useOffers();
@@ -62,7 +17,6 @@ export default function OffersPage() {
 
   const { addItem, openCart } = useCartStore();
 
-  // Filter out expired or not-yet-started offers on client
   const nowStr = new Date().toISOString();
   const offersList = rawOffersList.filter((o) => {
     if (!o.is_active) return false;
@@ -118,32 +72,36 @@ export default function OffersPage() {
       {/* HERO SECTION */}
       <div className="relative bg-slate-950 text-white py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-800 overflow-hidden">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" />
-        
+
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-2xl text-center md:text-left">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider">
               <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
               <span>AURA Exclusive Releases & Bundles</span>
             </div>
-            
+
             <h1 className="text-3xl sm:text-5xl font-black text-white font-mono tracking-tight leading-tight">
               Special Offers & Curated Tech Bundles
             </h1>
-            
+
             <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
-              Unlock maximum value with our engineered hardware bundles. Every offer includes full warranty protection, express shipping, and instant bundle savings.
+              Unlock maximum value with our engineered hardware bundles. Every offer includes
+              full warranty protection, express shipping, and instant bundle savings.
             </p>
           </div>
 
-          {/* Quick Value Stats */}
           <div className="grid grid-cols-2 gap-4 w-full md:w-auto font-mono text-center">
             <div className="p-4 bg-slate-900/90 border border-slate-800">
               <span className="text-2xl font-black text-amber-400 block">Up to 40%</span>
-              <span className="text-[11px] text-slate-400 uppercase font-bold">Bundle Discounts</span>
+              <span className="text-[11px] text-slate-400 uppercase font-bold">
+                Bundle Discounts
+              </span>
             </div>
             <div className="p-4 bg-slate-900/90 border border-slate-800">
               <span className="text-2xl font-black text-emerald-400 block">1-Click</span>
-              <span className="text-[11px] text-slate-400 uppercase font-bold">Cart Instant Add</span>
+              <span className="text-[11px] text-slate-400 uppercase font-bold">
+                Cart Instant Add
+              </span>
             </div>
           </div>
         </div>
@@ -158,7 +116,8 @@ export default function OffersPage() {
               Active Hardware Bundles ({offersList.length})
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Select a bundle below to add all included components to your cart with guaranteed offer pricing.
+              Select a bundle below to add all included components to your cart with guaranteed
+              offer pricing.
             </p>
           </div>
         </div>
@@ -170,137 +129,24 @@ export default function OffersPage() {
         ) : offersList.length === 0 ? (
           <div className="py-16 text-center bg-white border border-slate-200 p-8 space-y-3">
             <Sparkles className="w-8 h-8 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-800 uppercase">No active offers right now</h3>
-            <p className="text-xs text-slate-500">Subscribe to our newsletter below to get notified as soon as new offer drops go live!</p>
+            <h3 className="text-base font-bold text-slate-800 uppercase">
+              No active offers right now
+            </h3>
+            <p className="text-xs text-slate-500">
+              Subscribe to our newsletter below to get notified as soon as new offer drops go
+              live!
+            </p>
           </div>
         ) : (
           <div className="space-y-8">
             {offersList.map((offer, idx) => (
-              <motion.div
+              <OfferCard
                 key={offer.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-white border-2 border-slate-200 hover:border-slate-900 transition-all overflow-hidden grid grid-cols-1 lg:grid-cols-12 shadow-sm"
-              >
-                {/* Image Column */}
-                <div className="lg:col-span-5 relative bg-slate-950 min-h-[260px] lg:min-h-full flex items-center justify-center p-6 overflow-hidden">
-                  <img
-                    src={offer.image_url}
-                    alt={offer.title}
-                    className="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
-
-                  <div className="absolute top-4 left-4 bg-amber-400 text-slate-950 font-black px-3 py-1 text-xs uppercase tracking-wider font-mono border border-amber-500">
-                    {offer.badge || `SAVE ${offer.discount_percentage}%`}
-                  </div>
-
-                  {offer.show_in_overlay && (
-                    <div className="absolute top-4 right-4 bg-slate-900 text-amber-400 font-bold px-2.5 py-1 text-[10px] uppercase font-mono border border-amber-400/40">
-                      Featured Entrance Offer
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest block">
-                      AURA Verified Deal
-                    </span>
-                    <h3 className="text-lg font-black text-white font-mono leading-tight">
-                      {offer.title}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Details Column */}
-                <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="text-2xl font-black text-slate-900 leading-tight">
-                            {offer.title}
-                          </h3>
-                          {offer.ends_at && <OfferCountdown endsAt={offer.ends_at} />}
-                        </div>
-                        {offer.subtitle && (
-                          <p className="text-xs text-slate-600 font-bold uppercase tracking-wider mt-0.5">
-                            {offer.subtitle}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="text-right font-mono">
-                        <span className="text-xs text-slate-400 line-through block">
-                          ${offer.original_price}
-                        </span>
-                        <span className="text-2xl font-black text-slate-900">
-                          ${offer.offer_price}
-                        </span>
-                      </div>
-                    </div>
-
-                    {offer.description && (
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {offer.description}
-                      </p>
-                    )}
-
-                    {/* Included Products List */}
-                    {offer.products && offer.products.length > 0 && (
-                      <div className="space-y-2 pt-2">
-                        <span className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Included Products in Bundle ({offer.products.length}):
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {offer.products.map((prod) => (
-                            <div
-                              key={prod.id}
-                              className="flex items-center space-x-3 p-2 bg-slate-50 border border-slate-200 text-xs"
-                            >
-                              {prod.images && prod.images[0] && (
-                                <img
-                                  src={prod.images[0]}
-                                  alt={prod.name}
-                                  className="w-10 h-10 object-cover border border-slate-300 flex-shrink-0"
-                                />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-slate-900 truncate">
-                                  {prod.name}
-                                </p>
-                                <p className="text-[11px] text-slate-500 font-mono">
-                                  ${prod.price}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions Row */}
-                  <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center space-x-2 text-xs text-slate-500 font-bold uppercase">
-                      <ShieldCheck className="w-4 h-4 text-slate-900" />
-                      <span>Free Express Delivery & Warranty Included</span>
-                    </div>
-
-                    <button
-                      onClick={() => handleAddBundleToCart(offer)}
-                      disabled={addingId === offer.id}
-                      className="px-6 py-3 bg-slate-900 hover:bg-black text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 border border-slate-800 transition-all cursor-pointer"
-                    >
-                      <ShoppingBag className="w-4 h-4 text-white" />
-                      <span>
-                        {addingId === offer.id ? "Adding Bundle..." : "Add Entire Bundle to Cart"}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                offer={offer}
+                idx={idx}
+                addingId={addingId}
+                handleAddBundleToCart={handleAddBundleToCart}
+              />
             ))}
           </div>
         )}
@@ -316,7 +162,8 @@ export default function OffersPage() {
               Get Early Access to Future Bundles & Release Alerts
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Subscribe to our insider email alerts. Be the first to receive notifications whenever a new limited-edition hardware offer goes live on AURA.
+              Subscribe to our insider email alerts. Be the first to receive notifications
+              whenever a new limited-edition hardware offer goes live on AURA.
             </p>
           </div>
 
@@ -333,7 +180,11 @@ export default function OffersPage() {
                 type="submit"
                 className="px-6 bg-amber-400 text-slate-950 hover:bg-amber-300 text-xs font-black font-mono uppercase transition-colors flex items-center justify-center border border-amber-500 cursor-pointer whitespace-nowrap"
               >
-                {subscribed ? <CheckCircle2 className="w-4 h-4 text-slate-950" /> : <ArrowRight className="w-4 h-4 text-slate-950" />}
+                {subscribed ? (
+                  <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 text-slate-950" />
+                )}
               </button>
             </form>
             {subscribed && (

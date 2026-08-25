@@ -27,3 +27,14 @@ export function formatDate(dateString: string): string {
     year: 'numeric',
   });
 }
+
+export function getProductRating(product: { rating_avg?: number; reviews_count?: number }): number {
+  if (product?.reviews_count && product.reviews_count > 0 && typeof product?.rating_avg === 'number') {
+    return product.rating_avg;
+  }
+  return 0;
+}
+
+export function getProductReviewsCount(product: { reviews_count?: number }): number {
+  return product?.reviews_count || 0;
+}

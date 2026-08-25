@@ -2,74 +2,52 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  getProductById,
-  getProducts,
-  getUserAddresses,
-} from "@/lib/services/db";
 import { Product, UserAddress } from "@/types";
 import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { ProductBundleWizard } from "@/components/product/ProductBundleWizard";
 import { ProductCarouselSection } from "@/components/product/ProductCarouselSection";
-import { ProductDiscountCountdown } from "@/components/product/ProductDiscountCountdown";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
-import { CustomSelect } from "@/components/ui/CustomSelect";
+import { useUserWishlist } from "@/hooks/useUserData";
 import {
-  calculateExpressDelivery,
+  useSingleProduct,
+  useProducts,
+  useUserAddresses,
+  useProductReviews,
+} from "@/hooks/useStoreData";
+import {
   getStoredGovernorates,
-  getShippingFee,
   getActiveGovernorate,
   setActiveGovernorate,
 } from "@/lib/shipping";
 import toast from "react-hot-toast";
-import {
-  Star,
-  Heart,
-  Truck,
-  RefreshCw,
-  Lock,
-  RotateCcw,
-  Banknote,
-  CreditCard,
-  ChevronRight,
-  CheckCircle2,
-  MapPin,
-  X,
-} from "lucide-react";
+import { RefreshCw, ChevronRight } from "lucide-react";
 import { ExpressBuyModal } from "@/components/checkout/ExpressBuyModal";
 import { trackProductView } from "@/lib/analytics/tracker";
 import { createClient } from "@/lib/supabase/client";
-import { useProductReviews } from "@/hooks/useStoreData";
 
-export default function ProductClientPage({
-  productId,
-}: {
-  productId: string;
-}) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+import { ProductGallery } from "@/components/product/ProductGallery";
+import { ProductInfoCenter } from "@/components/product/ProductInfoCenter";
+import { ProductBuyBox } from "@/components/product/ProductBuyBox";
+
+export default function ProductClientPage({ productId }: { productId: string }) {
+  // React Query cached hooks
+  const { data: product, isLoading: loadingProduct } = useSingleProduct(productId);
+  const { data: allProducts = [] } = useProducts();
+  const { data: userAddresses = [] } = useUserAddresses();
+
   const [selectedImage, setSelectedImage] = useState("");
-  const [selectedVariants, setSelectedVariants] = useState<
-    Record<string, string>
-  >({});
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
-  const [copied, setCopied] = useState(false);
   const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
-  const [selectedProtectionPlan, setSelectedProtectionPlan] = useState<
-    string | null
-  >(null);
+  const [selectedProtectionPlan] = useState<string | null>(null);
   const [selectedGovernorate, setSelectedGovernorate] = useState<string>(() =>
-    getActiveGovernorate(),
+    getActiveGovernorate()
   );
   const [storedGovs, setStoredGovs] = useState(() => getStoredGovernorates());
-  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(
-    null,
-  );
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
+  const [, setIsLocationModalOpen] = useState(false);
 
   const handleSetGovernorate = (gov: string) => {
     setSelectedGovernorate(gov);
@@ -85,67 +63,40 @@ export default function ProductClientPage({
   }, []);
 
   useEffect(() => {
-    async function loadUserAddresses() {
-      try {
-        const addrs = await getUserAddresses();
-        if (Array.isArray(addrs) && addrs.length > 0) {
-          setSavedAddresses(addrs);
-          const def = addrs.find((a: UserAddress) => a.is_default) || addrs[0];
-          setSelectedAddress(def);
-          const govName = def.state_region || def.city;
-          if (govName) {
-            handleSetGovernorate(govName);
-          }
-        }
-      } catch {}
+    if (Array.isArray(userAddresses) && userAddresses.length > 0) {
+      const def = userAddresses.find((a: UserAddress) => a.is_default) || userAddresses[0];
+      setSelectedAddress(def);
+      const govName = def.state_region || def.city;
+      if (govName) handleSetGovernorate(govName);
     }
-    loadUserAddresses();
-  }, []);
+  }, [userAddresses]);
 
   const { addItem } = useCartStore();
-  const { toggleWishlist, isInWishlist } = useUserStore();
+  const { profile } = useUserStore();
+  const { data: wishlistRaw = [], addToWishlistMutation, removeFromWishlistMutation } = useUserWishlist(profile?.id);
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [productId]);
+
+  useEffect(() => {
+    if (product) {
+      setSelectedImage(product.images?.[0] || "");
+      const initialVariants: Record<string, string> = {};
+      product.variants?.forEach((v: any) => {
+        if (v.options.length > 0) initialVariants[v.name] = v.options[0];
+      });
+      setSelectedVariants(initialVariants);
+
+      try {
+        trackProductView(product.id, product.name, product.price);
+      } catch {}
+    }
+  }, [product]);
 
   const [boughtAlsoBought, setBoughtAlsoBought] = useState<Product[]>([]);
   const [inspiredProducts, setInspiredProducts] = useState<Product[]>([]);
-  const [viewedHistoryProducts, setViewedHistoryProducts] = useState<Product[]>(
-    [],
-  );
-
-  useEffect(() => {
-    async function loadProduct() {
-      setLoading(true);
-      const [prod, catalog] = await Promise.all([
-        getProductById(productId),
-        getProducts(),
-      ]);
-
-      if (prod) {
-        setProduct(prod);
-        setSelectedImage(prod.images[0] || "");
-        const initialVariants: Record<string, string> = {};
-        prod.variants?.forEach((v: any) => {
-          if (v.options.length > 0) initialVariants[v.name] = v.options[0];
-        });
-        setSelectedVariants(initialVariants);
-
-        try {
-          trackProductView(prod.id, prod.name, prod.price);
-        } catch {}
-      }
-      if (Array.isArray(catalog)) {
-        setAllProducts(catalog);
-      }
-      setLoading(false);
-    }
-    loadProduct();
-  }, [productId]);
+  const [viewedHistoryProducts, setViewedHistoryProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     if (allProducts.length === 0 || !product) return;
@@ -154,7 +105,6 @@ export default function ProductClientPage({
     async function loadRecommendationSections() {
       const supabase = createClient();
 
-      // 1. Customers who bought this item also bought (Pure Supabase DB query on order_items)
       try {
         const { data: matchedOrders } = await supabase
           .from("order_items")
@@ -172,30 +122,20 @@ export default function ProductClientPage({
           if (coItems && coItems.length > 0) {
             const freq: Record<string, number> = {};
             coItems.forEach((ci: any) => {
-              if (ci.product_id) {
-                freq[ci.product_id] = (freq[ci.product_id] || 0) + 1;
-              }
+              if (ci.product_id) freq[ci.product_id] = (freq[ci.product_id] || 0) + 1;
             });
-            const sortedIds = Object.keys(freq).sort(
-              (a, b) => freq[b] - freq[a],
-            );
+            const sortedIds = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
             const coProducts = sortedIds
               .map((id) => allProducts.find((p) => p.id === id))
               .filter((p): p is Product => Boolean(p));
 
             setBoughtAlsoBought(coProducts);
-          } else {
-            setBoughtAlsoBought([]);
           }
-        } else {
-          setBoughtAlsoBought([]);
         }
       } catch (err) {
         console.error("Error loading co-purchases from Supabase:", err);
-        setBoughtAlsoBought([]);
       }
 
-      // 2. Inspired by your browsing history (Pure Supabase DB query on analytics_events for search_query)
       try {
         const { data: searchEvents } = await supabase
           .from("analytics_events")
@@ -212,24 +152,17 @@ export default function ProductClientPage({
           if (queries.length > 0) {
             const searchMatches = allProducts.filter((p) => {
               if (p.id === currId) return false;
-              const text =
-                `${p.name} ${p.brand || ""} ${p.category?.name || ""} ${p.description || ""}`.toLowerCase();
+              const text = `${p.name} ${p.brand || ""} ${p.category?.name || ""} ${p.description || ""}`.toLowerCase();
               return queries.some((q) => text.includes(q.toLowerCase()));
             });
 
             setInspiredProducts(searchMatches);
-          } else {
-            setInspiredProducts([]);
           }
-        } else {
-          setInspiredProducts([]);
         }
       } catch (err) {
         console.error("Error loading search inspiration from Supabase:", err);
-        setInspiredProducts([]);
       }
 
-      // 3. Your Browsing History (Pure Supabase DB query on analytics_events for product_view)
       try {
         const { data: viewEvents } = await supabase
           .from("analytics_events")
@@ -252,12 +185,9 @@ export default function ProductClientPage({
             .filter((p): p is Product => Boolean(p));
 
           setViewedHistoryProducts(visited);
-        } else {
-          setViewedHistoryProducts([]);
         }
       } catch (err) {
         console.error("Error loading product view history from Supabase:", err);
-        setViewedHistoryProducts([]);
       }
     }
 
@@ -265,13 +195,18 @@ export default function ProductClientPage({
   }, [allProducts, product]);
 
   const { data: productReviews = [] } = useProductReviews(product?.id || "");
-  const dynamicRatingAvg = productReviews.length > 0
-    ? (productReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / productReviews.length).toFixed(1)
-    : (product?.rating_avg || 0);
+  const dynamicReviewsCount =
+    productReviews.length > 0 ? productReviews.length : (product?.reviews_count || 0);
 
-  const dynamicReviewsCount = productReviews.length > 0
-    ? productReviews.length
-    : (product?.reviews_count || 0);
+  const dynamicRatingAvg =
+    productReviews.length > 0
+      ? (
+          productReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) /
+          productReviews.length
+        ).toFixed(1)
+      : dynamicReviewsCount > 0
+      ? (product?.rating_avg || 0)
+      : 0;
 
   const handleSearchThisPage = () => {
     if (typeof window !== "undefined") {
@@ -287,7 +222,7 @@ export default function ProductClientPage({
     }
   };
 
-  if (loading) {
+  if (loadingProduct) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center text-slate-900 font-sans space-y-4">
         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-slate-900" />
@@ -314,36 +249,41 @@ export default function ProductClientPage({
     );
   }
 
-  const isLiked = isInWishlist(product.id);
+  const isLiked =
+    Boolean(product) &&
+    Array.isArray(wishlistRaw) &&
+    wishlistRaw.some(
+      (w: any) =>
+        w.product_id === product?.id || w.id === product?.id || w === product?.id
+    );
+
+  const handleToggleWishlist = (productId: string) => {
+    if (!profile?.id) return;
+    if (isLiked) {
+      removeFromWishlistMutation.mutate({ userId: profile.id, productId });
+    } else {
+      addToWishlistMutation.mutate({ userId: profile.id, productId });
+    }
+  };
   const discount = product.original_price
     ? calculateDiscountPercentage(product.original_price, product.price)
     : 0;
 
-  const handleShare = () => {
-    if (typeof window !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      toast.success("Product link copied to clipboard!", {
-        style: {
-          background: "#0f172a",
-          color: "#ffffff",
-          borderRadius: "0px",
-          fontSize: "12px",
-          fontWeight: "bold",
-        },
-      });
-      setTimeout(() => setCopied(false), 2500);
-    }
-  };
+  const defaultProtectionPlans = [
+    { id: "plan_1", name: "1-Year Extended Warranty by Boxi", price: 56 },
+    { id: "plan_2", name: "2-Year Extended Warranty by Boxi", price: 89 },
+    { id: "plan_3", name: "1-Year Accidental Damage Protection", price: 97 },
+  ];
+  const protectionPlans =
+    product.protection_plans && product.protection_plans.length > 0
+      ? product.protection_plans
+      : defaultProtectionPlans;
 
   const handleAddToCart = () => {
-    const chosenPlan = protectionPlans.find(
-      (p) => p.id === selectedProtectionPlan,
-    );
+    const chosenPlan = protectionPlans.find((p) => p.id === selectedProtectionPlan);
     const finalVariants = { ...selectedVariants };
     if (chosenPlan) {
-      finalVariants["Protection Plan"] =
-        `${chosenPlan.name} (+${formatPrice(chosenPlan.price)})`;
+      finalVariants["Protection Plan"] = `${chosenPlan.name} (+${formatPrice(chosenPlan.price)})`;
     }
 
     const itemToAdd = chosenPlan
@@ -362,47 +302,14 @@ export default function ProductClientPage({
           fontSize: "12px",
           fontWeight: "bold",
         },
-      },
+      }
     );
   };
 
-  // Technical Specs from Supabase JSONB
   const techSpecs = product.specs || {};
-
-  // Highlights / About this item from Supabase ARRAY or JSONB
-  const aboutHighlights = Array.isArray(product.highlights)
-    ? product.highlights
-    : [];
-
-  // Bank Promotions (Coupons) from Supabase JSONB
-  const bankPromos = product.bank_promos || [];
-
-  // Protection Plans (Extended Warranties) with fallback to default Boxi plans
-  const defaultProtectionPlans = [
-    {
-      id: "plan_1",
-      name: "1-Year Extended Warranty by Boxi (Email delivery)",
-      price: 56,
-    },
-    {
-      id: "plan_2",
-      name: "2-Year Extended Warranty by Boxi (E-mail delivery)",
-      price: 89,
-    },
-    {
-      id: "plan_3",
-      name: "1-Year Accidental Damage Protection by Boxi (Email Delivery)",
-      price: 97,
-    },
-  ];
-  const protectionPlans =
-    product.protection_plans && product.protection_plans.length > 0
-      ? product.protection_plans
-      : defaultProtectionPlans;
-
-  // Related products from Supabase DB by matching category_id
+  const aboutHighlights = Array.isArray(product.highlights) ? product.highlights : [];
   const relatedCategoryDeals = allProducts.filter(
-    (p) => p.id !== product.id && p.category_id === product.category_id,
+    (p) => p.id !== product.id && p.category_id === product.category_id
   );
   const displayCategoryDeals =
     relatedCategoryDeals.length > 0
@@ -417,10 +324,7 @@ export default function ProductClientPage({
           Home
         </Link>
         <ChevronRight className="w-3 h-3 text-slate-400" />
-        <Link
-          href="/products"
-          className="hover:text-slate-900 transition-colors"
-        >
+        <Link href="/products" className="hover:text-slate-900 transition-colors">
           Catalog
         </Link>
         <ChevronRight className="w-3 h-3 text-slate-400" />
@@ -433,557 +337,92 @@ export default function ProductClientPage({
         </span>
       </div>
 
-      {/* 2. Main Product Details Layout Grid */}
+      {/* 2. Main Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Image Gallery (4 Cols on LG) */}
-        <div className="lg:col-span-4 flex flex-col-reverse sm:flex-row gap-3 items-start lg:sticky  top-24">
-          {/* Vertical Thumbnails */}
-          {product.images.length > 1 && (
-            <div className="flex sm:flex-col gap-2 max-h-[500px] w-full sm:w-auto shrink-0 py-1">
-              {product.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(img)}
-                  className={`w-14 h-14 sm:w-16 sm:h-16 bg-white border transition-all cursor-pointer ${
-                    selectedImage === img
-                      ? "border-slate-900 border-2 shadow-sm scale-105"
-                      : "border-slate-200 opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`${product.name} thumbnail ${i + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+        <ProductGallery
+          images={product.images}
+          productName={product.name}
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+          discount={discount}
+          badge={product.badge}
+        />
 
-          {/* Main Display Image */}
-          <div className="relative aspect-square w-full flex-1 bg-white border border-slate-200 overflow-hidden group">
-            <img
-              src={selectedImage || product.images[0]}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
-            />
-            {discount > 0 && (
-              <span className="absolute top-3 left-3 bg-rose-600 text-white text-xs font-black px-2.5 py-1 uppercase border border-rose-700 shadow-md">
-                -{discount}% OFF
-              </span>
-            )}
-            {product.badge && (
-              <span className="absolute top-3 right-3 bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 uppercase border border-amber-600 shadow-md">
-                {product.badge}
-              </span>
-            )}
-          </div>
-        </div>
+        <ProductInfoCenter
+          product={product}
+          dynamicRatingAvg={dynamicRatingAvg}
+          dynamicReviewsCount={dynamicReviewsCount}
+          discount={discount}
+          selectedVariants={selectedVariants}
+          setSelectedVariants={setSelectedVariants}
+          handleSearchThisPage={handleSearchThisPage}
+          techSpecs={techSpecs}
+          aboutHighlights={aboutHighlights}
+        />
 
-        {/* Center Column: Product Specs & Information (5 Cols on LG) */}
-        <div className="lg:col-span-5 space-y-5 border-b lg:border-b-0 border-slate-200 pb-6 lg:pb-0">
-          <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-              Brand:{" "}
-              <strong className="text-slate-900">
-                {product.brand || "AURA Flagship"}
-              </strong>
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight mt-1">
-              {product.name}
-            </h1>
-
-            {/* Ratings, Reviews & Search link */}
-            <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
-              <div className="flex items-center text-amber-500">
-                <span className="font-black mr-1 text-slate-900">
-                  {dynamicRatingAvg}
-                </span>
-                <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
-              </div>
-              <span className="text-slate-600 font-bold">
-                ({dynamicReviewsCount} verified ratings)
-              </span>
-              <span className="text-slate-300">|</span>
-              <button
-                onClick={handleSearchThisPage}
-                className="text-slate-600 hover:text-slate-900 underline font-semibold cursor-pointer"
-              >
-                Search this page
-              </button>
-            </div>
-          </div>
-
-          {/* Pricing & Installments Banner */}
-          <div className="space-y-2 pb-4 border-b border-slate-200">
-            <div className="flex items-baseline gap-3">
-              {discount > 0 && (
-                <span className="text-lg font-black text-rose-600">
-                  -{discount}%
-                </span>
-              )}
-              <span className="text-2xl font-black text-slate-900 font-mono">
-                {formatPrice(product.price)}
-              </span>
-              {product.original_price && (
-                <span className="text-xs font-semibold line-through text-slate-600 font-mono">
-                  List Price: {formatPrice(product.original_price)}
-                </span>
-              )}
-            </div>
-
-            {/* Live Discount Offer Countdown Timer */}
-            {(discount > 0 || product.discount_ends_at || product.is_flash_deal) && (
-              <ProductDiscountCountdown
-                targetDate={product.discount_ends_at || product.flash_deal_ends_at}
-                discountPercent={discount}
-              />
-            )}
-
-            {/* Monthly Payment Plan / Installments */}
-            <div className="text-xs text-slate-700 flex items-center gap-1.5 pt-1 border-t border-slate-100 font-medium">
-              <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>
-                Or <strong>{formatPrice(Math.round(product.price / 3))}</strong>
-                /month x 3 months at 0% interest.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-[11px] text-slate-500 font-bold uppercase pt-0.5">
-              <span className="text-emerald-700">FREE Returns</span>
-              <span>•</span>
-              <span>All prices include VAT</span>
-            </div>
-          </div>
-
-          {/* 5 Trust Badges Grid */}
-          <div className="grid grid-cols-5 gap-1.5 py-3 border-y border-slate-200 text-center text-[10px] font-bold text-slate-700">
-            <div className="flex flex-col items-center space-y-1 p-1.5 bg-white border border-slate-200">
-              <Banknote className="w-4 h-4 text-slate-900" />
-              <span>Cash on Delivery</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1 p-1.5 bg-white border border-slate-200">
-              <RotateCcw className="w-4 h-4 text-slate-900" />
-              <span>15 Days Returnable</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1 p-1.5 bg-white border border-slate-200">
-              <Truck className="w-4 h-4 text-slate-900" />
-              <span>Free Delivery</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1 p-1.5 bg-white border border-slate-200">
-              <CheckCircle2 className="w-4 h-4 text-slate-900" />
-              <span>Delivered by AURA</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1 p-1.5 bg-white border border-slate-200">
-              <Lock className="w-4 h-4 text-slate-900" />
-              <span>Secure Transaction</span>
-            </div>
-          </div>
-
-          {/* Variants Selector */}
-          {product.variants && product.variants.length > 0 && (
-            <div className="space-y-3">
-              {product.variants.map((v) => (
-                <div key={v.name} className="space-y-1.5">
-                  <span className="text-xs font-bold text-slate-800 uppercase block">
-                    {v.name}:{" "}
-                    <strong className="text-slate-950">
-                      {selectedVariants[v.name] || "Select"}
-                    </strong>
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {v.options.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() =>
-                          setSelectedVariants({
-                            ...selectedVariants,
-                            [v.name]: opt,
-                          })
-                        }
-                        className={`px-3 py-1.5 text-xs font-bold uppercase border transition-all cursor-pointer ${
-                          selectedVariants[v.name] === opt
-                            ? "bg-slate-900 text-white border-slate-800 shadow-sm"
-                            : "bg-white text-slate-700 border-slate-300 hover:border-slate-900"
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Technical Specifications Summary */}
-          <div className="space-y-2 pt-2">
-            <span className="text-xs font-black uppercase text-slate-800 block">
-              Technical Specifications
-            </span>
-            <div className="bg-white border border-slate-200 text-xs divide-y divide-slate-100">
-              {Object.entries(techSpecs)
-                .slice(0, 5)
-                .map(([key, val]) => (
-                  <div key={key} className="grid grid-cols-2 p-2">
-                    <span className="font-bold text-slate-600">{key}</span>
-                    <span className="text-slate-900 font-medium">{val}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* About This Item Bullet List */}
-          <div className="space-y-2 pt-2">
-            <span className="text-xs font-black uppercase text-slate-800 block">
-              About this item
-            </span>
-            <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 pl-1 leading-relaxed">
-              {aboutHighlights.map((hl, idx) => (
-                <li key={idx} className="text-slate-800">
-                  <span className="font-semibold text-slate-900">{hl}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Right Column: Desktop Buy Box (3 Cols on LG) - Matches Image 3 */}
-        <div className="lg:col-span-3 bg-white border border-slate-300 p-4 space-y-3.5 sticky top-24 shadow-sm text-slate-900">
-          <div className="space-y-1.5 pb-3 border-b border-slate-200">
-            <span className="text-2xl font-black text-slate-900 font-mono block">
-              {formatPrice(product.price)}
-            </span>
-            <span className="text-[11px] font-bold text-slate-700 uppercase block tracking-wider">
-              FREE Returns
-            </span>
-            {(() => {
-              const est = calculateExpressDelivery(
-                17,
-                selectedGovernorate,
-                storedGovs,
-              );
-              const shipInfo = getShippingFee(
-                selectedGovernorate,
-                product.price,
-              );
-              return (
-                <div className="space-y-1.5 mt-2 text-xs">
-                  <p className="text-slate-900">
-                    {shipInfo.isFree ? (
-                      <>
-                        FREE delivery{" "}
-                        <strong className="font-bold text-slate-950">
-                          {est.formattedStandardDate}
-                        </strong>
-                      </>
-                    ) : (
-                      <>
-                        Shipping:{" "}
-                        <strong className="font-bold">
-                          {formatPrice(shipInfo.fee)}
-                        </strong>{" "}
-                        • Delivery by{" "}
-                        <strong className="font-bold text-slate-950">
-                          {est.formattedStandardDate}
-                        </strong>
-                      </>
-                    )}
-                  </p>
-
-                  <p className="text-slate-800 text-xs">
-                    Or fastest delivery{" "}
-                    <strong className="font-bold text-slate-950">
-                      {est.deliveryText}
-                    </strong>
-                    . Order within{" "}
-                    <span className="text-slate-900 font-bold">
-                      {est.formattedCountdown}
-                    </span>
-                  </p>
-
-                  {/* Deliver to address line button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsLocationModalOpen(true)}
-                    className="flex items-center gap-1 text-xs text-slate-900 hover:text-black font-semibold pt-1 underline transition-colors cursor-pointer group"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-slate-900 shrink-0 group-hover:text-black" />
-                    <span className="truncate">
-                      Deliver to{" "}
-                      {selectedAddress
-                        ? `${selectedAddress.full_name?.split(" ")[0] || "User"} - ${selectedAddress.city || selectedAddress.state_region}`
-                        : selectedGovernorate}
-                    </span>
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Stock Status Alert */}
-          <div>
-            {product.stock > 5 ? (
-              <span className="text-xs font-bold uppercase text-slate-900 block tracking-wider">
-                In Stock
-              </span>
-            ) : product.stock > 0 ? (
-              <span className="text-xs font-black text-slate-900 uppercase block bg-slate-100 p-2 border border-slate-300">
-                Only {product.stock} left in stock - order soon.
-              </span>
-            ) : (
-              <span className="text-xs font-black text-slate-900 uppercase block bg-slate-100 p-2 border border-slate-300">
-                Out of Stock
-              </span>
-            )}
-          </div>
-
-          {/* Quantity Selector using CustomSelect */}
-          <div className="space-y-1">
-            <CustomSelect
-              value={String(quantity)}
-              onChange={(val) => setQuantity(Number(val))}
-              options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => ({
-                value: String(num),
-                label: `Quantity: ${num}`,
-              }))}
-              className="w-full"
-              triggerClassName="w-full justify-between py-2 text-xs font-bold"
-            />
-          </div>
-
-          {/* Action CTAs */}
-          <div className="space-y-2 pt-1">
-            <button
-              onClick={handleAddToCart}
-              className="w-full h-10 bg-slate-950 hover:bg-black text-white rounded-none font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs active:scale-[0.99] uppercase tracking-wider"
-            >
-              <span>Add to cart</span>
-            </button>
-
-            <button
-              onClick={() => setIsExpressModalOpen(true)}
-              className="w-full h-10 bg-white hover:bg-slate-100 text-slate-950 border border-slate-900 rounded-none font-bold text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xs active:scale-[0.99] uppercase tracking-wider"
-            >
-              <span>Buy Now</span>
-            </button>
-          </div>
-
-          {/* Shipper & Payment Information */}
-          <div className="text-[11px] space-y-1.5 pt-3 border-t border-slate-200 text-slate-600 font-medium">
-            <div className="grid grid-cols-2">
-              <span className="text-slate-500">Shipper / Seller</span>
-              <span className="font-bold text-slate-900 text-right">
-                AURA.eg
-              </span>
-            </div>
-            <div className="grid grid-cols-2">
-              <span className="text-slate-500">Payment</span>
-              <span className="font-bold text-slate-900 hover:underline cursor-pointer text-right">
-                Secure transaction
-              </span>
-            </div>
-            <div className="grid grid-cols-2">
-              <span className="text-slate-500">Customer service</span>
-              <span className="font-bold text-slate-900 hover:underline cursor-pointer text-right">
-                AURA.eg
-              </span>
-            </div>
-          </div>
-
-          {/* Wishlist Button */}
-          <div className="pt-2 border-t border-slate-200">
-            <button
-              onClick={() => toggleWishlist(product.id)}
-              className={`w-full py-2 px-3 border text-xs font-bold uppercase flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                isLiked
-                  ? "bg-black text-white border-black"
-                  : "bg-white text-slate-800 border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <Heart
-                className={`w-3.5 h-3.5 ${isLiked ? "fill-current" : ""}`}
-              />
-              <span>
-                {isLiked ? "Added to Wishlist" : "Add to List / Wishlist"}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Frequently Bought Together Bundle Savings Wizard */}
-      <div className="pt-6 border-t border-slate-200">
-        <ProductBundleWizard
-          currentProduct={product}
-          allProducts={allProducts}
+        <ProductBuyBox
+          product={product}
+          quantity={quantity}
+          setQuantity={setQuantity}
+          selectedGovernorate={selectedGovernorate}
+          storedGovs={storedGovs}
+          selectedAddress={selectedAddress}
+          setIsLocationModalOpen={setIsLocationModalOpen}
+          handleAddToCart={handleAddToCart}
+          setIsExpressModalOpen={setIsExpressModalOpen}
+          isLiked={isLiked}
+          toggleWishlist={handleToggleWishlist}
         />
       </div>
 
-      {/* 4. Explore top deals in related categories */}
-      <ProductCarouselSection
-        title="Explore top deals in related categories"
-        subtitle="Hand-picked flash deals and category bestsellers with extra savings"
-        actionLink={{
-          href: `/products?category=${encodeURIComponent(product.category_id || product.category?.id || "all")}`,
-          label: "See all deals",
-        }}
-        products={displayCategoryDeals}
-      />
+      {/* 3. Bundle Wizard */}
+      <ProductBundleWizard currentProduct={product} allProducts={allProducts} />
 
-      {/* 5. Tabs: Technical Specifications & Customer Reviews */}
-      <div className="pt-8 border-t border-slate-200">
-        <ProductTabs product={product} />
-      </div>
+      
+      {displayCategoryDeals.length > 0 && (
+        <ProductCarouselSection
+          title={`More In ${product.category?.name || "Category"}`}
+          subtitle="Recommended alternatives from our catalog"
+          products={displayCategoryDeals}
+        />
+      )}
 
-      {/* 6. Customers who bought this item also bought */}
-      <ProductCarouselSection
-        title="Customers who bought this item also bought"
-        subtitle="Frequently paired products bought by AURA shoppers"
-        products={boughtAlsoBought}
-      />
+      {/* 4. Product Tabs */}
+      <ProductTabs product={product} />
 
-      {/* 7. Inspired by your recent searches (Search queries) */}
-      <ProductCarouselSection
-        title="Inspired by Your Recent Searches"
-        subtitle="Recommendations based on items and terms you searched for"
-        products={inspiredProducts}
-      />
+      {/* 5. Recommended Carousels */}
+      {boughtAlsoBought.length > 0 && (
+        <ProductCarouselSection
+          title="Customers Who Bought This Item Also Bought"
+          subtitle="Real-time co-purchases from customer orders"
+          products={boughtAlsoBought}
+        />
+      )}
 
-      {/* 8. Your Recently Viewed Items */}
-      <ProductCarouselSection
-        title="Your Recently Viewed Items"
-        subtitle="Products whose detail pages you directly visited"
-        products={viewedHistoryProducts}
-      />
+      {inspiredProducts.length > 0 && (
+        <ProductCarouselSection
+          title="Inspired by your search history"
+          subtitle="Based on your search activity"
+          products={inspiredProducts}
+        />
+      )}
+
+      {viewedHistoryProducts.length > 0 && (
+        <ProductCarouselSection
+          title="Your Browsing History"
+          subtitle="Recently viewed hardware items"
+          products={viewedHistoryProducts}
+        />
+      )}
 
       {/* Express Buy Modal */}
-      {(() => {
-        const chosenPlan = protectionPlans.find(
-          (p) => p.id === selectedProtectionPlan,
-        );
-        const activeVariants = chosenPlan
-          ? {
-              ...selectedVariants,
-              "Protection Plan": `${chosenPlan.name} (+${formatPrice(chosenPlan.price)})`,
-            }
-          : selectedVariants;
-        const activeProduct = chosenPlan
-          ? { ...product, price: product.price + chosenPlan.price }
-          : product;
-
-        return (
-          <ExpressBuyModal
-            product={activeProduct}
-            quantity={quantity}
-            selectedVariants={activeVariants}
-            isOpen={isExpressModalOpen}
-            onClose={() => setIsExpressModalOpen(false)}
-          />
-        );
-      })()}
-
-      {/* Choose Your Delivery Location Overlay Modal - Matches Image 4 */}
-      {isLocationModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-slate-200 relative space-y-4 animate-scaleUp text-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="font-bold text-base text-slate-900">
-                Choose your delivery location
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsLocationModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Delivery options and delivery speeds may vary for different
-              locations
-            </p>
-
-            {/* Saved Addresses List */}
-            {savedAddresses.length > 0 && (
-              <div className="space-y-3">
-                {savedAddresses.map((addr) => {
-                  const isSelected = selectedAddress?.id === addr.id;
-                  return (
-                    <div
-                      key={addr.id}
-                      onClick={() => {
-                        setSelectedAddress(addr);
-                        if (addr.state_region || addr.city) {
-                          handleSetGovernorate(addr.state_region || addr.city);
-                        }
-                        setIsLocationModalOpen(false);
-                      }}
-                      className={`p-3.5 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-slate-900 bg-slate-50 shadow-xs"
-                          : "border-slate-200 hover:border-slate-400 bg-white"
-                      }`}
-                    >
-                      <div className="font-bold text-xs text-slate-900 leading-snug">
-                        {addr.full_name}{" "}
-                        {addr.building_no ? `${addr.building_no} ` : ""}
-                        {addr.street_address}
-                      </div>
-                      <div className="text-xs text-slate-600 mt-1">
-                        {addr.building_no ? `${addr.building_no}, ` : ""}
-                        {addr.city} {addr.state_region}
-                      </div>
-                      {addr.is_default && (
-                        <span className="text-[11px] font-bold text-slate-700 block mt-1.5">
-                          Default address
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-
-                <Link
-                  href="/addresses"
-                  className="text-xs font-semibold text-cyan-700 hover:text-cyan-900 hover:underline block pt-1"
-                >
-                  Manage address book
-                </Link>
-              </div>
-            )}
-
-            {savedAddresses.length > 0 && (
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink mx-3 text-xs text-slate-400 font-bold uppercase">
-                  or
-                </span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-            )}
-
-            {/* Governorate Selector Dropdown */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 block">
-                Select your Governorate
-              </label>
-              <CustomSelect
-                value={selectedGovernorate}
-                onChange={(val) => {
-                  handleSetGovernorate(val);
-                  setIsLocationModalOpen(false);
-                }}
-                placeholder="Select your Governorate"
-                options={storedGovs.map((g) => ({
-                  value: g.name,
-                  label: `${g.nameAr} (${g.name}) - ${g.fee === 0 ? "Free" : formatPrice(g.fee)}`,
-                }))}
-                triggerClassName="w-full justify-between py-2.5 text-xs font-semibold"
-              />
-            </div>
-          </div>
-        </div>
+      {isExpressModalOpen && (
+        <ExpressBuyModal
+          product={product}
+          quantity={quantity}
+          isOpen={isExpressModalOpen}
+          onClose={() => setIsExpressModalOpen(false)}
+        />
       )}
     </div>
   );

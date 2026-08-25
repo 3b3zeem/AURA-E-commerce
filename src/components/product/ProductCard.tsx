@@ -11,10 +11,11 @@ import {
   Zap,
 } from "lucide-react";
 import { Product } from "@/types";
-import { formatPrice, calculateDiscountPercentage } from "@/lib/utils";
+import { formatPrice, calculateDiscountPercentage, getProductRating, getProductReviewsCount } from "@/lib/utils";
 import { calculateExpressDelivery, getActiveGovernorate, setActiveGovernorate } from "@/lib/shipping";
 import { useCartStore } from "@/store/useCartStore";
 import { useUserStore } from "@/store/useUserStore";
+import { useUserWishlist } from "@/hooks/useUserData";
 import { ExpressBuyModal } from "@/components/checkout/ExpressBuyModal";
 import { ProductDiscountCountdown } from "@/components/product/ProductDiscountCountdown";
 
@@ -24,7 +25,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
-  const { profile, toggleWishlist, isInWishlist } = useUserStore();
+  const { profile } = useUserStore();
+  const { data: wishlistRaw = [], addToWishlistMutation, removeFromWishlistMutation } = useUserWishlist(profile?.id);
   const [isExpressModalOpen, setIsExpressModalOpen] = useState(false);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [activeGov, setActiveGov] = useState<string>(() => getActiveGovernorate());
@@ -69,7 +71,27 @@ export function ProductCard({ product }: ProductCardProps) {
     setCurrentImgIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  const isLiked = isInWishlist(product.id);
+  const isLiked =
+    Array.isArray(wishlistRaw) &&
+    wishlistRaw.some(
+      (w: any) =>
+        w.product_id === product.id || w.id === product.id || w === product.id,
+    );
+
+  const handleToggleWishlist = () => {
+    if (!profile?.id) return;
+    if (isLiked) {
+      removeFromWishlistMutation.mutate({
+        userId: profile.id,
+        productId: product.id,
+      });
+    } else {
+      addToWishlistMutation.mutate({
+        userId: profile.id,
+        productId: product.id,
+      });
+    }
+  };
 
   const nowStr = new Date().toISOString();
   const isDiscountActive = Boolean(
@@ -182,17 +204,18 @@ export function ProductCard({ product }: ProductCardProps) {
 
             {/* Ratings & Bought Count */}
             {(() => {
-              const reviewsCount = product.reviews_count || 0;
-              const ratingAvg = reviewsCount > 0 ? (product.rating_avg || 0) : 0;
+              const ratingAvg = getProductRating(product);
+              const reviewsCount = getProductReviewsCount(product);
+              const hasReviews = reviewsCount > 0 && ratingAvg > 0;
               return (
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <div className="flex items-center text-amber-500">
-                    <Star className="w-3.5 h-3.5 fill-current text-amber-500" />
+                  <div className="flex items-center">
+                    <Star className={`w-3.5 h-3.5 ${hasReviews ? "fill-current text-amber-500" : "text-slate-300"}`} />
                   </div>
                   <span className="text-xs font-bold text-slate-800">
-                    {ratingAvg}
+                    {hasReviews ? ratingAvg : "0"}
                   </span>
-                  <span className="text-[11px] font-bold text-slate-700">
+                  <span className="text-[11px] font-bold text-slate-500">
                     ({reviewsCount})
                   </span>
                   
@@ -275,7 +298,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {profile && (
               <div className="pt-0.5">
                 <button
-                  onClick={() => toggleWishlist(product.id)}
+                  onClick={handleToggleWishlist}
                   className={`w-full py-1 px-2 text-[10px] font-bold flex items-center justify-center space-x-1 border transition-colors uppercase cursor-pointer ${
                     isLiked
                       ? "bg-slate-900 text-white border-slate-800"

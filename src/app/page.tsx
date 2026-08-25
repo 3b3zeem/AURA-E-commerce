@@ -13,8 +13,8 @@ import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const { data: products = [] } = useProducts();
-  const { data: stories = [] } = useStories();
-  const { data: categories = [] } = useCategories();
+  const { data: stories = [], isLoading: loadingStories } = useStories();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
 
   const flashDealProducts = products.filter((p) => p.is_flash_deal);
   const featuredProducts = products.filter((p) => p.is_featured);
@@ -22,7 +22,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8 bg-[#f8fafc] text-slate-900 pb-16 font-sans">
       {/* 1. Instagram-Style Stories Bar (Very First Item on Home Page) */}
-      <StoryHero stories={stories} />
+      <StoryHero stories={stories} isLoading={loadingStories} />
 
       {/* 2. Apple-Style Bento Grid Hero */}
       <BentoGridHero />
@@ -34,7 +34,7 @@ export default function HomePage() {
       <RecommendedProductsSection />
 
       {/* 6. Category Grid Showcase */}
-      <CategoryGrid categories={categories} />
+      <CategoryGrid categories={categories} isLoading={loadingCategories} />
 
       {/* 4. Trending Innovations Showcase */}
       <section className="w-full px-4 sm:px-6 lg:px-8 py-8">

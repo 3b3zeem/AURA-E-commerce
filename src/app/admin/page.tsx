@@ -35,6 +35,7 @@ import {
   getBlogsFromDb,
   getBrands,
 } from "@/lib/services/db";
+import { addAdminTrendingSearch } from "@/lib/services/adminService";
 import {
   Product,
   Category,
@@ -884,14 +885,7 @@ export default function AdminDashboardPage() {
       setNewTrendingQuery("");
       setIsAddTrendingOpen(false);
 
-      await fetch("/api/admin/trending-searches", {
-        method: "POST",
-        headers: {
-          "x-admin-key": "aura-admin-token",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: newTrendingQuery }),
-      });
+      await addAdminTrendingSearch(newTrendingQuery);
     } finally {
       setIsSubmitting(false);
     }

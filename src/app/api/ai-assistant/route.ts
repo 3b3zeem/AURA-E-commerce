@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
-import { createClient } from '@/lib/supabase/client';
+import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@/lib/supabase/client";
 
 // Simple In-Memory Rate Limiter (20 requests/minute per IP)
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -25,33 +25,42 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous-client';
+    const ip = req.headers.get("x-forwarded-for") || "anonymous-client";
     if (checkRateLimit(ip)) {
       return NextResponse.json(
-        { error: 'Too many requests. Please wait a moment before asking again.' },
-        { status: 429 }
+        {
+          error: "Too many requests. Please wait a moment before asking again.",
+        },
+        { status: 429 },
       );
     }
 
     const { message } = await req.json();
 
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({ error: 'Message is required.' }, { status: 400 });
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: "Message is required." },
+        { status: 400 },
+      );
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     const supabase = createClient();
 
     // Fetch products with category relationship
-    const { data: dbProducts } = await supabase.from('products').select('*, category:categories(*)');
+    const { data: dbProducts } = await supabase
+      .from("products")
+      .select("*, category:categories(*)");
     const catalog = dbProducts || [];
 
     const lowerQuery = message.toLowerCase();
 
     // Extract numerical budget if user specifies "under 200", "أقل من 500", "less than 300", "تحت 200$"
     let maxBudget: number | null = null;
-    const budgetMatch = lowerQuery.match(/(?:تحت|أقل من|اقل من|تحت ال|under|less than|below|\$|egp|جنيه)\s*(\d+)/i) ||
-                        lowerQuery.match(/(\d+)\s*(?:دولار|\$|جنيه|egp|مصر)/i);
+    const budgetMatch =
+      lowerQuery.match(
+        /(?:تحت|أقل من|اقل من|تحت ال|under|less than|below|\$|egp|جنيه)\s*(\d+)/i,
+      ) || lowerQuery.match(/(\d+)\s*(?:دولار|\$|جنيه|egp|مصر)/i);
 
     if (budgetMatch && budgetMatch[1]) {
       const parsed = parseFloat(budgetMatch[1]);
@@ -64,13 +73,72 @@ export async function POST(req: NextRequest) {
     const getLocalSmartResponse = () => {
       // Category Keywords Dictionary
       const categoryMap: { [key: string]: string[] } = {
-        audio: ['سماعة', 'سماعات', 'headphone', 'headset', 'earbuds', 'audio', 'sound', 'anc', 'صوت'],
-        monitors: ['شاشة', 'شاشات', 'monitor', 'screen', 'display', '165hz', '4k'],
-        keyboards: ['كيبورد', 'لوحة مفاتيح', 'keyboard', 'switches', 'mechanical'],
-        mice: ['ماوس', 'فأرة', 'mouse', 'dpi'],
-        skincare: ['بشرة', 'غسول', 'سيروم', 'skincare', 'serum', 'cleanser', 'cream', 'عناية', 'glow', 'hyaluronic', 'skin', 'عنايه'],
-        grooming: ['حلاقة', 'دقن', 'شعر', 'grooming', 'beard', 'trimmer', 'shaver', 'رجالي', 'perfume', 'splash'],
-        accessories: ['شنطة', 'جراب', 'محفظة', 'شاحن', 'pouch', 'case', 'charger', 'cable', 'holder', 'watch'],
+        audio: [
+          "سماعة",
+          "سماعات",
+          "headphone",
+          "headset",
+          "earbuds",
+          "audio",
+          "sound",
+          "anc",
+          "صوت",
+        ],
+        monitors: [
+          "شاشة",
+          "شاشات",
+          "monitor",
+          "screen",
+          "display",
+          "165hz",
+          "4k",
+        ],
+        keyboards: [
+          "كيبورد",
+          "لوحة مفاتيح",
+          "keyboard",
+          "switches",
+          "mechanical",
+        ],
+        mice: ["ماوس", "فأرة", "mouse", "dpi"],
+        skincare: [
+          "بشرة",
+          "غسول",
+          "سيروم",
+          "skincare",
+          "serum",
+          "cleanser",
+          "cream",
+          "عناية",
+          "glow",
+          "hyaluronic",
+          "skin",
+          "عنايه",
+        ],
+        grooming: [
+          "حلاقة",
+          "دقن",
+          "شعر",
+          "grooming",
+          "beard",
+          "trimmer",
+          "shaver",
+          "رجالي",
+          "perfume",
+          "splash",
+        ],
+        accessories: [
+          "شنطة",
+          "جراب",
+          "محفظة",
+          "شاحن",
+          "pouch",
+          "case",
+          "charger",
+          "cable",
+          "holder",
+          "watch",
+        ],
       };
 
       // Detect user intent categories
@@ -82,24 +150,39 @@ export async function POST(req: NextRequest) {
       }
 
       // Detect specific modifier tags
-      const isAskingCheapest = lowerQuery.includes('أرخص') || lowerQuery.includes('رخيص') || lowerQuery.includes('cheap') || lowerQuery.includes('lowest') || lowerQuery.includes('اقل سعر');
-      const isAskingGaming = lowerQuery.includes('gaming') || lowerQuery.includes('ألعاب') || lowerQuery.includes('قيمنق') || lowerQuery.includes('جيمنج');
+      const isAskingCheapest =
+        lowerQuery.includes("أرخص") ||
+        lowerQuery.includes("رخيص") ||
+        lowerQuery.includes("cheap") ||
+        lowerQuery.includes("lowest") ||
+        lowerQuery.includes("اقل سعر");
+      const isAskingGaming =
+        lowerQuery.includes("gaming") ||
+        lowerQuery.includes("ألعاب") ||
+        lowerQuery.includes("قيمنق") ||
+        lowerQuery.includes("جيمنج");
 
       // Filter catalog by maxBudget if specified
       let filteredCatalog = catalog;
       if (maxBudget !== null) {
-        filteredCatalog = catalog.filter((p: any) => p.price <= (maxBudget as number));
+        filteredCatalog = catalog.filter(
+          (p: any) => p.price <= (maxBudget as number),
+        );
       }
 
       // If budget hard-filter results in 0 items, find items closest to budget
-      const hasBudgetOverrun = maxBudget !== null && filteredCatalog.length === 0;
+      const hasBudgetOverrun =
+        maxBudget !== null && filteredCatalog.length === 0;
       if (hasBudgetOverrun) {
-        filteredCatalog = [...catalog].sort((a: any, b: any) => a.price - b.price);
+        filteredCatalog = [...catalog].sort(
+          (a: any, b: any) => a.price - b.price,
+        );
       }
 
       // Score products based on precision matching
       const scoredProducts = filteredCatalog.map((p: any) => {
-        const text = `${p.name} ${p.description} ${p.badge || ''} ${p.category?.name || ''}`.toLowerCase();
+        const text =
+          `${p.name} ${p.description} ${p.badge || ""} ${p.category?.name || ""}`.toLowerCase();
         let score = 0;
 
         // Category direct name match (+50)
@@ -119,13 +202,21 @@ export async function POST(req: NextRequest) {
         });
 
         // Keyword exact matches (+5 per word)
-        const words = lowerQuery.split(/\s+/).filter((w) => w.length > 2 && w !== 'gaming' && w !== 'best');
+        const words = lowerQuery
+          .split(/\s+/)
+          .filter((w) => w.length > 2 && w !== "gaming" && w !== "best");
         words.forEach((word) => {
           if (text.includes(word)) score += 5;
         });
 
         // Gaming match bonus (+10 if both requested and present)
-        if (isAskingGaming && (text.includes('gaming') || text.includes('headset') || text.includes('headphone') || text.includes('165hz'))) {
+        if (
+          isAskingGaming &&
+          (text.includes("gaming") ||
+            text.includes("headset") ||
+            text.includes("headphone") ||
+            text.includes("165hz"))
+        ) {
           score += 10;
         }
 
@@ -137,9 +228,15 @@ export async function POST(req: NextRequest) {
 
       // Sort by score & price
       if (isAskingCheapest || maxBudget !== null) {
-        matchedItems.sort((a, b) => b.score - a.score || a.product.price - b.product.price);
+        matchedItems.sort(
+          (a, b) => b.score - a.score || a.product.price - b.product.price,
+        );
       } else {
-        matchedItems.sort((a, b) => b.score - a.score || (b.product.is_featured ? 1 : 0) - (a.product.is_featured ? 1 : 0));
+        matchedItems.sort(
+          (a, b) =>
+            b.score - a.score ||
+            (b.product.is_featured ? 1 : 0) - (a.product.is_featured ? 1 : 0),
+        );
       }
 
       let matched = matchedItems.map((item) => item.product);
@@ -190,7 +287,7 @@ export async function POST(req: NextRequest) {
       const productsContext = catalog.map((p: any) => ({
         id: p.id,
         name: p.name,
-        category: p.category?.name || '',
+        category: p.category?.name || "",
         price: p.price,
         original_price: p.original_price,
         description: p.description,
@@ -210,28 +307,39 @@ ${JSON.stringify(productsContext, null, 2)}`;
 
       const ai = new GoogleGenAI({ apiKey });
       const aiResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: "gemini-2.5-flash",
         contents: [
-          { role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }] },
+          {
+            role: "user",
+            parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }],
+          },
         ],
       });
 
       const replyText = aiResponse.text || "Hello! How can I assist you today?";
       const recommended = catalog.filter((p: any) =>
-        replyText.toLowerCase().includes(p.name.toLowerCase())
+        replyText.toLowerCase().includes(p.name.toLowerCase()),
       );
 
       return NextResponse.json({
         reply: replyText,
-        recommendedProducts: recommended.length > 0 ? recommended.slice(0, 3) : catalog.slice(0, 3),
+        recommendedProducts:
+          recommended.length > 0
+            ? recommended.slice(0, 3)
+            : catalog.slice(0, 3),
       });
     } catch (aiError) {
-      console.warn('Gemini API call failed, falling back to smart local response:', aiError);
+      console.warn(
+        "Gemini API call failed, falling back to smart local response:",
+        aiError,
+      );
       return NextResponse.json(getLocalSmartResponse());
     }
-
   } catch (err: any) {
-    console.error('AI Assistant API Error:', err);
-    return NextResponse.json({ error: 'Failed to generate response.' }, { status: 500 });
+    console.error("AI Assistant API Error:", err);
+    return NextResponse.json(
+      { error: "Failed to generate response." },
+      { status: 500 },
+    );
   }
 }

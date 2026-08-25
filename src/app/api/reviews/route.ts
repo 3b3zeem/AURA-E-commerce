@@ -12,7 +12,15 @@ async function updateProductRatingStats(productId: string) {
 
     if (revs) {
       const count = revs.length;
-      const avg = count > 0 ? Number((revs.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / count).toFixed(1)) : 0;
+      const avg =
+        count > 0
+          ? Number(
+              (
+                revs.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) /
+                count
+              ).toFixed(1)
+            )
+          : 0;
 
       await supabase
         .from('products')
@@ -67,10 +75,11 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('reviews')
       .insert([{ product_id, user_id, rating, comment }])
-      .select()
-      .single();
+      .select();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const createdRecord = data && data.length > 0 ? data[0] : null;
 
     // Recalculate and update rating stats for product in Supabase DB
     await updateProductRatingStats(product_id);
@@ -82,7 +91,7 @@ export async function POST(request: Request) {
           .from('profiles')
           .select('loyalty_points')
           .eq('id', user_id)
-          .single();
+          .maybeSingle();
 
         const currentPts = userProfile?.loyalty_points || 0;
         await supabase
@@ -94,7 +103,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(createdRecord);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -103,26 +112,35 @@ export async function POST(request: Request) {
 // User PUT: Update an existing review
 export async function PUT(request: Request) {
   try {
-    const { review_id, rating, comment } = await request.json();
-    if (!review_id) {
+    const body = await request.json();
+    const reviewId = body.review_id || body.id;
+    const { rating, comment } = body;
+
+    if (!reviewId) {
       return NextResponse.json({ error: 'Missing review_id' }, { status: 400 });
     }
 
     const supabase = createClient();
+    
+    const updatePayload: Record<string, any> = {};
+    if (rating !== undefined) updatePayload.rating = rating;
+    if (comment !== undefined) updatePayload.comment = comment;
+
     const { data, error } = await supabase
       .from('reviews')
-      .update({ rating, comment })
-      .eq('id', review_id)
-      .select()
-      .single();
+      .update(updatePayload)
+      .eq('id', reviewId)
+      .select();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    if (data?.product_id) {
-      await updateProductRatingStats(data.product_id);
+    const updatedRecord = data && data.length > 0 ? data[0] : null;
+
+    if (updatedRecord?.product_id) {
+      await updateProductRatingStats(updatedRecord.product_id);
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(updatedRecord || { success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -132,7 +150,7 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const reviewId = searchParams.get('reviewId');
+    const reviewId = searchParams.get('reviewId') || searchParams.get('id');
 
     if (!reviewId) {
       return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
@@ -145,26 +163,22 @@ export async function DELETE(request: Request) {
       .from('reviews')
       .select('product_id')
       .eq('id', reviewId)
-      .single();
+      .maybeSingle();
 
-    const { error, count } = await supabase
+    const productId = targetReview?.product_id;
+
+    const { error } = await supabase
       .from('reviews')
-      .delete({ count: 'exact' })
+      .delete()
       .eq('id', reviewId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (count === 0) {
-      return NextResponse.json(
-        { error: 'Review not found or RLS permission denied in Supabase' },
-        { status: 404 }
-      );
+
+    if (productId) {
+      await updateProductRatingStats(productId);
     }
 
-    if (targetReview?.product_id) {
-      await updateProductRatingStats(targetReview.product_id);
-    }
-
-    return NextResponse.json({ success: true, count });
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

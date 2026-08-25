@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useUserStore } from '@/store/useUserStore';
 import { useUserOrders } from '@/hooks/useStoreData';
+import { updateUserOrderInDb } from '@/lib/services/ordersService';
 import toast from 'react-hot-toast';
 
 function OrderTrackingContent() {
@@ -73,13 +74,9 @@ function OrderTrackingContent() {
 
     setUpdating(true);
     try {
-      const res = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeOrder.id, status: 'cancelled' }),
-      });
+      const ok = await updateUserOrderInDb(activeOrder.id, { status: 'cancelled' });
 
-      if (res.ok) {
+      if (ok) {
         toast.success('Order has been cancelled successfully.');
         setActiveOrder({ ...activeOrder, status: 'cancelled' });
         setUserOrders(
@@ -124,13 +121,9 @@ function OrderTrackingContent() {
         phone_number: editAddressForm.phone,
       };
 
-      const res = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeOrder.id, shipping_address: updatedAddress }),
-      });
+      const ok = await updateUserOrderInDb(activeOrder.id, { shipping_address: updatedAddress });
 
-      if (res.ok) {
+      if (ok) {
         toast.success('Shipping address updated successfully!');
         setActiveOrder({ ...activeOrder, shipping_address: updatedAddress });
         setUserOrders(userOrders.map(o => o.id === activeOrder.id ? { ...o, shipping_address: updatedAddress } : o));

@@ -27,6 +27,7 @@ import {
   useUpdateReviewMutation,
   useDeleteReviewMutation,
 } from '@/hooks/useStoreData';
+import { AIReviewSummaryCard } from './AIReviewSummaryCard';
 
 interface ProductTabsProps {
   product: Product;
@@ -367,7 +368,10 @@ export function ProductTabs({ product }: ProductTabsProps) {
       </div>
 
       {/* Standalone Customer Reviews & FAQ Section (ALWAYS VISIBLE BELOW TABS) */}
-      <div className="border-t-2 border-slate-200 p-6 sm:p-8 bg-white space-y-12">
+      {/* Customer Reviews Section with AI Sentiment Summarizer */}
+      <div className="border-t-2 border-slate-200 p-6 sm:p-8 bg-white space-y-8">
+        {/* AI Reviews Summary Widget */}
+        <AIReviewSummaryCard productId={product.id} />
         
         {/* Amazon Write/Edit Review Full Modal Form */}
         {showWriteForm && (
@@ -498,23 +502,39 @@ export function ProductTabs({ product }: ProductTabsProps) {
             
             {/* Rating Average & Stars */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="flex text-slate-900">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={`w-5 h-5 ${
-                        s <= Math.round(product.rating_avg || (reviews.length > 0 ? reviews.reduce((a, b) => a + b.rating, 0) / reviews.length : 0))
-                          ? "text-slate-900 fill-slate-900"
-                          : "text-slate-300"
-                      }`}
-                    />
-                  ))}
+              {reviews.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex text-slate-900">
+                    {[1, 2, 3, 4, 5].map((s) => {
+                      const avg = reviews.reduce((a, b) => a + b.rating, 0) / reviews.length;
+                      return (
+                        <Star
+                          key={s}
+                          className={`w-5 h-5 ${
+                            s <= Math.round(avg)
+                              ? "text-slate-900 fill-slate-900"
+                              : "text-slate-300"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-base font-bold text-slate-900">
+                    {(reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1)} out of 5
+                  </span>
                 </div>
-                <span className="text-base font-bold text-slate-900">
-                  {(product.rating_avg || (reviews.length > 0 ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1) : 0))} out of 5
-                </span>
-              </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="flex text-slate-300">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className="w-5 h-5 text-slate-300" />
+                    ))}
+                  </div>
+                  <span className="text-base font-bold text-slate-500">
+                    0 out of 5
+                  </span>
+                </div>
+              )}
               <p className="text-xs text-slate-500 font-medium">
                 {reviews.length} customer ratings
               </p>

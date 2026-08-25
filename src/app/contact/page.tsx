@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUserStore } from '@/store/useUserStore';
+import { createTicket } from '@/lib/services/supportApi';
 
 export default function ContactPage() {
   const profile = useUserStore((state) => state.profile);
@@ -43,31 +44,23 @@ export default function ContactPage() {
     setSubmitting(true);
     try {
       // Create support ticket via API
-      const res = await fetch('/api/support/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: `[${formData.category}] ${formData.subject || 'Contact Form Submission'}`,
-          message: formData.message,
-          user_identity: formData.email,
-          user_name: formData.name,
-        }),
+      await createTicket({
+        userIdentity: formData.email,
+        userEmail: formData.email,
+        userName: formData.name,
+        subject: `[${formData.category}] ${formData.subject || 'Contact Form Submission'}`,
+        initialMessage: formData.message,
       });
 
-      if (res.ok) {
-        setSubmitted(true);
-        toast.success('Your message has been sent! Our team will respond shortly.');
-        setFormData({
-          name: '',
-          email: '',
-          subject: '',
-          category: 'General Inquiry',
-          message: '',
-        });
-      } else {
-        toast.success('Message received! We will reach back via email.');
-        setSubmitted(true);
-      }
+      setSubmitted(true);
+      toast.success('Your message has been sent! Our team will respond shortly.');
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        category: 'General Inquiry',
+        message: '',
+      });
     } catch {
       toast.success('Message received! We will reach back via email.');
       setSubmitted(true);

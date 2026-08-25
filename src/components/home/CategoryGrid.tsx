@@ -1,16 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Category } from '@/types';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { FolderX } from 'lucide-react';
 
 interface CategoryGridProps {
   categories: Category[];
+  isLoading?: boolean;
 }
 
-export function CategoryGrid({ categories }: CategoryGridProps) {
+export function CategoryGrid({ categories, isLoading }: CategoryGridProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const showSkeleton = !isMounted || isLoading || categories.length === 0;
+
   return (
     <section className="py-6 px-4 sm:px-6 lg:px-8 w-full font-sans text-slate-900">
       <div className="mb-4">
@@ -22,7 +29,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
         </p>
       </div>
 
-      {categories.length === 0 ? (
+      {showSkeleton ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[320px]">
           {[1, 2, 3, 4].map((i) => (
             <div
