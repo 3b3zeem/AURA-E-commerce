@@ -34,7 +34,7 @@ export async function getUserProfileFromDb(
 
 export async function updateUserRoleInDb(
   userId: string,
-  role: "customer" | "admin",
+  role: string,
 ): Promise<boolean> {
   try {
     const res = await fetch("/api/admin/users", {
@@ -49,11 +49,28 @@ export async function updateUserRoleInDb(
   }
 }
 
-export async function createUserInDb(userData: any): Promise<Profile | null> {
+export async function updateUserPermissionsInDb(
+  userId: string,
+  custom_permissions: string[]
+): Promise<boolean> {
   try {
     const res = await fetch("/api/admin/users", {
-      method: "POST",
+      method: "PATCH",
       headers: getAdminHeaders(),
+      body: JSON.stringify({ userId, custom_permissions }),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function createUserInDb(userData: any): Promise<Profile | null> {
+  try {
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
     if (!res.ok) return null;
@@ -67,13 +84,26 @@ export async function createUserInDb(userData: any): Promise<Profile | null> {
 
 export async function updateUserInDb(userData: any): Promise<Profile | null> {
   try {
-    const res = await fetch("/api/admin/users", {
+    // Try public self-update route first
+    const resPublic = await fetch("/api/users", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
+    if (resPublic.ok) {
+      const result = await resPublic.json();
+      notifyDataChanged();
+      return result;
+    }
+
+    // Fallback to admin endpoint
+    const resAdmin = await fetch("/api/admin/users", {
       method: "PUT",
       headers: getAdminHeaders(),
       body: JSON.stringify(userData),
     });
-    if (!res.ok) return null;
-    const result = await res.json();
+    if (!resAdmin.ok) return null;
+    const result = await resAdmin.json();
     notifyDataChanged();
     return result;
   } catch {
@@ -396,3 +426,140 @@ export async function awardLoyaltyPointsAdmin(
     return null;
   }
 }
+
+// ==========================================
+// 5. ROLES & PERMISSIONS SERVICES (RBAC)
+// ==========================================
+
+export async function getRolesFromDb(): Promise<any[]> {
+  try {
+    const res = await fetch("/api/admin/roles", {
+      cache: "no-store",
+      headers: getAdminHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function createRoleInDb(roleData: {
+  code: string;
+  name: string;
+  description?: string;
+  permissions?: string[];
+}): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/roles", {
+      method: "POST",
+      headers: getAdminHeaders(),
+      body: JSON.stringify(roleData),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    notifyDataChanged();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateRoleInDb(roleData: {
+  code: string;
+  name?: string;
+  description?: string;
+  permissions?: string[];
+}): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/roles", {
+      method: "PUT",
+      headers: getAdminHeaders(),
+      body: JSON.stringify(roleData),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteRoleInDb(code: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/roles?code=${code}`, {
+      method: "DELETE",
+      headers: getAdminHeaders(),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function getPermissionsFromDb(): Promise<any[]> {
+  try {
+    const res = await fetch("/api/admin/permissions", {
+      cache: "no-store",
+      headers: getAdminHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function createPermissionInDb(permData: {
+  code: string;
+  name: string;
+  module: string;
+  description?: string;
+}): Promise<any | null> {
+  try {
+    const res = await fetch("/api/admin/permissions", {
+      method: "POST",
+      headers: getAdminHeaders(),
+      body: JSON.stringify(permData),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    notifyDataChanged();
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updatePermissionInDb(permData: {
+  code: string;
+  name?: string;
+  module?: string;
+  description?: string;
+}): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/permissions", {
+      method: "PUT",
+      headers: getAdminHeaders(),
+      body: JSON.stringify(permData),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deletePermissionInDb(code: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/permissions?code=${code}`, {
+      method: "DELETE",
+      headers: getAdminHeaders(),
+    });
+    if (res.ok) notifyDataChanged();
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+

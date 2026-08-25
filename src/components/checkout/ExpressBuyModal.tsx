@@ -336,8 +336,9 @@ export function ExpressBuyModal({
                     <input
                       type="tel"
                       required
+                      maxLength={11}
                       value={newAddress.phone_number}
-                      onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
+                      onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value.replace(/\D/g, "").slice(0, 11) })}
                       className="w-full p-2 border border-slate-300 font-medium text-slate-900 focus:border-slate-900 outline-none"
                       placeholder="01000000000"
                     />

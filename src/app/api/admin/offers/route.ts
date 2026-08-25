@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
+import { verifyPermission } from '@/lib/auth/adminGuard';
 
 // GET /api/admin/offers
-export async function GET() {
+export async function GET(req: Request) {
+  const guard = await verifyPermission(req, "manage_offers");
+  if (!guard.isAdmin && guard.response) return guard.response;
+
   try {
     const supabase = createClient();
     const { data: dbOffers, error } = await supabase
@@ -23,13 +27,16 @@ export async function GET() {
       return { ...off, product_ids: pIds, products: attached };
     });
     return NextResponse.json(formatted);
-  } catch (err: any) {
+  } catch {
     return NextResponse.json([], { status: 500 });
   }
 }
 
 // POST /api/admin/offers (Create new Offer bundle)
 export async function POST(req: Request) {
+  const guard = await verifyPermission(req, "manage_offers");
+  if (!guard.isAdmin && guard.response) return guard.response;
+
   try {
     const body = await req.json();
     const { title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, show_in_overlay, starts_at, ends_at } = body;
@@ -44,7 +51,6 @@ export async function POST(req: Request) {
 
     const supabase = createClient();
 
-    // If show_in_overlay is true, unset other overlays first
     if (show_in_overlay) {
       await supabase.from('offers').update({ show_in_overlay: false }).neq('id', '00000000-0000-0000-0000-000000000000');
     }
@@ -74,7 +80,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Insert selected product relations
     if (Array.isArray(product_ids) && product_ids.length > 0) {
       const rows = product_ids.map((pid: string) => ({ offer_id: newOffer.id, product_id: pid }));
       await supabase.from('offer_products').insert(rows);
@@ -87,6 +92,9 @@ export async function POST(req: Request) {
 
 // PUT /api/admin/offers (Update Offer)
 export async function PUT(req: Request) {
+  const guard = await verifyPermission(req, "manage_offers");
+  if (!guard.isAdmin && guard.response) return guard.response;
+
   try {
     const body = await req.json();
     const { id, title, subtitle, description, badge, image_url, original_price, offer_price, product_ids, is_active, show_in_overlay, starts_at, ends_at } = body;
@@ -143,6 +151,9 @@ export async function PUT(req: Request) {
 
 // DELETE /api/admin/offers?id=...
 export async function DELETE(req: Request) {
+  const guard = await verifyPermission(req, "manage_offers");
+  if (!guard.isAdmin && guard.response) return guard.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -163,12 +174,14 @@ export async function DELETE(req: Request) {
 
 // PATCH /api/admin/offers (Set specific offer as active overlay popup)
 export async function PATCH(req: Request) {
+  const guard = await verifyPermission(req, "manage_offers");
+  if (!guard.isAdmin && guard.response) return guard.response;
+
   try {
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: 'Missing offer ID' }, { status: 400 });
 
     const supabase = createClient();
-    // Unset all, then set targeted
     await supabase.from('offers').update({ show_in_overlay: false }).neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('offers').update({ show_in_overlay: true, is_active: true }).eq('id', id);
 

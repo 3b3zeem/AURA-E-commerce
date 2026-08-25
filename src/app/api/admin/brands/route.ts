@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
-import { verifyAdmin } from '@/lib/auth/adminGuard';
+import { verifyPermission } from '@/lib/auth/adminGuard';
 
 export async function GET(req: Request) {
-  const guard = await verifyAdmin(req);
+  const guard = await verifyPermission(req, "manage_brands");
   if (!guard.isAdmin) {
     return guard.response || NextResponse.json({ error: 'Unauthorized admin access' }, { status: 401 });
   }
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const guard = await verifyAdmin(req);
+  const guard = await verifyPermission(req, "manage_brands");
   if (!guard.isAdmin) {
     return guard.response || NextResponse.json({ error: 'Unauthorized admin access' }, { status: 401 });
   }
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const guard = await verifyAdmin(req);
+  const guard = await verifyPermission(req, "manage_brands");
   if (!guard.isAdmin) {
     return guard.response || NextResponse.json({ error: 'Unauthorized admin access' }, { status: 401 });
   }
@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const guard = await verifyAdmin(req);
+  const guard = await verifyPermission(req, "manage_brands");
   if (!guard.isAdmin) {
     return guard.response || NextResponse.json({ error: 'Unauthorized admin access' }, { status: 401 });
   }

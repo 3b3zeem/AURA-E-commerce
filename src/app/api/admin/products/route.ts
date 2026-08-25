@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdmin } from '@/lib/auth/adminGuard';
+import { verifyPermission } from '@/lib/auth/adminGuard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -28,7 +28,7 @@ function formatProductResponse(data: any) {
 
 // READ
 export async function GET(request: Request) {
-  const guard = await verifyAdmin(request);
+  const guard = await verifyPermission(request, "manage_products");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
 // CREATE
 export async function POST(request: Request) {
-  const guard = await verifyAdmin(request);
+  const guard = await verifyPermission(request, "manage_products");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
 
 // UPDATE
 export async function PUT(request: Request) {
-  const guard = await verifyAdmin(request);
+  const guard = await verifyPermission(request, "manage_products");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
@@ -191,7 +191,7 @@ export async function PUT(request: Request) {
 
 // DELETE
 export async function DELETE(request: Request) {
-  const guard = await verifyAdmin(request);
+  const guard = await verifyPermission(request, "manage_products");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {

@@ -96,7 +96,8 @@ export function NavbarMobileDrawer({
               >
                 Order Tracking
               </Link>
-              {profile?.role === "admin" && (
+              {(profile?.role === "admin" ||
+                profile?.role === "super_admin") && (
                 <Link
                   href="/admin"
                   onClick={onClose}

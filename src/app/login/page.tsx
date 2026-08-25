@@ -1,23 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useUserStore } from '@/store/useUserStore';
-import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { useUserStore } from "@/store/useUserStore";
+import {
+  Mail,
+  Lock,
+  LogIn,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isJustRegistered = searchParams.get('registered') === 'true';
+  const isJustRegistered = searchParams.get("registered") === "true";
+  const isAlreadyRegistered = searchParams.get("already_registered") === "true";
+  const isResetSuccess = searchParams.get("reset") === "success";
+  const emailParam = searchParams.get("email") || "";
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(emailParam);
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { setProfile, setToken } = useUserStore();
+
+  React.useEffect(() => {
+    if (emailParam && !email) {
+      setEmail(emailParam);
+    }
+  }, [emailParam, email]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +49,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErrorMessage(error.message || 'Invalid email or password.');
+        setErrorMessage(error.message || "Invalid email or password.");
         return;
       }
 
@@ -42,33 +59,41 @@ export default function LoginPage() {
 
       if (data.user) {
         const { data: profData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
           .single();
 
         if (profData) {
           setProfile(profData);
-          router.push(profData.role === 'admin' ? '/admin' : '/');
+          const isStaff =
+            profData.role === "admin" ||
+            profData.role === "super_admin" ||
+            profData.role === "seller";
+          router.push(isStaff ? "/admin" : "/");
         } else {
-          const userRole = data.user.email?.includes('admin') ? 'admin' : 'customer';
+          const userRole = data.user.email?.includes("admin")
+            ? "admin"
+            : "user";
           const newProfile = {
             id: data.user.id,
             email: data.user.email || email,
-            full_name: data.user.email?.split('@')[0] || 'User',
+            full_name: data.user.email?.split("@")[0] || "User",
             avatar_url: null,
             phone: null,
-            role: userRole as 'admin' | 'customer',
-            loyalty_points: userRole === 'admin' ? 5000 : 100,
+            role: userRole as any,
+            loyalty_points: userRole === "admin" ? 5000 : 100,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
           setProfile(newProfile);
-          router.push(userRole === 'admin' ? '/admin' : '/profile');
+          router.push(userRole === "admin" ? "/admin" : "/profile");
         }
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Login failed. Please check your credentials.');
+      setErrorMessage(
+        err.message || "Login failed. Please check your credentials.",
+      );
     } finally {
       setLoading(false);
     }
@@ -78,12 +103,12 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: { redirectTo: `${window.location.origin}/profile` },
       });
       if (error) setErrorMessage(error.message);
     } catch (err: any) {
-      setErrorMessage('Google Sign-In failed: ' + err.message);
+      setErrorMessage("Google Sign-In failed: " + err.message);
     }
   };
 
@@ -91,14 +116,39 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto px-4 py-16 font-sans text-slate-900 bg-[#f8fafc]">
       <div className="p-8 bg-white border border-slate-200 space-y-6">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sign In</h1>
-          <p className="text-xs text-slate-600 mt-1">Access your account, orders, and VIP rewards.</p>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+            Sign In
+          </h1>
+          <p className="text-xs text-slate-600 mt-1">
+            Access your account, orders, and VIP rewards.
+          </p>
         </div>
 
         {isJustRegistered && (
           <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-            <span>Account created successfully! Please sign in with your credentials.</span>
+            <span>
+              Account created successfully! Please sign in with your
+              credentials.
+            </span>
+          </div>
+        )}
+
+        {isAlreadyRegistered && (
+          <div className="p-3 bg-sky-50 border border-sky-300 text-sky-900 text-xs flex items-center space-x-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-sky-600" />
+            <span>
+              This email is already registered. Please sign in to your existing account.
+            </span>
+          </div>
+        )}
+
+        {isResetSuccess && (
+          <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center space-x-2 font-bold">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+            <span>
+              Password reset successfully! Please sign in with your new password.
+            </span>
           </div>
         )}
 
@@ -138,12 +188,16 @@ export default function LoginPage() {
 
         <div className="relative flex items-center justify-center">
           <div className="border-t border-slate-200 w-full" />
-          <span className="bg-white px-3 text-[10px] uppercase font-bold text-slate-500 absolute">or email</span>
+          <span className="bg-white px-3 text-[10px] uppercase font-bold text-slate-500 absolute">
+            or email
+          </span>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1 uppercase">Email Address</label>
+            <label className="text-xs font-bold text-slate-700 block mb-1 uppercase">
+              Email Address
+            </label>
             <div className="relative">
               <input
                 type="email"
@@ -158,10 +212,20 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1 uppercase">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold text-slate-700 block uppercase">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:underline uppercase"
+              >
+                Forgot Password?
+              </Link>
+            </div>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -173,9 +237,13 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-900 focus:outline-none cursor-pointer"
-                title={showPassword ? 'Hide Password' : 'Show Password'}
+                title={showPassword ? "Hide Password" : "Show Password"}
               >
-                {showPassword ? <EyeOff className="w-4 h-4 text-slate-900" /> : <Eye className="w-4 h-4 text-slate-400" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4 text-slate-900" />
+                ) : (
+                  <Eye className="w-4 h-4 text-slate-400" />
+                )}
               </button>
             </div>
           </div>
@@ -186,14 +254,17 @@ export default function LoginPage() {
             className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-2 transition-colors uppercase tracking-wider border border-slate-800 cursor-pointer"
           >
             <LogIn className="w-4 h-4 text-white" />
-            <span>{loading ? 'Signing In...' : 'Sign In'}</span>
+            <span>{loading ? "Signing In..." : "Sign In"}</span>
           </button>
         </form>
 
         <div className="pt-4 border-t border-slate-200 text-center space-y-3">
           <p className="text-xs text-slate-600">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-extrabold text-slate-900 hover:text-black underline">
+            Don't have an account?{" "}
+            <Link
+              href="/register"
+              className="font-extrabold text-slate-900 hover:text-black underline"
+            >
               Register here
             </Link>
           </p>

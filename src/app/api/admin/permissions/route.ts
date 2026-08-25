@@ -1,48 +1,50 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyPermission } from '@/lib/auth/adminGuard';
+import { verifyAdmin, verifyPermission } from '@/lib/auth/adminGuard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function GET(request: Request) {
-  const guard = await verifyPermission(request, "manage_categories");
+  const guard = await verifyAdmin(request);
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const { data, error } = await supabase
-      .from('categories')
+      .from('permissions')
       .select('*')
-      .order('name', { ascending: true });
+      .order('module', { ascending: true });
 
-    if (error) return NextResponse.json([]);
-    return NextResponse.json(data || []);
+    if (error || !data) {
+      return NextResponse.json([]);
+    }
+    return NextResponse.json(data);
   } catch {
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json([]);
   }
 }
 
 export async function POST(request: Request) {
-  const guard = await verifyPermission(request, "manage_categories");
+  const guard = await verifyPermission(request, "manage_roles");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
-    const body = await request.json();
-    const { name, description, image_url, is_featured, slug: customSlug } = body;
-    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    const { code, name, module, description } = await request.json();
+    if (!code || !name || !module) {
+      return NextResponse.json({ error: 'Permission code, name, and module are required' }, { status: 400 });
+    }
 
-    const slug = customSlug || name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const cleanCode = code.toLowerCase().trim().replace(/[^a-z0-9_.]+/g, '_');
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     const { data, error } = await supabase
-      .from('categories')
+      .from('permissions')
       .insert([{
+        code: cleanCode,
         name,
-        slug,
+        module,
         description: description || '',
-        image_url: image_url || '',
-        is_featured: is_featured ?? false
       }])
       .select()
       .single();
@@ -55,28 +57,23 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const guard = await verifyPermission(request, "manage_categories");
+  const guard = await verifyPermission(request, "manage_roles");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
-    const body = await request.json();
-    const { id, name, description, image_url, is_featured, slug: customSlug } = body;
-    if (!id) return NextResponse.json({ error: 'Category ID required' }, { status: 400 });
+    const { code, name, module, description } = await request.json();
+    if (!code) return NextResponse.json({ error: 'Permission code required' }, { status: 400 });
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const slug = customSlug || (name ? name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : undefined);
-
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (slug !== undefined) updateData.slug = slug;
-    if (description !== undefined) updateData.description = description;
-    if (image_url !== undefined) updateData.image_url = image_url;
-    if (is_featured !== undefined) updateData.is_featured = is_featured;
+    const updates: any = {};
+    if (name) updates.name = name;
+    if (module) updates.module = module;
+    if (description !== undefined) updates.description = description;
 
     const { data, error } = await supabase
-      .from('categories')
-      .update(updateData)
-      .eq('id', id)
+      .from('permissions')
+      .update(updates)
+      .eq('code', code)
       .select()
       .single();
 
@@ -88,16 +85,16 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await verifyPermission(request, "manage_categories");
+  const guard = await verifyPermission(request, "manage_roles");
   if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'Category ID required' }, { status: 400 });
+    const code = searchParams.get('code');
+    if (!code) return NextResponse.json({ error: 'Permission code required' }, { status: 400 });
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { error } = await supabase.from('categories').delete().eq('id', id);
+    const { error } = await supabase.from('permissions').delete().eq('code', code);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });

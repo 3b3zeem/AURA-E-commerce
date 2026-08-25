@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/client';
-import { verifyAdmin } from '@/lib/auth/adminGuard';
+import { verifyPermission } from '@/lib/auth/adminGuard';
 
 // READ ALL ORDERS
-export async function GET() {
-  const guard = await verifyAdmin();
-  if (!guard.isAdmin) return guard.response;
+export async function GET(request: Request) {
+  const guard = await verifyPermission(request, "manage_orders");
+  if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
     const supabase = createClient();
@@ -23,8 +23,8 @@ export async function GET() {
 
 // UPDATE ORDER STATUS / TRACKING
 export async function PATCH(request: Request) {
-  const guard = await verifyAdmin();
-  if (!guard.isAdmin) return guard.response;
+  const guard = await verifyPermission(request, "manage_orders");
+  if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
     const { id, status, tracking_number } = await request.json();
@@ -49,8 +49,8 @@ export async function PATCH(request: Request) {
 
 // DELETE ORDER
 export async function DELETE(request: Request) {
-  const guard = await verifyAdmin();
-  if (!guard.isAdmin) return guard.response;
+  const guard = await verifyPermission(request, "manage_orders");
+  if (!guard.isAdmin && guard.response) return guard.response;
 
   try {
     const { searchParams } = new URL(request.url);

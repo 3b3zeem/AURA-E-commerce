@@ -66,7 +66,7 @@ export function NavbarUserMenu({
                 >
                   Your Orders & Tracking
                 </Link>
-                {profile.role === "admin" && (
+                {(profile.role === "admin" || profile.role === "super_admin") && (
                   <Link
                     href="/admin"
                     onClick={() => setAccountDropdownOpen(false)}

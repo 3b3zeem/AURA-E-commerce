@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import { useUserStore } from "@/store/useUserStore";
@@ -34,6 +34,7 @@ import {
   getNewsletterSubscribers,
   getBlogsFromDb,
   getBrands,
+  getRolesFromDb,
 } from "@/lib/services/db";
 import { addAdminTrendingSearch } from "@/lib/services/adminService";
 import {
@@ -50,7 +51,7 @@ import Link from "next/link";
 import { CheckCircle2, ShieldAlert, ArrowLeft, KeyRound, LogIn } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { AdminTabsNav, AdminTab } from "@/components/admin/AdminTabsNav";
+import { AdminTabsNav, AdminTab, getAllowedTabsForRole } from "@/components/admin/AdminTabsNav";
 import { AdminProductsTab } from "@/components/admin/AdminProductsTab";
 import { AdminBrandsTab } from "@/components/admin/AdminBrandsTab";
 import { AdminOffersTab } from "@/components/admin/AdminOffersTab";
@@ -58,6 +59,7 @@ import { AdminNewsletterTab } from "@/components/admin/AdminNewsletterTab";
 import { AdminOrdersTab } from "@/components/admin/AdminOrdersTab";
 import { AdminCategoriesTab } from "@/components/admin/AdminCategoriesTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
+import { AdminRolesTab } from "@/components/admin/AdminRolesTab";
 import { AdminStoriesTab } from "@/components/admin/AdminStoriesTab";
 import { AdminBentoTab } from "@/components/admin/AdminBentoTab";
 import { AdminPromoTab } from "@/components/admin/AdminPromoTab";
@@ -70,6 +72,7 @@ import { AdminModals } from "@/components/admin/AdminModals";
 
 const ALL_ADMIN_TABS: AdminTab[] = [
   "analytics",
+  "roles",
   "support",
   "blogs",
   "products",
@@ -87,14 +90,42 @@ const ALL_ADMIN_TABS: AdminTab[] = [
 
 export default function AdminDashboardPage() {
   const { profile, setProfile } = useUserStore();
-  const [activeTab, setActiveTab] = useState<AdminTab>("analytics");
+  const [activeTab, setActiveTab] = useState<AdminTab>("products");
   const [mounted, setMounted] = useState(false);
+  const [rolesList, setRolesList] = useState<any[]>([]);
 
-  const isAdmin = profile?.role === "admin";
+  const isAdmin =
+    profile?.role === "admin" ||
+    profile?.role === "super_admin" ||
+    profile?.role === "seller";
 
   useEffect(() => {
     setMounted(true);
+    getRolesFromDb().then((rData: any[]) => {
+      if (Array.isArray(rData)) setRolesList(rData);
+    });
   }, []);
+
+  const userPermissions = useMemo(() => {
+    if (!profile?.role) return undefined;
+    const roleObj = rolesList.find((r) => r.code === profile.role);
+    const rolePerms = roleObj?.permissions || [];
+    const customPerms = profile?.custom_permissions || [];
+    const combined = Array.from(new Set([...rolePerms, ...customPerms]));
+    return combined.length > 0 ? combined : undefined;
+  }, [profile, rolesList]);
+
+  const allowedTabs = useMemo(() => {
+    return getAllowedTabsForRole(profile?.role, userPermissions);
+  }, [profile?.role, userPermissions]);
+
+  const isTabAllowed = allowedTabs.includes(activeTab);
+
+  useEffect(() => {
+    if (mounted && profile && allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
+      setActiveTab(allowedTabs[0]);
+    }
+  }, [mounted, profile?.role, allowedTabs]);
 
   // Data States loaded live from Supabase DB
   const [productsList, setProductsList] = useState<Product[]>([]);
@@ -229,6 +260,11 @@ export default function AdminDashboardPage() {
           break;
         }
         case "users": {
+          const usrs = await getUsersFromDb();
+          setUsersList(usrs);
+          break;
+        }
+        case "roles": {
           const usrs = await getUsersFromDb();
           setUsersList(usrs);
           break;
@@ -721,15 +757,19 @@ export default function AdminDashboardPage() {
   };
 
   // Handlers for Users
-  const toggleUserRole = async (user: Profile) => {
+  const handleUserRoleChange = async (userId: string, newRole: string) => {
+    if (profile?.role !== "super_admin") {
+      showNotification("Only Super Admin can change user roles!");
+      return;
+    }
     try {
-      setActionLoadingId(user.id);
-      const newRole = user.role === "admin" ? "customer" : "admin";
+      setActionLoadingId(userId);
+      const targetUser = usersList.find((u) => u.id === userId);
       setUsersList((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u)),
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole as any } : u)),
       );
-      showNotification(`Updated role for ${user.full_name} to ${newRole}`);
-      await updateUserRoleInDb(user.id, newRole);
+      showNotification(`Updated role for ${targetUser?.full_name || 'User'} to ${newRole}`);
+      await updateUserRoleInDb(userId, newRole);
     } finally {
       setActionLoadingId(null);
     }
@@ -906,7 +946,7 @@ export default function AdminDashboardPage() {
 
   if (mounted && !isAdmin) {
     return (
-      <div className="w-full bg-[#f8fafc] text-slate-900 font-sans min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full bg-white text-slate-900 font-sans min-h-screen flex flex-col items-center justify-center p-4">
         <Toaster position="top-center" />
         <div className="max-w-lg w-full bg-white border border-slate-200 shadow-2xl p-8 space-y-6 text-center relative overflow-hidden">
           {/* Warning Icon Badge */}
@@ -955,7 +995,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="w-full bg-[#f8fafc] text-slate-900 font-sans min-h-screen pb-16">
+    <div className="w-full bg-white text-slate-900 font-sans min-h-screen pb-16">
       <Toaster position="top-center" />
       {/* Toast Notification */}
       <AnimatePresence>
@@ -978,6 +1018,8 @@ export default function AdminDashboardPage() {
       <div className="px-4 sm:px-6 pt-6">
         {/* TAB NAVIGATION GRID */}
         <AdminTabsNav
+          userRole={profile?.role}
+          userPermissions={userPermissions}
           activeTab={activeTab}
           onTabChange={changeTab}
           productsCount={productsList.length}
@@ -992,12 +1034,36 @@ export default function AdminDashboardPage() {
           offersCount={offersList.length}
           subscribersCount={subscribersList.length}
           blogsCount={blogsList.length}
+          rolesCount={rolesList.length}
         />
 
         {/* ACTIVE TAB CONTENTS */}
-        {activeTab === "blogs" && (
-          <AdminBlogsTab blogs={blogsList} onRefresh={refreshData} />
-        )}
+        {!isTabAllowed ? (
+          <div className="p-12 text-center bg-white border border-slate-300 shadow-sm space-y-4 font-sans text-slate-900 my-6">
+            <div className="w-16 h-16 bg-rose-50 border border-rose-200 rounded-full flex items-center justify-center mx-auto text-rose-600">
+              <ShieldAlert className="w-8 h-8 text-rose-600" />
+            </div>
+            <span className="inline-block bg-rose-100 text-rose-800 text-[10px] font-mono font-black uppercase px-2.5 py-0.5 tracking-wider border border-rose-200">
+              403 Permission Restricted
+            </span>
+            <h3 className="text-xl font-black uppercase text-slate-900 tracking-tight">
+              Access Restricted For Tab "{activeTab}"
+            </h3>
+            <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+              Your current account role (<strong className="uppercase font-mono text-slate-900">{profile?.role || "user"}</strong>) does not have administrative permissions to view or manage this section.
+            </p>
+            <button
+              onClick={() => changeTab(allowedTabs[0] || "products")}
+              className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border border-slate-900"
+            >
+              Go to Permitted Tab ({allowedTabs[0] || "products"})
+            </button>
+          </div>
+        ) : (
+          <>
+            {activeTab === "blogs" && (
+              <AdminBlogsTab blogs={blogsList} onRefresh={refreshData} />
+            )}
 
         {activeTab === "products" && (
           <AdminProductsTab
@@ -1070,12 +1136,22 @@ export default function AdminDashboardPage() {
 
         {activeTab === "users" && (
           <AdminUsersTab
+            currentUserRole={profile?.role}
             usersList={usersList}
             actionLoadingId={actionLoadingId}
-            onToggleUserRole={toggleUserRole}
+            onChangeUserRole={handleUserRoleChange}
             onDeleteUser={handleDeleteUser}
             onRefresh={refreshData}
             onNotify={showNotification}
+          />
+        )}
+
+        {activeTab === "roles" && (
+          <AdminRolesTab
+            currentUserRole={profile?.role}
+            usersList={usersList}
+            onNotify={showNotification}
+            onRefreshUsers={() => loadTabData("users", false)}
           />
         )}
 
@@ -1148,6 +1224,8 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === "support" && <AdminCustomerServiceTab />}
+          </>
+        )}
       </div>
 
       {/* ALL CREATE & EDIT MODALS */}

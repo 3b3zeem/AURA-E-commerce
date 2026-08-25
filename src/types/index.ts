@@ -1,16 +1,57 @@
-export type UserRole = 'customer' | 'admin';
+export type UserRole = 'super_admin' | 'admin' | 'seller' | 'user' | 'customer';
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface Role {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  is_system?: boolean;
+  permissions?: string[]; // list of permission codes
+  created_at?: string;
+}
+
+export interface Permission {
+  id: string;
+  code: string;
+  name: string;
+  module: string;
+  description: string;
+  created_at?: string;
+}
+
+export interface RolePermission {
+  role_code: string;
+  permission_code: string;
+}
+
+export interface SellerRequest {
+  id: string;
+  user_id: string;
+  store_name: string;
+  store_description?: string;
+  phone?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  user?: Profile;
+}
 
 export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
-  avatar_url: string | null;
-  phone: string | null;
+  avatar_url?: string | null;
+  phone?: string | null;
   role: UserRole;
-  loyalty_points: number;
-  created_at: string;
-  updated_at: string;
+  loyalty_points?: number;
+  company_name?: string | null;
+  store_name?: string | null;
+  business_phone?: string | null;
+  tax_id?: string | null;
+  store_description?: string | null;
+  custom_permissions?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Category {

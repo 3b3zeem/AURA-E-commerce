@@ -92,36 +92,33 @@ export function Navbar() {
             .from("profiles")
             .select("*")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
+
+          if (!profData) {
+            // Profile row deleted from database: clear local session & force redirect
+            await supabase.auth.signOut();
+            useUserStore.getState().clearUser();
+            useCartStore.getState().setItems([]);
+            syncedUserIdRef.current = null;
+            toast.error("Your account no longer exists. Redirecting to sign in...");
+            router.push("/login");
+            return;
+          }
 
           const googleName =
             user.user_metadata?.full_name || user.user_metadata?.name;
           const googleAvatar =
             user.user_metadata?.avatar_url || user.user_metadata?.picture;
 
-          if (profData) {
-            setProfile({
-              ...profData,
-              full_name:
-                profData.full_name ||
-                googleName ||
-                user.email?.split("@")[0] ||
-                "User",
-              avatar_url: profData.avatar_url || googleAvatar || null,
-            });
-          } else {
-            setProfile({
-              id: user.id,
-              email: user.email || "",
-              full_name: googleName || user.email?.split("@")[0] || "User",
-              avatar_url: googleAvatar || null,
-              phone: null,
-              role: user.email?.includes("admin") ? "admin" : "customer",
-              loyalty_points: 100,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-          }
+          setProfile({
+            ...profData,
+            full_name:
+              profData.full_name ||
+              googleName ||
+              user.email?.split("@")[0] ||
+              "User",
+            avatar_url: profData.avatar_url || googleAvatar || null,
+          });
         }
 
         const { data: authListener } = supabase.auth.onAuthStateChange(

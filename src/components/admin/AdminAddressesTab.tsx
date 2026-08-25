@@ -304,7 +304,7 @@ export function AdminAddressesTab({
                   {addr.city}, {addr.state_region} {addr.zip_code} - {addr.country}
                 </p>
                 <p className="text-slate-700 font-mono font-bold">
-                  📞 {ph}
+                  Phone: {ph}
                 </p>
                 {addr.delivery_instructions && (
                   <p className="text-[11px] italic text-slate-500 bg-slate-50 p-2 border border-slate-200 mt-2">
